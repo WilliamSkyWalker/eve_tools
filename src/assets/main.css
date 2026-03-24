@@ -1,0 +1,117 @@
+:root {
+  /* Background */
+  --bg-base: #0d0d0d;
+  --bg-panel: #1a1a1a;
+  --bg-elevated: #222222;
+  --bg-input: #0d0d0d;
+
+  /* Border */
+  --border-default: #2a2a2a;
+  --border-hover: #3a3a3a;
+
+  /* Text */
+  --text-primary: #d0d0d0;
+  --text-muted: #8a8a8a;
+  --text-dim: #555555;
+
+  /* Accent */
+  --gold: #c8aa6e;
+  --gold-hover: #e0c882;
+  --gold-bg: rgba(200, 170, 110, 0.08);
+  --gold-bg-light: rgba(200, 170, 110, 0.03);
+  --gold-bg-medium: rgba(200, 170, 110, 0.1);
+
+  /* Semantic */
+  --green: #4caf50;
+  --green-bg: rgba(76, 175, 80, 0.1);
+  --orange: #ff9800;
+  --orange-bg: rgba(255, 152, 0, 0.1);
+  --red: #ef5350;
+  --red-bg: rgba(239, 83, 80, 0.1);
+  --blue: #42a5f5;
+  --blue-bg: rgba(66, 165, 245, 0.1);
+  --purple: #ce93d8;
+  --purple-bg: rgba(206, 147, 216, 0.1);
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Font sizes */
+  --text-xs: 0.75em;
+  --text-sm: 0.8em;
+  --text-base: 0.85em;
+  --text-md: 0.9em;
+  --text-lg: 0.95em;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.main-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.type-icon {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--gold-hover);
+}
+
+input, select, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+th {
+  background-color: var(--gold-bg);
+  color: var(--gold);
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+tr:hover {
+  background-color: rgba(200, 170, 110, 0.03);
+}

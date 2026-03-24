@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# SDE source CSVs (large, can be re-downloaded)
+sde_data/*.csv
+
+# Claude config
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+*.local
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+*.timestamp-*-*.mjs
