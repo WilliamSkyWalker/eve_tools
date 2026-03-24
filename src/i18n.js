@@ -225,11 +225,10 @@ const messages = {
     // Donate
     'donate.title': '支持本项目',
     'donate.subtitle': '如果这个工具对你有帮助，欢迎请作者喝杯咖啡',
-    'donate.wechat': '微信',
-    'donate.alipay': '支付宝',
-    'donate.qrHint': '收款码待添加',
-    'donate.kofiDesc': '海外用户可通过 Ko-fi 支持',
-    'donate.kofiBtn': '在 Ko-fi 上支持',
+    'donate.kofiDesc': '通过 Ko-fi 支持（支持 PayPal 和信用卡）',
+    'donate.kofiBtn': '请作者喝杯咖啡',
+    'donate.wechatTitle': '微信赞赏',
+    'donate.wechatDesc': '使用微信扫码赞赏',
     'donate.thanks': '感谢每一位支持者，你们的鼓励是持续更新的动力。',
 
     // Auth
@@ -473,11 +472,10 @@ const messages = {
     // Donate
     'donate.title': 'Support This Project',
     'donate.subtitle': 'If you find this tool helpful, consider buying the developer a coffee',
-    'donate.wechat': 'WeChat Pay',
-    'donate.alipay': 'Alipay',
-    'donate.qrHint': 'QR code coming soon',
-    'donate.kofiDesc': 'International users can support via Ko-fi',
-    'donate.kofiBtn': 'Support on Ko-fi',
+    'donate.kofiDesc': 'Support via Ko-fi (PayPal & credit card accepted)',
+    'donate.kofiBtn': 'Buy me a coffee',
+    'donate.wechatTitle': 'WeChat Pay',
+    'donate.wechatDesc': 'Scan with WeChat to donate',
     'donate.thanks': 'Thank you to every supporter. Your encouragement keeps this project going.',
 
     // Auth

@@ -12,7 +12,7 @@
         <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
       </nav>
       <div class="header-controls">
-        <router-link to="/donate" class="donate-link">{{ t('nav.donate') }}</router-link>
+        <button class="donate-link" @click="showDonate = true">{{ t('nav.donate') }}</button>
         <button class="toggle-btn server-toggle" @click="onToggleServer">
           <span class="toggle-active" :class="server === 'gf' ? 'clr-gf' : 'clr-of'">
             {{ serverLabel }}
@@ -56,6 +56,31 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Donate Modal -->
+    <Teleport to="body">
+      <div v-if="showDonate" class="modal-overlay" @click.self="showDonate = false">
+        <div class="modal-content donate-modal">
+          <button class="modal-close" @click="showDonate = false">&times;</button>
+          <h2 class="modal-title">{{ t('donate.title') }}</h2>
+          <p class="modal-subtitle">{{ t('donate.subtitle') }}</p>
+
+          <div v-if="locale === 'zh'" class="donate-body">
+            <img src="/donate-wechat.png" alt="微信赞赏码" class="wechat-qr" />
+            <p class="donate-desc">{{ t('donate.wechatDesc') }}</p>
+          </div>
+
+          <div v-else class="donate-body">
+            <a href="https://ko-fi.com/williamdd" target="_blank" rel="noopener" class="kofi-btn">
+              ☕ {{ t('donate.kofiBtn') }}
+            </a>
+            <p class="donate-desc">{{ t('donate.kofiDesc') }}</p>
+          </div>
+
+          <p class="donate-thanks">{{ t('donate.thanks') }}</p>
+        </div>
+      </div>
+    </Teleport>
   </header>
 </template>
 
@@ -72,6 +97,7 @@ const { t, locale, serverLabel } = useI18n()
 
 const server = computed(() => settings.server)
 const showCredits = ref(false)
+const showDonate = ref(false)
 
 function onToggleServer() {
   const newServer = server.value === 'gf' ? 'of' : 'gf'
@@ -150,12 +176,61 @@ nav a.router-link-active {
   padding: 3px 12px;
   border: 1px solid #c8aa6e;
   border-radius: 4px;
+  cursor: pointer;
+  background: none;
   transition: background 0.2s, color 0.2s;
 }
 
 .donate-link:hover {
   background: #c8aa6e;
   color: #0d0d0d;
+}
+
+/* ── Donate Modal ── */
+.donate-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.donate-body {
+  margin: 20px 0;
+}
+
+.wechat-qr {
+  width: 220px;
+  height: 220px;
+  border-radius: 8px;
+}
+
+.kofi-btn {
+  display: inline-block;
+  background: #c8aa6e;
+  color: #0d0d0d;
+  text-decoration: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1em;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.kofi-btn:hover {
+  background: #e0c882;
+  transform: translateY(-1px);
+}
+
+.donate-desc {
+  color: #8a8a8a;
+  font-size: 0.85em;
+  margin-top: 12px;
+}
+
+.donate-thanks {
+  color: #555;
+  font-size: 0.8em;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2a2a;
 }
 
 .toggle-btn {

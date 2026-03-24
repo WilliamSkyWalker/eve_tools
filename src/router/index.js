@@ -39,12 +39,7 @@ const router = createRouter({
       name: 'credits',
       component: () => import('../views/CreditsView.vue'),
     },
-    {
-      path: '/donate',
-      name: 'donate',
-      component: () => import('../views/DonateView.vue'),
-    },
-    {
+{
       path: '/blueprint/:typeId',
       name: 'blueprint',
       component: () => import('../views/BlueprintView.vue'),
