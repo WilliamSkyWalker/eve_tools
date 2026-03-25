@@ -7,6 +7,20 @@ import { MANUFACTURING_ACTIVITY_ID, REACTION_ACTIVITY_ID, getSourceForProduct } 
 
 import { getTypeName } from './calculator'
 
+// Special edition / AT prize ships — not normally manufacturable
+const SPECIAL_EDITION_RE = / (Edition|Imperial Issue)|Luxury Yacht/
+const AT_PRIZE_SHIPS = new Set([
+  'Adrestia','Utu','Malice','Vangel','Freki','Mimir','Cambion','Etana',
+  'Chremoas','Moracha','Chameleon','Whiptail','Caedes','Rabisu','Imp','Fiend',
+  'Tiamat','Hydra','Victor','Virtuoso','Pacifier','Enforcer','Marshal',
+  'Apotheosis','Zephyr','Immolator','Echelon','Guardian-Vexor',
+  'Gold Magnate','Silver Magnate','Sarum Magnate',
+])
+
+function isSpecialEdition(name) {
+  return SPECIAL_EDITION_RE.test(name) || AT_PRIZE_SHIPS.has(name)
+}
+
 /**
  * Search blueprints by product name (Chinese or English).
  */
@@ -23,6 +37,7 @@ export function searchBlueprints(query, limit = 20) {
     const prodTid = parseInt(prodTidStr)
     const prodType = data.types[prodTid]
     if (!prodType || prodType.n?.startsWith('OLD ')) continue
+    if (isSpecialEdition(prodType.n)) continue
 
     const matchEn = prodType.n?.toLowerCase().includes(q)
     const matchZh = prodType.nz?.includes(query)

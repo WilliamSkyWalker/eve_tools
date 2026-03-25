@@ -282,6 +282,21 @@ async function main() {
   }
   console.log(`  Industry types: ${Object.keys(filteredTypes).length}, groups: ${Object.keys(filteredGroups).length}`)
 
+  // ── Step 5b: Fetch Chinese type names from Serenity ESI ──
+  if (FETCH_ZH) {
+    console.log('Fetching Chinese type names from Serenity ESI...')
+    const typeIds = Object.keys(filteredTypes).map(Number)
+    const zhTypeNamesESI = await fetchUniverseNames(typeIds)
+    let updated = 0
+    for (const [id, name] of Object.entries(zhTypeNamesESI)) {
+      if (filteredTypes[id] && name && name !== filteredTypes[id].n) {
+        filteredTypes[id].nz = name
+        updated++
+      }
+    }
+    console.log(`  Updated ${updated} Chinese type names from ESI`)
+  }
+
   // ── Step 6: Build industry.json ──
   const industryJson = {
     types: filteredTypes,
