@@ -173,6 +173,7 @@ async function main() {
       g: toInt(row.groupID),
       pub: row.published === '1',
       v: toFloat(row.volume),
+      ps: toInt(row.portionSize) || 1,
     }
   })
 
@@ -274,7 +275,9 @@ async function main() {
   for (const tid of industryTypeIds) {
     const t = allTypes[tid]
     if (t) {
-      filteredTypes[tid] = { n: t.n, nz: t.nz, g: t.g }
+      const entry = { n: t.n, nz: t.nz, g: t.g }
+      if (t.ps && t.ps !== 1) entry.ps = t.ps
+      filteredTypes[tid] = entry
       if (t.g && groups[t.g] && !filteredGroups[t.g]) {
         filteredGroups[t.g] = { n: groups[t.g].n }
       }

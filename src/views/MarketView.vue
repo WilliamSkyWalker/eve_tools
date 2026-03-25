@@ -265,8 +265,9 @@ async function calcReprocess() {
       if (!mats) continue
       const itemGroup = indData.types[r.type_id]?.g
       const rate = ORE_GROUPS.has(itemGroup) ? oreRate : scrapRate
+      const portionSize = indData.types[r.type_id]?.ps || 1
       for (const [matTid, matQty] of mats) {
-        const output = Math.floor(matQty * qty * rate)
+        const output = Math.floor(matQty * (qty / portionSize) * rate)
         if (output > 0) {
           outputMap[matTid] = (outputMap[matTid] || 0) + output
         }

@@ -59,6 +59,16 @@ const messages = {
     'industry.finalProduct': '最终产品',
     'industry.subComponentMe': '子组件材料效率',
     'industry.applyMe': '应用',
+    'industry.inventoryBtn': '已有',
+    'industry.pasteInventory': '粘贴已有材料',
+    'industry.inventoryPlaceholder': '从游戏中粘贴已有材料，每行一个\n格式: 材料名\t数量\n\n例如:\n三钛合金\t50000\n类晶体胶矿\t20000',
+    'industry.applyInventory': '确认',
+    'industry.clearInventory': '清除',
+    'industry.inventoryHint': '从游戏中粘贴已有材料，实时计算还需数量',
+    'industry.copyNeed': '复制还需材料',
+    'industry.copied': '已复制!',
+    'industry.haveQty': '已有',
+    'industry.needQty': '还需',
 
     // ManufacturingQueue
     'queue.searchPlaceholder': '搜索蓝图...',
@@ -318,6 +328,16 @@ const messages = {
     'industry.finalProduct': 'Final Product',
     'industry.subComponentMe': 'Sub-component ME',
     'industry.applyMe': 'Apply',
+    'industry.inventoryBtn': 'Inventory',
+    'industry.pasteInventory': 'Paste Existing Inventory',
+    'industry.inventoryPlaceholder': 'Paste materials from game, one per line\nFormat: Material Name\tQuantity\n\nExample:\nTritanium\t50000\nPyerite\t20000',
+    'industry.applyInventory': 'Apply',
+    'industry.clearInventory': 'Clear',
+    'industry.inventoryHint': 'Paste existing materials from game, need is calculated in real-time',
+    'industry.copyNeed': 'Copy Needed',
+    'industry.copied': 'Copied!',
+    'industry.haveQty': 'Have',
+    'industry.needQty': 'Need',
 
     // ManufacturingQueue
     'queue.searchPlaceholder': 'Search blueprints...',
