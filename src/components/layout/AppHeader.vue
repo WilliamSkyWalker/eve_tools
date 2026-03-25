@@ -12,15 +12,20 @@
         <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
       </nav>
       <div class="header-controls">
-        <button class="donate-link" @click="showDonate = true">{{ t('nav.donate') }}</button>
-        <button class="toggle-btn server-toggle" @click="onToggleServer">
-          <span class="toggle-active" :class="server === 'gf' ? 'clr-gf' : 'clr-of'">
-            {{ serverLabel }}
-          </span>
-        </button>
-        <button class="toggle-btn lang-toggle" @click="settings.toggleLocale()">
-          {{ locale === 'zh' ? 'EN' : '中' }}
-        </button>
+        <div class="toggle-group">
+          <a href="https://github.com/WilliamSkyWalker/eve_tools/issues" target="_blank" rel="noopener" class="toggle-item">{{ t('nav.feedback') }}</a>
+          <span class="toggle-sep"></span>
+          <button class="toggle-item" @click="showDonate = true">{{ t('nav.donate') }}</button>
+        </div>
+        <div class="toggle-group">
+          <button class="toggle-item" @click="onToggleServer">
+            <span :class="server === 'gf' ? 'clr-gf' : 'clr-of'">{{ serverLabel }}</span>
+          </button>
+          <span class="toggle-sep"></span>
+          <button class="toggle-item" @click="settings.toggleLocale()">
+            {{ locale === 'zh' ? 'EN' : '中' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -165,25 +170,39 @@ nav a.router-link-active {
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.donate-link {
-  color: #c8aa6e;
-  text-decoration: none;
-  font-size: 0.85em;
-  font-weight: 600;
-  padding: 3px 12px;
-  border: 1px solid #c8aa6e;
+.toggle-group {
+  display: flex;
+  align-items: center;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
   border-radius: 4px;
-  cursor: pointer;
-  background: none;
-  transition: background 0.2s, color 0.2s;
+  overflow: hidden;
 }
 
-.donate-link:hover {
-  background: #c8aa6e;
-  color: #0d0d0d;
+.toggle-item {
+  background: none;
+  border: none;
+  color: #8a8a8a;
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.toggle-item:hover {
+  color: #c8aa6e;
+  background: rgba(200, 170, 110, 0.08);
+}
+
+.toggle-sep {
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  background: #2a2a2a;
 }
 
 /* ── Donate Modal ── */
@@ -233,38 +252,12 @@ nav a.router-link-active {
   border-top: 1px solid #2a2a2a;
 }
 
-.toggle-btn {
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 0.8em;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-  color: #8a8a8a;
-}
-
-.toggle-btn:hover {
-  border-color: #c8aa6e;
-  color: #c8aa6e;
-}
-
-.toggle-active {
-  font-weight: 600;
-}
-
 .clr-gf {
   color: #ff9800;
 }
 
 .clr-of {
   color: #4caf50;
-}
-
-.lang-toggle {
-  font-weight: 600;
-  min-width: 36px;
-  text-align: center;
 }
 
 /* ── Credits Modal ── */

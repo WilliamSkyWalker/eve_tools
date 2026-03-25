@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 export const useSettingsStore = defineStore('settings', () => {
   const server = ref(localStorage.getItem('eve_server') || 'gf')
-  const locale = ref(localStorage.getItem('eve_locale') || 'zh')
+  const locale = ref(localStorage.getItem('eve_locale') || (navigator.language?.startsWith('zh') ? 'zh' : 'en'))
 
   const datasource = computed(() => server.value === 'gf' ? 'serenity' : 'tranquility')
   const serverPrefix = computed(() => `/${server.value}`)

@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-eve_tools — EVE Online 工业工具箱，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、旗舰跳跃路线规划、公开合同查询和虫洞系统查询。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
+eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、旗舰跳跃路线规划、公开合同查询和虫洞系统查询。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
 
 ## Tech Stack
 
 - **Frontend**: Vue 3 (Vite + Pinia + Vue Router)，纯静态 SPA，无后端
 - **ESI**: 浏览器直连 `https://ali-esi.evepc.163.com` (Serenity) / `https://esi.evetech.net` (Tranquility)
-- **SDE**: Fuzzwork CSV dump → JSON 转换脚本 (`scripts/convert-sde.mjs`)，数据存于 `frontend/public/data/`
-- **部署**: Cloudflare Pages（`npx wrangler pages deploy dist/`）
+- **SDE**: Fuzzwork CSV dump（欧服）+ Serenity ESI 中文名 → JSON 转换脚本 (`scripts/convert-sde.mjs`)，数据存于 `public/data/`。注意：国服专属物品（如座头鲸）无公开 SDE，暂不支持
+- **部署**: Cloudflare Pages，push 到 main 自动部署（GitHub Actions + wrangler）
 
 ## Architecture
 
@@ -31,7 +31,7 @@ eve_tools — EVE Online 工业工具箱，纯前端 SPA（无后端）。包含
 
 - **`calculator.js`** — ME 材料公式，`getSourceForProduct()` 查找制造/反应来源
 - **`bom.js`** — 递归 BOM 展开，层级聚合，批量 BOM
-- **`blueprintLookup.js`** — 蓝图搜索（中英文）
+- **`blueprintLookup.js`** — 蓝图搜索（中英文），自动过滤特别版/AT奖励舰船
 - **`routeFinder.js`** — 旗舰跳跃 BFS 路径算法，星门 BFS，高安目的地双路线选项
 - **`systemSearch.js`** — 星系名称前缀搜索
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表
@@ -78,15 +78,14 @@ npm run dev                                       # 启动 Vite 开发服务器 
 npm run build                                     # 构建生产版本 (输出到 dist/)
 npm run preview                                   # 预览构建结果
 
-# 部署（从项目根目录执行）
-npm run build && npx wrangler pages deploy dist/  # 构建并部署到 Cloudflare Pages
+# 部署（push 到 main 自动触发 GitHub Actions 部署，也可手动）
+npm run build && npx wrangler pages deploy dist/  # 手动部署到 Cloudflare Pages
 
-# 每周数据维护
+# 每周数据维护（push 后自动部署，无需手动 wrangler）
 git pull
 node scripts/convert-sde.mjs --download --fetch-zh-names
 git add public/data/
 git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
-npm run build && npx wrangler pages deploy dist/
 ```
 
 ## 编码规范

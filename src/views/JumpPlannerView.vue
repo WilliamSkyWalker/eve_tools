@@ -234,6 +234,7 @@ const presets = computed(() => [
   { label: `6.5 (${t('jump.presets.super')})`, value: 6.5 },
   { label: `7.0 (${t('jump.presets.jf')})`, value: 7.0 },
   { label: `10.0 (${t('jump.presets.titan')})`, value: 10.0 },
+  { label: `15.0 (${t('jump.presets.bowhead')})`, value: 15.0 },
 ])
 
 const startSystem = ref('')
