@@ -78,12 +78,6 @@ const { t, locale } = useI18n()
   margin-top: 24px;
 }
 
-.section-title {
-  color: #c8aa6e;
-  font-size: 1.1em;
-  margin-bottom: 16px;
-}
-
 .wechat-qr {
   width: 220px;
   height: 220px;

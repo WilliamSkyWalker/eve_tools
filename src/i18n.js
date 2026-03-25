@@ -67,6 +67,9 @@ const messages = {
     'industry.inventoryHint': '从游戏中粘贴已有材料，实时计算还需数量',
     'industry.copyNeed': '复制还需材料',
     'industry.copied': '已复制!',
+    'industry.sell': '卖单',
+    'industry.buy': '收单',
+    'industry.share': '分享计划',
     'industry.haveQty': '已有',
     'industry.needQty': '还需',
 
@@ -79,6 +82,10 @@ const messages = {
     'queue.output': '产出',
     'queue.action': '操作',
     'queue.calculate': '计算材料清单',
+    'queue.import': '导入',
+    'queue.importTitle': '导入生产计划',
+    'queue.importPlaceholder': '粘贴分享的生产计划，或直接输入：\n产品名\t数量\n\n例如：\n帕拉丁级\t1',
+    'queue.importError': '未能识别以下物品',
 
     // MaterialSummary
     'summary.rawMaterial': '原材料',
@@ -338,6 +345,9 @@ const messages = {
     'industry.copied': 'Copied!',
     'industry.haveQty': 'Have',
     'industry.needQty': 'Need',
+    'industry.sell': 'Sell',
+    'industry.buy': 'Buy',
+    'industry.share': 'Share Plan',
 
     // ManufacturingQueue
     'queue.searchPlaceholder': 'Search blueprints...',
@@ -348,6 +358,10 @@ const messages = {
     'queue.output': 'Output',
     'queue.action': 'Action',
     'queue.calculate': 'Calculate Materials',
+    'queue.import': 'Import',
+    'queue.importTitle': 'Import Manufacturing Plan',
+    'queue.importPlaceholder': 'Paste a shared plan, or enter directly:\nProduct Name\tQuantity\n\nExample:\nPaladin\t1',
+    'queue.importError': 'Could not resolve these items',
 
     // MaterialSummary
     'summary.rawMaterial': 'Raw Material',

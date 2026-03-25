@@ -11,6 +11,8 @@
         <label class="global-me-label">{{ t('industry.subComponentMe') }}</label>
         <input type="number" v-model.number="globalMe" min="0" max="10" class="global-me-input" />
         <button class="global-me-btn" @click="applyGlobalMe">{{ t('industry.applyMe') }}</button>
+        <span class="bar-spacer"></span>
+        <button class="global-me-btn" @click="sharePlan">{{ shareLabel }}</button>
       </div>
 
       <div class="levels-row">
@@ -19,7 +21,14 @@
           <table class="level-table">
             <thead>
               <tr>
-                <th class="col-header level-product" colspan="2">{{ t('industry.finalProduct') }}</th>
+                <th class="col-header level-product" colspan="2">
+                  {{ t('industry.finalProduct') }}
+                  <div v-if="productSellPrice != null || totalTime.max" class="level-stats">
+                    <span v-if="productSellPrice != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(productSellPrice) }}</span>
+                    <span v-if="productBuyPrice != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(productBuyPrice) }}</span>
+                    <span v-if="totalTime.max" class="stat-item time">{{ formatTime(totalTime.min) }} ~ {{ formatTime(totalTime.max) }}</span>
+                  </div>
+                </th>
               </tr>
               <tr>
                 <th class="sub-header">{{ t('queue.product') }}</th>
@@ -43,14 +52,22 @@
             <thead>
               <tr>
                 <th :class="`col-header level-${Math.min(lvl.level, 4)}`" :colspan="colSpan(lvl)">
-                  {{ levelLabel(lvl.level) }}
-                  <button class="inventory-btn" @click="openInventory(lvl.level)" :title="t('industry.pasteInventory')">{{ t('industry.inventoryBtn') }}</button>
+                  <div class="level-header-top">
+                    {{ levelLabel(lvl.level) }}
+                    <button class="inventory-btn" @click="openInventory(lvl.level)" :title="t('industry.pasteInventory')">{{ t('industry.inventoryBtn') }}</button>
+                  </div>
+                  <div v-if="levelStats[lvl.level]" class="level-stats">
+                    <span v-if="levelStats[lvl.level].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
+                    <span v-if="levelStats[lvl.level].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.level].buyTotal) }}</span>
+                    <span v-if="levelStats[lvl.level].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.level].minTime) }} ~ {{ formatTime(levelStats[lvl.level].maxTime) }}</span>
+                  </div>
+                  <div v-else-if="priceLoading" class="level-stats"><span class="stat-item loading-stat">...</span></div>
                 </th>
               </tr>
               <tr>
                 <th class="sub-header">{{ t('industry.material') }}</th>
                 <th class="sub-header num">{{ t('industry.quantity') }}</th>
-                <th class="sub-header num" v-if="hasManufacturable(lvl)">{{ t('queue.me') }}</th>
+                <th class="sub-header num" v-if="lvl.level === 0 && hasManufacturable(lvl)">{{ t('queue.me') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -58,21 +75,23 @@
                 <tr v-if="idx === 0 || mat.group_name !== lvl.materials[idx - 1].group_name" class="group-row">
                   <td :colspan="colSpan(lvl)" class="group-label">{{ mat.group_name }}</td>
                 </tr>
-                <tr>
+                <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id) }">
                   <td class="name-cell">
                     <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
                     <span
                       class="copyable"
                       :class="{
-                        'name-reaction': mat.is_reaction,
-                        'name-mfg': mat.is_manufacturable && !mat.is_reaction,
+                        'name-reaction': mat.is_reaction && !skippedItems.has(mat.type_id),
+                        'name-mfg': mat.is_manufacturable && !mat.is_reaction && !skippedItems.has(mat.type_id),
+                        'name-skipped': skippedItems.has(mat.type_id),
                       }"
                       :data-tid="mat.type_id"
                       @click="copyName(mat.type_name)"
+                      @contextmenu.prevent="toggleSkip(mat.type_id)"
                     >{{ mat.type_name }}</span>
                   </td>
                   <td class="num">{{ formatNumber(mat.quantity) }}</td>
-                  <td class="num" v-if="hasManufacturable(lvl)">
+                  <td class="num" v-if="lvl.level === 0 && hasManufacturable(lvl)">
                     <input
                       v-if="mat.build && !mat.is_reaction"
                       type="number"
@@ -85,6 +104,39 @@
                   </td>
                 </tr>
               </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Raw Material Summary Column -->
+        <div v-if="summary.length" class="level-col">
+          <table class="level-table" @copy="onSummaryCopy($event)">
+            <thead>
+              <tr>
+                <th class="col-header level-summary" colspan="2">
+                  <div class="level-header-top">
+                    {{ t('industry.rawSummary') }}
+                    <button class="inventory-btn" @click="openInventory('summary')" :title="t('industry.pasteInventory')">{{ t('industry.inventoryBtn') }}</button>
+                  </div>
+                  <div v-if="levelStats['summary']?.sellTotal" class="level-stats">
+                    <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
+                    <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats['summary'].buyTotal) }}</span>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th class="sub-header">{{ t('industry.material') }}</th>
+                <th class="sub-header num">{{ t('industry.quantity') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="mat in summary" :key="mat.type_id">
+                <td class="name-cell">
+                  <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <span class="copyable" :data-tid="mat.type_id" @click="copyName(mat.type_name)">{{ mat.type_name }}</span>
+                </td>
+                <td class="num">{{ formatNumber(mat.total_quantity) }}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -153,6 +205,7 @@ import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadIndustryData, getIndustryData } from '../data/loader'
+import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
 
 const settings = useSettingsStore()
@@ -168,11 +221,42 @@ const SKIP_EXPAND_GROUPS = new Set([
 const { t, serverLabel } = useI18n()
 
 const levels = ref([])
+const summary = ref([])
 const buildItems = ref({})
 const currentItems = ref([])
 const calculating = ref(false)
 const dataReady = ref(false)
 const globalMe = ref(0)
+const skippedItems = reactive(new Set())
+
+const productSellPrice = ref(null)
+const productBuyPrice = ref(null)
+
+const totalTime = computed(() => {
+  let totalBase = 0, totalBest = 0
+  const indData = getIndustryData()
+  if (!indData) return { min: null, max: null }
+  for (const lvl of levels.value) {
+    for (const mat of lvl.materials) {
+      if (!mat.build || !mat.blueprint_type_id || !mat.source_activity) continue
+      const baseTime = indData.activities?.[mat.blueprint_type_id]?.[mat.source_activity]
+      if (!baseTime) continue
+      const prodEntry = indData.productsByBp?.[mat.blueprint_type_id]?.[mat.source_activity]
+      const prodQty = prodEntry?.[1] || 1
+      const runs = Math.ceil(mat.quantity / prodQty)
+      const jobTime = baseTime * runs
+      totalBase += jobTime
+      totalBest += jobTime * (mat.is_reaction ? REACT_BEST_MULT : MFG_BEST_MULT)
+    }
+  }
+  return {
+    min: totalBase > 0 ? Math.round(totalBest) : null,
+    max: totalBase > 0 ? totalBase : null,
+  }
+}) // right-clicked items: won't be expanded
+const levelStats = reactive({}) // level -> { sellTotal, buyTotal, minTime, maxTime }
+const priceLoading = ref(false)
+const shareLabel = ref('')
 
 // Per-level inventory: { levelIndex: { typeId: quantity } }
 const inventoryByLevel = reactive({})
@@ -184,9 +268,12 @@ const copyLabel = ref('')
 onMounted(async () => {
   await loadIndustryData()
   dataReady.value = true
+  shareLabel.value = t('industry.share')
+  copyLabel.value = t('industry.copyNeed')
 })
 
 function levelLabel(n) {
+  if (n === 'summary') return t('industry.rawSummary')
   const names = t('industry.levels')
   if (Array.isArray(names) && n < names.length) return names[n]
   return t('industry.levelN', { n: n + 1 })
@@ -198,16 +285,149 @@ async function fetchBom() {
   try {
     const { data } = await getBatchBom(currentItems.value, buildItems.value)
     levels.value = data.levels
+    summary.value = data.summary || []
+    computeTimeStats()
+    fetchLevelPrices()
   } finally {
     calculating.value = false
   }
 }
 
+// Theoretical best time multipliers (all skills V + best structure + T2 rig lowsec)
+// Manufacturing: TE20(0.80) × Industry V(0.80) × Adv Industry V(0.85) × Sotiyo(0.70) × T2 rig(0.958)
+const MFG_BEST_MULT = 0.80 * 0.80 * 0.85 * 0.70 * 0.958  // ≈ 0.365
+// Reaction: Reactions V(0.75) × Adv Industry V(0.85) × Tatara(0.75) × T2 rig(0.958)
+const REACT_BEST_MULT = 0.75 * 0.85 * 0.75 * 0.958  // ≈ 0.458
+
+function computeTimeStats() {
+  const indData = getIndustryData()
+  if (!indData) return
+
+  // Compute production time per level, then shift to next level for display
+  const timeByLevel = {} // level -> { totalBase, totalBest }
+  for (const lvl of levels.value) {
+    let totalBase = 0
+    let totalBest = 0
+    for (const mat of lvl.materials) {
+      if (!mat.build || !mat.blueprint_type_id || !mat.source_activity) continue
+      const baseTime = indData.activities?.[mat.blueprint_type_id]?.[mat.source_activity]
+      if (!baseTime) continue
+      const prodEntry = indData.productsByBp?.[mat.blueprint_type_id]?.[mat.source_activity]
+      const prodQty = prodEntry?.[1] || 1
+      const runs = Math.ceil(mat.quantity / prodQty)
+      const jobTime = baseTime * runs
+      totalBase += jobTime
+      totalBest += jobTime * (mat.is_reaction ? REACT_BEST_MULT : MFG_BEST_MULT)
+    }
+    if (totalBase > 0) timeByLevel[lvl.level] = { totalBase, totalBest }
+  }
+
+  // Display time at level N+1 (child materials level shows parent's production time)
+  for (const lvl of levels.value) {
+    const existing = levelStats[lvl.level]
+    const parentTime = timeByLevel[lvl.level - 1]
+    levelStats[lvl.level] = {
+      sellTotal: existing?.sellTotal ?? null,
+      buyTotal: existing?.buyTotal ?? null,
+      minTime: parentTime ? Math.round(parentTime.totalBest) : null,
+      maxTime: parentTime ? parentTime.totalBase : null,
+    }
+  }
+}
+
+async function fetchLevelPrices() {
+  priceLoading.value = true
+  try {
+    // Collect all type IDs
+    const allTypeIds = new Set()
+    for (const item of currentItems.value) allTypeIds.add(item.product_type_id)
+    for (const lvl of levels.value) {
+      for (const mat of lvl.materials) allTypeIds.add(mat.type_id)
+    }
+    for (const mat of summary.value) allTypeIds.add(mat.type_id)
+
+    // Fetch Jita order prices for all types at once
+    const prices = await getOrderPricesForTypes([...allTypeIds], settings.datasource)
+
+    // Product prices
+    let prodSell = 0, prodBuy = 0
+    for (const item of currentItems.value) {
+      const p = prices[item.product_type_id]
+      const qty = item.runs * (item.product_quantity || 1)
+      if (p?.sell_price) prodSell += p.sell_price * qty
+      if (p?.buy_price) prodBuy += p.buy_price * qty
+    }
+    productSellPrice.value = prodSell || null
+    productBuyPrice.value = prodBuy || null
+
+    // Summary prices
+    let summSell = 0, summBuy = 0
+    for (const mat of summary.value) {
+      const p = prices[mat.type_id]
+      if (p?.sell_price) summSell += p.sell_price * mat.total_quantity
+      if (p?.buy_price) summBuy += p.buy_price * mat.total_quantity
+    }
+    levelStats['summary'] = { sellTotal: summSell || null, buyTotal: summBuy || null, minTime: null, maxTime: null }
+
+    // Per-level prices
+    for (const lvl of levels.value) {
+      let sellTotal = 0, buyTotal = 0
+      for (const mat of lvl.materials) {
+        const p = prices[mat.type_id]
+        if (p?.sell_price) sellTotal += p.sell_price * mat.quantity
+        if (p?.buy_price) buyTotal += p.buy_price * mat.quantity
+      }
+      if (levelStats[lvl.level]) {
+        levelStats[lvl.level].sellTotal = sellTotal
+        levelStats[lvl.level].buyTotal = buyTotal
+      } else {
+        levelStats[lvl.level] = { sellTotal, buyTotal, minTime: null, maxTime: null }
+      }
+    }
+  } catch { /* prices optional */ }
+  finally { priceLoading.value = false }
+}
+
+function formatPrice(n) {
+  if (n == null) return '—'
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B'
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
+  return n.toFixed(0)
+}
+
+function formatTime(seconds) {
+  if (!seconds) return '—'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 24) {
+    const d = Math.floor(h / 24)
+    const rh = h % 24
+    return `${d}d ${rh}h`
+  }
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+function sharePlan() {
+  const lines = []
+  lines.push(`=== ${t('industry.finalProduct')} ===`)
+  for (const item of currentItems.value) {
+    lines.push(`${item.product_name}\t${item.runs}\tME${item.me_level}`)
+  }
+
+  navigator.clipboard.writeText(lines.join('\n'))
+  shareLabel.value = t('industry.copied')
+  setTimeout(() => { shareLabel.value = t('industry.share') }, 2000)
+}
+
 async function onCalculate(items) {
   currentItems.value = items
   buildItems.value = {}
-  // Clear inventory on recalculate
+  skippedItems.clear()
   for (const key of Object.keys(inventoryByLevel)) delete inventoryByLevel[key]
+  for (const key of Object.keys(levelStats)) delete levelStats[key]
+  productSellPrice.value = null
+  productBuyPrice.value = null
 
   const finalProductIds = new Set(items.map(i => i.product_type_id))
   const indData = getIndustryData()
@@ -216,7 +436,7 @@ async function onCalculate(items) {
     await fetchBom()
     for (const lvl of levels.value) {
       for (const mat of lvl.materials) {
-        if (mat.is_manufacturable && !buildItems.value[String(mat.type_id)]?.build) {
+        if (mat.is_manufacturable && !buildItems.value[String(mat.type_id)]?.build && !skippedItems.has(mat.type_id)) {
           const group = indData?.types[mat.type_id]?.g
           if (SKIP_EXPAND_GROUPS.has(group) && !finalProductIds.has(mat.type_id)) continue
           buildItems.value[String(mat.type_id)] = { me_level: globalMe.value, build: true }
@@ -225,6 +445,40 @@ async function onCalculate(items) {
     }
     if (Object.keys(buildItems.value).length === prevCount) break
     prevCount = Object.keys(buildItems.value).length
+  }
+}
+
+function toggleSkip(typeId) {
+  if (skippedItems.has(typeId)) {
+    skippedItems.delete(typeId)
+    // Re-add to buildItems if manufacturable
+    const indData = getIndustryData()
+    const source = indData?.products?.[1]?.[typeId] || indData?.products?.[11]?.[typeId]
+    if (source) {
+      buildItems.value[String(typeId)] = { me_level: globalMe.value, build: true }
+    }
+  } else {
+    skippedItems.add(typeId)
+    // Remove from buildItems to stop expansion
+    delete buildItems.value[String(typeId)]
+  }
+  fetchBom()
+}
+
+function onSummaryCopy(event) {
+  const sel = window.getSelection()
+  if (!sel || sel.isCollapsed) return
+  const text = sel.toString()
+  const matMap = {}
+  for (const mat of summary.value) matMap[mat.type_name] = mat.total_quantity
+  const lines = []
+  for (const line of text.split('\n')) {
+    const name = line.trim().replace(/[\d,.\s]+$/, '').trim()
+    if (name && matMap[name] != null) lines.push(`${name}\t${matMap[name]}`)
+  }
+  if (lines.length) {
+    event.preventDefault()
+    event.clipboardData.setData('text/plain', lines.join('\n'))
   }
 }
 
@@ -237,7 +491,7 @@ function hasInventory(level) {
 }
 
 function colSpan(lvl) {
-  return hasManufacturable(lvl) ? 3 : 2
+  return (lvl.level === 0 && hasManufacturable(lvl)) ? 3 : 2
 }
 
 function onTableCopy(event, lvl) {
@@ -286,9 +540,17 @@ function needClass(level, typeId, required) {
 const modalMaterials = computed(() => {
   const level = inventoryModal.value
   if (level === null) return []
-  const lvl = levels.value.find(l => l.level === level)
-  if (!lvl) return []
-  return lvl.materials.map(mat => {
+
+  let mats
+  if (level === 'summary') {
+    mats = summary.value.map(m => ({ type_id: m.type_id, type_name: m.type_name, quantity: m.total_quantity }))
+  } else {
+    const lvl = levels.value.find(l => l.level === level)
+    if (!lvl) return []
+    mats = lvl.materials
+  }
+
+  return mats.map(mat => {
     const have = tempInventory[mat.type_id] || 0
     return {
       type_id: mat.type_id,
@@ -470,6 +732,10 @@ function formatNumber(n) {
   background: #3a3a3a;
 }
 
+.bar-spacer {
+  flex: 1;
+}
+
 /* ---- product column ---- */
 .product-col .col-header {
   background: rgba(200, 170, 110, 0.18);
@@ -492,6 +758,7 @@ function formatNumber(n) {
   gap: 12px;
   overflow-x: auto;
   align-items: flex-start;
+  padding-bottom: 8px;
 }
 
 .level-col {
@@ -525,6 +792,33 @@ function formatNumber(n) {
 .col-header.level-2 { background: rgba(156, 39, 176, 0.12); color: #ce93d8; }
 .col-header.level-3 { background: rgba(76, 175, 80, 0.12); color: #81c784; }
 .col-header.level-4 { background: rgba(244, 67, 54, 0.12); color: #ef9a9a; }
+.col-header.level-summary { background: rgba(255, 255, 255, 0.08); color: #e6e6e6; }
+
+.level-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.level-stats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  font-size: 0.7em;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.stat-item.sell { color: #ef5350; }
+.stat-item.buy { color: #4caf50; }
+.stat-item.time { color: #8a8a8a; }
+.stat-item.loading-stat { color: #555; }
 
 .inventory-btn {
   margin-left: 8px;
@@ -640,6 +934,15 @@ function formatNumber(n) {
 
 .name-mfg:hover {
   color: #81c784;
+}
+
+.skipped-row {
+  opacity: 0.4;
+}
+
+.name-skipped {
+  color: #555 !important;
+  text-decoration: line-through;
 }
 
 /* ---- Inventory Modal ---- */

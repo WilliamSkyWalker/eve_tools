@@ -39,7 +39,28 @@
         <input type="number" v-model.number="runs" min="1" class="small-input" />
       </div>
       <button @click="addItem" class="btn btn-add" :disabled="!selectedBp">{{ t('queue.add') }}</button>
+      <button @click="showImport = true" class="btn btn-import">{{ t('queue.import') }}</button>
     </div>
+
+    <!-- Import Modal -->
+    <Teleport to="body">
+      <div v-if="showImport" class="modal-overlay" @click.self="showImport = false">
+        <div class="modal-content">
+          <button class="modal-close" @click="showImport = false">&times;</button>
+          <h2 class="modal-title">{{ t('queue.importTitle') }}</h2>
+          <textarea
+            v-model="importText"
+            class="import-textarea"
+            :placeholder="t('queue.importPlaceholder')"
+            rows="10"
+          ></textarea>
+          <p v-if="importError" class="import-error">{{ importError }}</p>
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="doImport">{{ t('queue.import') }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Queue table -->
     <table v-if="items.length" class="queue-table">
@@ -90,6 +111,8 @@
 import { ref } from 'vue'
 import { searchBlueprints } from '../../api/blueprints'
 import { useI18n } from '../../i18n'
+import { resolveItemNames } from '../../services/market'
+import { getSourceForProduct, getTypeName } from '../../services/calculator'
 
 const { t } = useI18n()
 
@@ -164,6 +187,85 @@ function updateRuns(idx, event) {
   }
 }
 
+// ── Import ──
+const showImport = ref(false)
+const importText = ref('')
+const importError = ref('')
+
+function doImport() {
+  importError.value = ''
+  const text = importText.value.trim()
+  if (!text) return
+
+  // Parse: extract product lines from shared plan or plain "name\tqty" format
+  const productLines = []
+  const lines = text.split('\n')
+  let inProducts = false
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (/^===.*===/.test(trimmed)) {
+      // Section header — check if it's the products section
+      inProducts = /最终产品|Final Product/i.test(trimmed)
+      continue
+    }
+    if (inProducts && trimmed === '') { inProducts = false; continue }
+    // If we're in products section, or if there's no section headers at all (plain format)
+    const target = inProducts ? trimmed : (text.includes('===') ? null : trimmed)
+    if (!target) continue
+    // Parse "name\tqty\tMEn" or "name\tqty" or "name qty"
+    const tabMatch = target.match(/^(.+?)\t(\d+)(?:\tME(\d+))?$/)
+    if (tabMatch) {
+      productLines.push({ name: tabMatch[1].trim(), runs: parseInt(tabMatch[2]), me: tabMatch[3] != null ? parseInt(tabMatch[3]) : null })
+    } else {
+      const spaceMatch = target.match(/^(.+?)\s+(\d+)$/)
+      if (spaceMatch) {
+        productLines.push({ name: spaceMatch[1].trim(), runs: parseInt(spaceMatch[2]), me: null })
+      }
+    }
+  }
+
+  if (!productLines.length) {
+    importError.value = t('queue.importError')
+    return
+  }
+
+  // Resolve names to type_ids and blueprint_ids
+  const resolved = resolveItemNames(productLines.map(p => p.name))
+  const newItems = []
+  const errors = []
+  for (let i = 0; i < resolved.length; i++) {
+    if (!resolved[i].matched) {
+      errors.push(productLines[i].name)
+      continue
+    }
+    const typeId = resolved[i].type_id
+    const source = getSourceForProduct(typeId)
+    if (!source) {
+      errors.push(productLines[i].name)
+      continue
+    }
+    newItems.push({
+      blueprint_type_id: source.bpTypeId,
+      product_name: getTypeName(typeId),
+      product_type_id: typeId,
+      product_quantity: 1,
+      me_level: productLines[i].me ?? meLevel.value,
+      runs: productLines[i].runs,
+    })
+  }
+
+  if (errors.length) {
+    importError.value = `${t('queue.importError')}: ${errors.join(', ')}`
+  }
+
+  if (newItems.length) {
+    items.value = newItems
+    showImport.value = false
+    importText.value = ''
+    emitCalculate()
+  }
+}
+
 function emitCalculate() {
   emit('calculate', items.value.map(item => ({
     blueprint_type_id: item.blueprint_type_id,
@@ -174,9 +276,7 @@ function emitCalculate() {
   })))
 }
 
-function formatNumber(n) {
-  return n != null ? n.toLocaleString() : '-'
-}
+
 </script>
 
 <style scoped>
@@ -413,5 +513,93 @@ function formatNumber(n) {
 
 .btn-primary:hover {
   background: #e0c882;
+}
+
+.btn-import {
+  padding: 8px 16px;
+  background: none;
+  color: #8a8a8a;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-import:hover {
+  border-color: #c8aa6e;
+  color: #c8aa6e;
+}
+
+/* ── Import Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 24px 28px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #c8aa6e;
+}
+
+.modal-title {
+  color: #c8aa6e;
+  font-size: 1.1em;
+  margin-bottom: 12px;
+}
+
+.import-textarea {
+  width: 100%;
+  padding: 10px;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #d0d0d0;
+  font-size: 0.85em;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.import-textarea:focus {
+  border-color: #c8aa6e;
+}
+
+.import-error {
+  color: #ef5350;
+  font-size: 0.8em;
+  margin-top: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 </style>
