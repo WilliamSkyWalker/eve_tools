@@ -72,7 +72,7 @@
             <th class="col-type">{{ t('contracts.type') }}</th>
             <th>{{ t('contracts.colTitle') }}</th>
             <th class="col-price">{{ t('contracts.colPrice') }}</th>
-            <th class="col-jita">{{ t('contracts.jitaSell') }}</th>
+            <th class="col-jita">{{ t('contracts.jitaBuy') }}</th>
             <th class="col-volume">{{ t('contracts.colVolume') }}</th>
             <th class="col-issued">{{ t('contracts.colIssued') }}</th>
             <th class="col-action">{{ t('contracts.colDetail') }}</th>
@@ -365,7 +365,7 @@ async function fetchJitaPricesForContracts() {
         const { data } = await getContractItems(c.contract_id, {
           datasource: datasource.value,
         })
-        c._jita_total = data.total_jita_value
+        c._jita_total = data.total_jita_buy
         // Store item names for display in title column
         const included = (data.items || []).filter(i => i.is_included !== false)
         c._item_names = included.map(i => {
@@ -428,23 +428,25 @@ function copyEveLink(contract) {
 function contractPriceClass(c) {
   if (c.type === 'courier' || c._jita_total == null || c._jita_total <= 0) return ''
   const ratio = c.price / c._jita_total
-  if (ratio <= 0.5) return 'price-red'
-  if (ratio <= 0.8) return 'price-green'
+  if (ratio < 1) return 'price-green'    // cheaper than Jita = good deal
+  if (ratio > 1.2) return 'price-red'    // 20%+ above Jita = bad deal
   return ''
 }
 
 function discountClass(c) {
   if (!c._jita_total || c._jita_total <= 0 || c.type === 'courier') return ''
   const ratio = c.price / c._jita_total
-  if (ratio <= 0.5) return 'discount-red'
-  if (ratio <= 0.8) return 'discount-green'
+  if (ratio < 1) return 'discount-green'
+  if (ratio > 1.2) return 'discount-red'
   return 'discount-normal'
 }
 
 function discountText(c) {
   if (!c._jita_total || c._jita_total <= 0 || c.type === 'courier') return ''
-  const pct = Math.round((c.price / c._jita_total) * 100)
-  return `${pct}%`
+  const pct = Math.round((1 - c.price / c._jita_total) * 100)
+  if (pct > 0) return `-${pct}%`    // discount
+  if (pct < 0) return `+${-pct}%`   // premium
+  return '0%'
 }
 
 function contractTypeLabel(type) {
