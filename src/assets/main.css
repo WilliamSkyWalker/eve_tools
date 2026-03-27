@@ -134,3 +134,31 @@ tr:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold);
 }
+
+/* Copyable name — click feedback */
+.copyable {
+  cursor: pointer;
+  position: relative;
+  border-radius: 2px;
+}
+.copyable:hover {
+  color: var(--gold);
+}
+.copyable.copied {
+  color: #fff;
+  background-color: rgba(76, 175, 80, 0.25);
+}
+.copyable.copied::after {
+  content: attr(data-copied-tip);
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  background: #4caf50;
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}

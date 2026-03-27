@@ -154,9 +154,30 @@ export function flattenBomToLevels(trees) {
     walk(tree, 0)
   }
 
-  const levels = Object.keys(levelMap).map(Number).sort((a, b) => a - b)
+  // Consolidate: move each material to its deepest level so that
+  // the same material is only listed once and can be prepared together.
+  const deepestLevel = {}  // type_id -> max level
+  for (const [lvl, mats] of Object.entries(levelMap)) {
+    for (const tid of Object.keys(mats)) {
+      deepestLevel[tid] = Math.max(deepestLevel[tid] ?? -1, Number(lvl))
+    }
+  }
+  const consolidated = {}
+  for (const [lvl, mats] of Object.entries(levelMap)) {
+    for (const [tid, info] of Object.entries(mats)) {
+      const target = deepestLevel[tid]
+      if (!consolidated[target]) consolidated[target] = {}
+      if (!consolidated[target][tid]) {
+        consolidated[target][tid] = { ...info }
+      } else {
+        consolidated[target][tid].quantity += info.quantity
+      }
+    }
+  }
+
+  const levels = Object.keys(consolidated).map(Number).sort((a, b) => a - b)
   return levels.map(level => {
-    const materials = Object.entries(levelMap[level]).map(([tid, info]) => ({
+    const materials = Object.entries(consolidated[level]).map(([tid, info]) => ({
       type_id: parseInt(tid),
       type_name: info.type_name,
       quantity: info.quantity,

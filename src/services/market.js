@@ -8,7 +8,25 @@ import { getOrderPricesForTypes } from './esiClient'
 import { locName } from './locale'
 
 /**
+ * Try to parse a string as an integer quantity.
+ * Handles comma/dot/space as thousand separators: "1,000", "1.000", "1 000"
+ */
+function parseQty(s) {
+  if (!s) return null
+  const cleaned = s.replace(/[\s,.]/g, '')
+  const n = parseInt(cleaned, 10)
+  return isNaN(n) || n <= 0 ? null : n
+}
+
+/**
  * Parse pasted material list text into (name, quantity) pairs.
+ *
+ * Supported formats:
+ *   - Tab-separated (EVE inventory/contract/asset copy): Name\tQty\tGroup\t...
+ *     Quantity is found by scanning all columns after the first for a pure number.
+ *   - Space-separated: "Tritanium 100000"
+ *   - Suffix format: "Tritanium x2", "Tritanium ×3"
+ *   - Name only (quantity defaults to null)
  */
 export function parseMaterialText(text) {
   const results = []
@@ -16,26 +34,33 @@ export function parseMaterialText(text) {
     const line = rawLine.trim()
     if (!line) continue
 
-    let name, qtyStr
-    if (line.includes('\t')) {
-      const parts = line.split('\t')
-      name = parts[0].trim()
-      qtyStr = parts[1]?.trim() || ''
-    } else {
-      const match = line.match(/^(.+?)\s+([\d,]+(?:\.\d+)?)\s*$/)
-      if (match) {
-        name = match[1].trim()
-        qtyStr = match[2]
-      } else {
-        name = line
-        qtyStr = ''
-      }
-    }
-
+    let name = null
     let quantity = null
-    if (qtyStr) {
-      const n = parseInt(qtyStr.replace(/,/g, '').split('.')[0], 10)
-      if (!isNaN(n)) quantity = n
+
+    if (line.includes('\t')) {
+      // Tab-separated: first column is name, scan remaining columns for a number
+      const parts = line.split('\t').map(s => s.trim())
+      name = parts[0]
+      for (let i = 1; i < parts.length; i++) {
+        const q = parseQty(parts[i])
+        if (q != null) { quantity = q; break }
+      }
+    } else {
+      // Check for "Name x2" / "Name ×3" suffix
+      const xMatch = line.match(/^(.+?)\s+[x×](\d+)\s*$/i)
+      if (xMatch) {
+        name = xMatch[1].trim()
+        quantity = parseInt(xMatch[2], 10) || null
+      } else {
+        // Try "Name 100000" format
+        const spaceMatch = line.match(/^(.+?)\s+([\d,.\s]+)\s*$/)
+        if (spaceMatch) {
+          name = spaceMatch[1].trim()
+          quantity = parseQty(spaceMatch[2])
+        } else {
+          name = line
+        }
+      }
     }
 
     if (name) results.push({ name, quantity })

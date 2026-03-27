@@ -26,7 +26,7 @@
     </thead>
     <tbody>
       <tr v-for="mat in materials" :key="mat.type_id">
-        <td class="name-cell"><img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy"><span class="copyable" @click="copyName(mat.type_name)">{{ mat.type_name }}</span></td>
+        <td class="name-cell"><img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy"><span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span></td>
         <td class="num">{{ formatNumber(mat.total_quantity) }}</td>
         <td v-if="hasInventory" class="num have-qty">{{ formatNumber(getHave(mat.type_name)) }}</td>
         <td v-if="hasInventory" class="num" :class="getNeedClass(mat)">{{ formatNumber(getNeed(mat)) }}</td>
@@ -130,8 +130,20 @@ const totalCost = computed(() => {
   return hasAny ? total : null
 })
 
-function copyName(name) {
+function clearCopied() {
+  const prev = document.querySelector('.copyable.copied')
+  if (prev) prev.classList.remove('copied')
+}
+
+function copyName(name, e) {
+  e.stopPropagation()
   navigator.clipboard.writeText(name)
+  clearCopied()
+  const el = e?.target
+  if (el) {
+    el.setAttribute('data-copied-tip', t('industry.copied'))
+    el.classList.add('copied')
+  }
 }
 
 function formatNumber(n) {
@@ -222,15 +234,6 @@ function formatPrice(n) {
   height: 24px;
   flex-shrink: 0;
   border-radius: 3px;
-}
-
-.copyable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.copyable:hover {
-  color: #c8aa6e;
 }
 
 .num {

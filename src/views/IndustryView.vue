@@ -86,7 +86,7 @@
                         'name-skipped': skippedItems.has(mat.type_id),
                       }"
                       :data-tid="mat.type_id"
-                      @click="copyName(mat.type_name)"
+                      @click="copyName(mat.type_name, $event)"
                       @contextmenu.prevent="toggleSkip(mat.type_id)"
                     >{{ mat.type_name }}</span>
                   </td>
@@ -133,7 +133,7 @@
               <tr v-for="mat in summary" :key="mat.type_id">
                 <td class="name-cell">
                   <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
-                  <span class="copyable" :data-tid="mat.type_id" @click="copyName(mat.type_name)">{{ mat.type_name }}</span>
+                  <span class="copyable" :data-tid="mat.type_id" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                 </td>
                 <td class="num">{{ formatNumber(mat.total_quantity) }}</td>
               </tr>
@@ -199,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { getBatchBom } from '../api/blueprints'
 import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
 import { useSettingsStore } from '../stores/settings'
@@ -650,9 +650,24 @@ function applyGlobalMe() {
   fetchBom()
 }
 
-function copyName(name) {
-  navigator.clipboard.writeText(name)
+function clearCopied() {
+  const prev = document.querySelector('.copyable.copied')
+  if (prev) prev.classList.remove('copied')
 }
+
+function copyName(name, e) {
+  e.stopPropagation()
+  navigator.clipboard.writeText(name)
+  clearCopied()
+  const el = e?.target
+  if (el) {
+    el.setAttribute('data-copied-tip', t('industry.copied'))
+    el.classList.add('copied')
+  }
+}
+
+onMounted(() => document.addEventListener('click', clearCopied))
+onUnmounted(() => document.removeEventListener('click', clearCopied))
 
 function formatNumber(n) {
   return n != null ? n.toLocaleString() : '-'
@@ -909,15 +924,6 @@ function formatNumber(n) {
 
 .need-zero {
   color: #4caf50;
-}
-
-.copyable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.copyable:hover {
-  color: #c8aa6e;
 }
 
 .name-reaction {

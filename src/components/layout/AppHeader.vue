@@ -1,14 +1,18 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-      <span class="logo" @click="showCredits = true">{{ t('app.name') }}</span>
+      <span class="logo" @click="onLogoClick">{{ t('app.name') }}</span>
       <nav>
         <router-link to="/">{{ t('nav.home') }}</router-link>
         <span class="nav-divider"></span>
         <router-link :to="`/${server}/industry`">{{ t('nav.industry') }}</router-link>
         <router-link :to="`/${server}/market`">{{ t('nav.market') }}</router-link>
+        <router-link :to="`/${server}/pi`">{{ t('nav.pi') }}</router-link>
+        <router-link :to="`/${server}/lpstore`">{{ t('nav.lpstore') }}</router-link>
         <router-link :to="`/${server}/navigation`">{{ t('nav.navigation') }}</router-link>
-        <router-link :to="`/${server}/contracts`">{{ t('nav.contracts') }}</router-link>
+        <router-link v-if="settings.contractsUnlocked" :to="`/${server}/contracts`">{{ t('nav.contracts') }}</router-link>
+        <router-link :to="`/${server}/fitting`">{{ t('nav.fitting') }}</router-link>
+        <router-link :to="`/${server}/dscan`">{{ t('nav.dscan') }}</router-link>
         <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
       </nav>
       <div class="header-controls">
@@ -103,6 +107,23 @@ const { t, locale, serverLabel } = useI18n()
 const server = computed(() => settings.server)
 const showCredits = ref(false)
 const showDonate = ref(false)
+
+let logoClicks = 0
+let logoTimer = null
+
+function onLogoClick() {
+  logoClicks++
+  clearTimeout(logoTimer)
+  if (logoClicks >= 5) {
+    logoClicks = 0
+    settings.unlockContracts()
+  } else {
+    logoTimer = setTimeout(() => {
+      if (logoClicks < 5) showCredits.value = true
+      logoClicks = 0
+    }, 400)
+  }
+}
 
 function onToggleServer() {
   const newServer = server.value === 'gf' ? 'of' : 'gf'

@@ -29,6 +29,7 @@ const SERENITY_ESI = 'https://ali-esi.evepc.163.com/latest'
 const args = process.argv.slice(2)
 const DOWNLOAD = args.includes('--download')
 const FETCH_ZH = args.includes('--fetch-zh-names')
+const FETCH_LP = args.includes('--fetch-lp')
 
 // ──────────────────────────────────────────
 // CSV helpers
@@ -133,6 +134,8 @@ async function main() {
       'industryActivityMaterials', 'industryActivityProducts',
       'mapRegions', 'mapSolarSystems', 'mapSolarSystemJumps',
       'trnTranslations', 'dgmTypeAttributes', 'invTypeMaterials',
+      'crpNPCCorporations',
+      'planetSchematics', 'planetSchematicsTypeMap',
     ]
     for (const t of tables) {
       await downloadBz2(t)
@@ -466,16 +469,198 @@ async function main() {
   fs.writeFileSync(whPath, JSON.stringify(whJson))
   console.log(`  -> ${whPath} (${(fs.statSync(whPath).size / 1024).toFixed(0)} KB)`)
 
+  // ── Step 10: Build PI schematic data ──
+  console.log('Building PI schematic data...')
+
+  const piSchematics = {}  // schematicID -> { n: name, ct: cycleTime }
+  await readCsv('planetSchematics', (row) => {
+    const sid = toInt(row.schematicID)
+    if (sid != null) {
+      piSchematics[sid] = { n: row.schematicName || '', ct: toInt(row.cycleTime) || 3600 }
+    }
+  })
+
+  // Build PI production: productTypeId -> { inputs: [[typeId, qty], ...], output: qty, ct: cycleTime }
+  const piTypeMap = {}  // schematicID -> { inputs: [], output: null }
+  await readCsv('planetSchematicsTypeMap', (row) => {
+    const sid = toInt(row.schematicID)
+    const tid = toInt(row.typeID)
+    const qty = toInt(row.quantity)
+    const isInput = row.isInput === '1'
+    if (sid == null || tid == null || qty == null) return
+    if (!piTypeMap[sid]) piTypeMap[sid] = { inputs: [], output: null }
+    if (isInput) {
+      piTypeMap[sid].inputs.push([tid, qty])
+    } else {
+      piTypeMap[sid].output = [tid, qty]
+    }
+  })
+
+  // Build pi map keyed by product type_id
+  const piProduction = {}  // productTypeId -> { m: [[matTypeId, qty], ...], q: outputQty, ct: cycleTime }
+  const piTypeIds = new Set()
+  for (const [sid, map] of Object.entries(piTypeMap)) {
+    if (!map.output) continue
+    const [prodTid, prodQty] = map.output
+    const sch = piSchematics[sid]
+    piProduction[prodTid] = {
+      m: map.inputs,
+      q: prodQty,
+      ct: sch?.ct || 3600,
+    }
+    piTypeIds.add(prodTid)
+    for (const [matTid] of map.inputs) piTypeIds.add(matTid)
+  }
+
+  // Build PI types (names) — reuse allTypes for names
+  const piTypes = {}
+  for (const tid of piTypeIds) {
+    const t = allTypes[tid]
+    if (t) piTypes[tid] = { n: t.n, nz: t.nz || '', g: t.g }
+  }
+
+  // Fetch zh names for PI types if needed
+  if (FETCH_ZH) {
+    const missingZh = [...piTypeIds].filter(tid => piTypes[tid] && !piTypes[tid].nz)
+    if (missingZh.length) {
+      const zhNames = await fetchUniverseNames(missingZh)
+      let updated = 0
+      for (const [id, name] of Object.entries(zhNames)) {
+        if (piTypes[id] && name && name !== piTypes[id].n) { piTypes[id].nz = name; updated++ }
+      }
+      console.log(`  Updated ${updated} PI Chinese names from ESI`)
+    }
+  }
+
+  const piJson = { types: piTypes, production: piProduction }
+  const piPath = path.join(OUT_DIR, 'pi.json')
+  fs.writeFileSync(piPath, JSON.stringify(piJson))
+  console.log(`  ${Object.keys(piProduction).length} PI schematics, ${piTypeIds.size} types`)
+  console.log(`  -> ${piPath} (${(fs.statSync(piPath).size / 1024).toFixed(0)} KB)`)
+
+  // ── Step 11: Build LP store data ──
+  if (FETCH_LP) {
+    console.log('Building LP store data...')
+
+    // Read NPC corporation IDs and names
+    const npcCorps = {}  // corpID -> { n: name }
+    await readCsv('crpNPCCorporations', (row) => {
+      const cid = toInt(row.corporationID)
+      if (cid != null) npcCorps[cid] = { n: '' }
+    })
+    // Get corp names from invNames or translations
+    const corpIds = Object.keys(npcCorps).map(Number)
+
+    // Fetch corp names from ESI
+    console.log(`  Fetching names for ${corpIds.length} NPC corporations...`)
+    const corpNamesEn = await fetchUniverseNamesTQ(corpIds)
+    const corpNamesZh = FETCH_ZH ? await fetchUniverseNamesSerenity(corpIds) : {}
+    for (const cid of corpIds) {
+      npcCorps[cid].n = corpNamesEn[cid] || ''
+      const zh = corpNamesZh[cid]
+      if (zh && zh !== npcCorps[cid].n) npcCorps[cid].nz = zh
+    }
+
+    // Fetch LP store offers from ESI (Tranquility — same offers on both servers)
+    console.log('  Fetching LP store offers from ESI...')
+    const lpOffers = {}  // corpID -> [{ t, q, lp, isk, req }]
+    const CONCURRENCY = 20
+    const queue = [...corpIds]
+    let fetched = 0
+    const totalCorps = queue.length
+
+    async function lpWorker() {
+      while (queue.length) {
+        const cid = queue.shift()
+        try {
+          const resp = await fetch(`https://esi.evetech.net/latest/loyalty/stores/${cid}/offers/?datasource=tranquility`)
+          if (!resp.ok) continue
+          const data = await resp.json()
+          if (!data.length) continue
+          lpOffers[cid] = data.map(o => {
+            const entry = { t: o.type_id, q: o.quantity, lp: o.lp_cost, isk: o.isk_cost }
+            if (o.required_items?.length) {
+              entry.req = o.required_items.map(r => [r.type_id, r.quantity])
+            }
+            return entry
+          })
+        } catch { /* skip failed corps */ }
+        fetched++
+        if (fetched % 50 === 0) console.log(`    ${fetched}/${totalCorps} corporations...`)
+      }
+    }
+
+    await Promise.all(Array.from({ length: CONCURRENCY }, () => lpWorker()))
+
+    // Filter out corps with no offers
+    const corpsWithOffers = {}
+    for (const cid of Object.keys(lpOffers)) {
+      corpsWithOffers[cid] = npcCorps[cid] || { n: String(cid) }
+    }
+
+    // Collect all type_ids referenced in LP offers for name resolution
+    const lpTypeIds = new Set()
+    for (const offers of Object.values(lpOffers)) {
+      for (const o of offers) {
+        lpTypeIds.add(o.t)
+        if (o.req) for (const [tid] of o.req) lpTypeIds.add(tid)
+      }
+    }
+    // Include type names from allTypes already loaded
+    const lpTypes = {}
+    for (const tid of lpTypeIds) {
+      const t = allTypes[tid]
+      if (t) lpTypes[tid] = { n: t.n, nz: t.nz || '', g: t.g }
+    }
+
+    // Fetch zh names for LP types if needed
+    if (FETCH_ZH) {
+      const missingZh = [...lpTypeIds].filter(tid => lpTypes[tid] && !lpTypes[tid].nz)
+      if (missingZh.length) {
+        const zhNames = await fetchUniverseNamesSerenity(missingZh)
+        for (const [id, name] of Object.entries(zhNames)) {
+          if (lpTypes[id] && name && name !== lpTypes[id].n) lpTypes[id].nz = name
+        }
+      }
+    }
+
+    const lpJson = {
+      corps: corpsWithOffers,
+      types: lpTypes,
+      offers: lpOffers,
+    }
+
+    const totalOffers = Object.values(lpOffers).reduce((s, a) => s + a.length, 0)
+    console.log(`  ${Object.keys(corpsWithOffers).length} corporations with ${totalOffers} total offers`)
+
+    const lpPath = path.join(OUT_DIR, 'lpstore.json')
+    fs.writeFileSync(lpPath, JSON.stringify(lpJson))
+    console.log(`  -> ${lpPath} (${(fs.statSync(lpPath).size / 1024).toFixed(0)} KB)`)
+  }
+
   console.log('\nDone!')
 }
 
+const TQ_ESI = 'https://esi.evetech.net/latest'
+
 async function fetchUniverseNames(ids) {
+  return _fetchNames(ids, SERENITY_ESI, 'serenity')
+}
+
+async function fetchUniverseNamesTQ(ids) {
+  return _fetchNames(ids, TQ_ESI, 'tranquility')
+}
+
+// Keep old name for zh usage in LP step
+const fetchUniverseNamesSerenity = fetchUniverseNames
+
+async function _fetchNames(ids, base, datasource) {
   const BATCH = 1000
   const result = {}
   for (let i = 0; i < ids.length; i += BATCH) {
     const chunk = ids.slice(i, i + BATCH)
     try {
-      const resp = await fetch(`${SERENITY_ESI}/universe/names/?datasource=serenity`, {
+      const resp = await fetch(`${base}/universe/names/?datasource=${datasource}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chunk),
@@ -491,7 +676,6 @@ async function fetchUniverseNames(ids) {
     } catch (e) {
       console.warn(`  ESI /universe/names/ failed for batch starting ${chunk[0]}: ${e.message}`)
     }
-    // Small delay to avoid rate limiting
     if (i + BATCH < ids.length) await new Promise(r => setTimeout(r, 100))
   }
   return result

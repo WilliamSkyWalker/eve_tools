@@ -51,6 +51,37 @@ export async function loadWormholeData() {
   return wormholePromise
 }
 
+let lpStoreData = null
+let lpStorePromise = null
+
+export async function loadLpStoreData() {
+  if (lpStoreData) return lpStoreData
+  if (!lpStorePromise) {
+    lpStorePromise = fetchJson(`${import.meta.env.BASE_URL}data/lpstore.json`).then(data => {
+      lpStoreData = data
+      return data
+    })
+  }
+  return lpStorePromise
+}
+
+let piData = null
+let piPromise = null
+
+export async function loadPiData() {
+  if (piData) return piData
+  if (!piPromise) {
+    piPromise = fetchJson(`${import.meta.env.BASE_URL}data/pi.json`).then(data => {
+      piData = data
+      return data
+    })
+  }
+  return piPromise
+}
+
+export function getPiData() { return piData }
+
 export function getIndustryData() { return industryData }
 export function getNavigationData() { return navigationData }
 export function getWormholeData() { return wormholeData }
+export function getLpStoreData() { return lpStoreData }

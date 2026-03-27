@@ -74,15 +74,25 @@ export async function getMarketOrders(regionId, typeId, datasource = 'serenity')
   return data
 }
 
+const orderCache = {}  // `${datasource}:${regionId}:${typeId}` -> { data, timestamp }
+const ORDER_TTL = 3600000  // 1 hour
+
 async function fetchOrderPricesForType(regionId, typeId, datasource) {
+  const key = `${datasource}:${regionId}:${typeId}`
+  const cached = orderCache[key]
+  if (cached && Date.now() - cached.timestamp < ORDER_TTL) {
+    return cached.data
+  }
   try {
     const orders = await getMarketOrders(regionId, typeId, datasource)
     const buys = orders.filter(o => o.is_buy_order).map(o => o.price)
     const sells = orders.filter(o => !o.is_buy_order).map(o => o.price)
-    return {
+    const data = {
       buy_price: buys.length ? Math.max(...buys) : null,
       sell_price: sells.length ? Math.min(...sells) : null,
     }
+    orderCache[key] = { data, timestamp: Date.now() }
+    return data
   } catch {
     return { buy_price: null, sell_price: null }
   }
@@ -115,7 +125,12 @@ export async function getPublicContracts(regionId, page = 1, datasource = 'seren
   return { contracts: data, page, total_pages: totalPages }
 }
 
+const contractItemsCache = {}  // `${datasource}:${contractId}` -> data
+
 export async function getPublicContractItems(contractId, datasource = 'serenity') {
+  const key = `${datasource}:${contractId}`
+  if (contractItemsCache[key]) return contractItemsCache[key]
   const { data } = await esiGet(datasource, `/contracts/public/items/${contractId}/`)
+  contractItemsCache[key] = data
   return data
 }

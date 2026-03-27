@@ -13,7 +13,7 @@
       <tbody>
         <tr v-for="mat in materials" :key="mat.type_id" :class="{ 'row-build': mat.build }">
           <td>
-            <span class="copyable" :class="{ 'name-reaction': mat.is_reaction }" @click="copyName(mat.type_name)">{{ mat.type_name }}</span>
+            <span class="copyable" :class="{ 'name-reaction': mat.is_reaction }" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
           </td>
           <td class="num">{{ formatNumber(mat.quantity) }}</td>
           <td>
@@ -55,8 +55,20 @@ function formatNumber(n) {
   return n != null ? n.toLocaleString() : '-'
 }
 
-function copyName(name) {
+function clearCopied() {
+  const prev = document.querySelector('.copyable.copied')
+  if (prev) prev.classList.remove('copied')
+}
+
+function copyName(name, e) {
+  e.stopPropagation()
   navigator.clipboard.writeText(name)
+  clearCopied()
+  const el = e?.target
+  if (el) {
+    el.setAttribute('data-copied-tip', 'Copied!')
+    el.classList.add('copied')
+  }
 }
 
 function toggleBuild(mat) {
@@ -89,19 +101,6 @@ function toggleBuild(mat) {
 
 .row-build {
   background: rgba(200, 170, 110, 0.05);
-}
-
-.copyable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.copyable:hover {
-  color: #c8aa6e;
-}
-
-.copyable:active {
-  color: #e0c882;
 }
 
 .name-reaction {

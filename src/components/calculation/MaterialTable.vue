@@ -10,7 +10,7 @@
     </thead>
     <tbody>
       <tr v-for="mat in materials" :key="mat.type_id">
-        <td><span class="copyable" @click="copyName(mat.type_name)">{{ mat.type_name }}</span></td>
+        <td><span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span></td>
         <td class="num">{{ formatNumber(mat.base_quantity) }}</td>
         <td class="num highlight">{{ formatNumber(mat.adjusted_quantity) }}</td>
         <td>
@@ -34,8 +34,20 @@ function formatNumber(n) {
   return n != null ? n.toLocaleString() : '-'
 }
 
-function copyName(name) {
+function clearCopied() {
+  const prev = document.querySelector('.copyable.copied')
+  if (prev) prev.classList.remove('copied')
+}
+
+function copyName(name, e) {
+  e.stopPropagation()
   navigator.clipboard.writeText(name)
+  clearCopied()
+  const el = e?.target
+  if (el) {
+    el.setAttribute('data-copied-tip', 'Copied!')
+    el.classList.add('copied')
+  }
 }
 </script>
 
@@ -53,15 +65,6 @@ function copyName(name) {
 .highlight {
   color: #c8aa6e;
   font-weight: 600;
-}
-
-.copyable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.copyable:hover {
-  color: #c8aa6e;
 }
 
 .tag {

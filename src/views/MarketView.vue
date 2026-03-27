@@ -41,7 +41,7 @@
               <td class="col-name">
                 <div class="name-cell">
                   <img v-if="item.matched" class="type-icon" :src="`https://images.evetech.net/types/${item.type_id}/icon?size=32`" alt="" loading="lazy">
-                  <span v-if="item.matched" class="copyable" @click="copyName(item.type_name)">
+                  <span v-if="item.matched" class="copyable" @click="copyName(item.type_name, $event)">
                     {{ item.type_name }}
                   </span>
                   <span v-else class="unmatched-name">{{ item.name }} <small>({{ t('market.unmatched') }})</small></span>
@@ -134,7 +134,7 @@
               <td class="col-name">
                 <div class="name-cell">
                   <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
-                  <span class="copyable" @click="copyName(mat.type_name)">{{ mat.type_name }}</span>
+                  <span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(mat.quantity) }}</td>
@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marketCompare } from '../api/prices'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
@@ -327,9 +327,24 @@ function formatSubtotal(price, quantity) {
   return (price * quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function copyName(name) {
-  navigator.clipboard.writeText(name)
+function clearCopied() {
+  const prev = document.querySelector('.copyable.copied')
+  if (prev) prev.classList.remove('copied')
 }
+
+function copyName(name, e) {
+  e.stopPropagation()
+  navigator.clipboard.writeText(name)
+  clearCopied()
+  const el = e?.target
+  if (el) {
+    el.setAttribute('data-copied-tip', t('industry.copied'))
+    el.classList.add('copied')
+  }
+}
+
+onMounted(() => document.addEventListener('click', clearCopied))
+onUnmounted(() => document.removeEventListener('click', clearCopied))
 </script>
 
 <style scoped>
@@ -521,15 +536,6 @@ function copyName(name) {
 .col-price {
   text-align: right;
   white-space: nowrap;
-}
-
-.copyable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.copyable:hover {
-  color: #c8aa6e;
 }
 
 .unmatched td {

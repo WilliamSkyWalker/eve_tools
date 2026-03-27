@@ -20,6 +20,26 @@ const router = createRouter({
       component: () => import('../views/MarketView.vue'),
     },
     {
+      path: '/:server(gf|of)/pi',
+      name: 'pi',
+      component: () => import('../views/PiView.vue'),
+    },
+    {
+      path: '/:server(gf|of)/fitting',
+      name: 'fitting',
+      component: () => import('../views/FittingView.vue'),
+    },
+    {
+      path: '/:server(gf|of)/dscan',
+      name: 'dscan',
+      component: () => import('../views/DscanView.vue'),
+    },
+    {
+      path: '/:server(gf|of)/lpstore',
+      name: 'lpstore',
+      component: () => import('../views/LpStoreView.vue'),
+    },
+    {
       path: '/:server(gf|of)/navigation',
       name: 'navigation',
       component: () => import('../views/JumpPlannerView.vue'),
@@ -28,6 +48,9 @@ const router = createRouter({
       path: '/:server(gf|of)/contracts',
       name: 'contracts',
       component: () => import('../views/ContractsView.vue'),
+      beforeEnter: () => {
+        return localStorage.getItem('eve_contracts') === '1' || { name: 'home' }
+      },
     },
     {
       path: '/:server(gf|of)/wormhole',
