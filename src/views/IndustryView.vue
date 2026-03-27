@@ -15,21 +15,50 @@
         <button class="global-me-btn" @click="sharePlan">{{ shareLabel }}</button>
       </div>
 
-      <div class="levels-row">
-        <!-- Products column -->
-        <div class="level-col product-col">
-          <table class="level-table">
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn" :class="{ 'tab-active': activeTab === 'product' }" @click="activeTab = 'product'">
+          <div class="tab-label">{{ t('industry.finalProduct') }}</div>
+          <div v-if="productSellPrice != null || totalTime.max" class="tab-meta">
+            <div v-if="productSellPrice != null" class="tab-stats">
+              <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(productSellPrice) }}</span>
+              <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(productBuyPrice) }}</span>
+            </div>
+            <div v-if="totalTime.max" class="tab-stats">
+              <span class="stat-item time">{{ formatTime(totalTime.min) }} ~ {{ formatTime(totalTime.max) }}</span>
+            </div>
+          </div>
+        </button>
+        <button v-for="lvl in levels" :key="lvl.level" class="tab-btn" :class="{ 'tab-active': activeTab === lvl.level }" @click="activeTab = lvl.level">
+          <div class="tab-label">{{ levelLabel(lvl.level) }}</div>
+          <div v-if="levelStats[lvl.level]" class="tab-meta">
+            <div v-if="levelStats[lvl.level].sellTotal != null" class="tab-stats">
+              <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
+              <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.level].buyTotal) }}</span>
+            </div>
+            <div v-if="levelStats[lvl.level].minTime" class="tab-stats">
+              <span class="stat-item time">{{ formatTime(levelStats[lvl.level].minTime) }} ~ {{ formatTime(levelStats[lvl.level].maxTime) }}</span>
+            </div>
+          </div>
+          <div v-else-if="priceLoading" class="tab-stats"><span class="stat-item loading-stat">...</span></div>
+        </button>
+        <button v-if="summary.length" class="tab-btn" :class="{ 'tab-active': activeTab === 'summary' }" @click="activeTab = 'summary'">
+          <div class="tab-label">{{ t('industry.rawSummary') }}</div>
+          <div v-if="levelStats['summary']?.sellTotal" class="tab-meta">
+            <div class="tab-stats">
+              <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
+              <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats['summary'].buyTotal) }}</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Product Tab -->
+        <div v-if="activeTab === 'product'">
+          <table class="level-table full-width">
             <thead>
-              <tr>
-                <th class="col-header level-product" colspan="2">
-                  {{ t('industry.finalProduct') }}
-                  <div v-if="productSellPrice != null || totalTime.max" class="level-stats">
-                    <span v-if="productSellPrice != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(productSellPrice) }}</span>
-                    <span v-if="productBuyPrice != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(productBuyPrice) }}</span>
-                    <span v-if="totalTime.max" class="stat-item time">{{ formatTime(totalTime.min) }} ~ {{ formatTime(totalTime.max) }}</span>
-                  </div>
-                </th>
-              </tr>
               <tr>
                 <th class="sub-header">{{ t('queue.product') }}</th>
                 <th class="sub-header num">{{ t('industry.quantity') }}</th>
@@ -47,23 +76,13 @@
           </table>
         </div>
 
-        <div v-for="lvl in levels" :key="lvl.level" class="level-col">
-          <table class="level-table" @copy="onTableCopy($event, lvl)">
+        <!-- Level Tabs -->
+        <div v-for="lvl in levels" :key="lvl.level" v-show="activeTab === lvl.level">
+          <div class="tab-toolbar">
+            <button class="inventory-btn" @click="openInventory(lvl.level)">{{ t('industry.inventoryBtn') }}</button>
+          </div>
+          <table class="level-table full-width" @copy="onTableCopy($event, lvl)">
             <thead>
-              <tr>
-                <th :class="`col-header level-${Math.min(lvl.level, 4)}`" :colspan="colSpan(lvl)">
-                  <div class="level-header-top">
-                    {{ levelLabel(lvl.level) }}
-                    <button class="inventory-btn" @click="openInventory(lvl.level)" :title="t('industry.pasteInventory')">{{ t('industry.inventoryBtn') }}</button>
-                  </div>
-                  <div v-if="levelStats[lvl.level]" class="level-stats">
-                    <span v-if="levelStats[lvl.level].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
-                    <span v-if="levelStats[lvl.level].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.level].buyTotal) }}</span>
-                    <span v-if="levelStats[lvl.level].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.level].minTime) }} ~ {{ formatTime(levelStats[lvl.level].maxTime) }}</span>
-                  </div>
-                  <div v-else-if="priceLoading" class="level-stats"><span class="stat-item loading-stat">...</span></div>
-                </th>
-              </tr>
               <tr>
                 <th class="sub-header">{{ t('industry.material') }}</th>
                 <th class="sub-header num">{{ t('industry.quantity') }}</th>
@@ -108,22 +127,13 @@
           </table>
         </div>
 
-        <!-- Raw Material Summary Column -->
-        <div v-if="summary.length" class="level-col">
-          <table class="level-table" @copy="onSummaryCopy($event)">
+        <!-- Summary Tab -->
+        <div v-if="activeTab === 'summary' && summary.length">
+          <div class="tab-toolbar">
+            <button class="inventory-btn" @click="openInventory('summary')">{{ t('industry.inventoryBtn') }}</button>
+          </div>
+          <table class="level-table full-width" @copy="onSummaryCopy($event)">
             <thead>
-              <tr>
-                <th class="col-header level-summary" colspan="2">
-                  <div class="level-header-top">
-                    {{ t('industry.rawSummary') }}
-                    <button class="inventory-btn" @click="openInventory('summary')" :title="t('industry.pasteInventory')">{{ t('industry.inventoryBtn') }}</button>
-                  </div>
-                  <div v-if="levelStats['summary']?.sellTotal" class="level-stats">
-                    <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
-                    <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats['summary'].buyTotal) }}</span>
-                  </div>
-                </th>
-              </tr>
               <tr>
                 <th class="sub-header">{{ t('industry.material') }}</th>
                 <th class="sub-header num">{{ t('industry.quantity') }}</th>
@@ -222,6 +232,7 @@ const { t, serverLabel } = useI18n()
 
 const levels = ref([])
 const summary = ref([])
+const activeTab = ref(0)
 const buildItems = ref({})
 const currentItems = ref([])
 const calculating = ref(false)
@@ -428,6 +439,7 @@ async function onCalculate(items) {
   for (const key of Object.keys(levelStats)) delete levelStats[key]
   productSellPrice.value = null
   productBuyPrice.value = null
+  activeTab.value = 0
 
   const finalProductIds = new Set(items.map(i => i.product_type_id))
   const indData = getIndustryData()
@@ -751,77 +763,52 @@ function formatNumber(n) {
   flex: 1;
 }
 
-/* ---- product column ---- */
-.product-col .col-header {
-  background: rgba(200, 170, 110, 0.18);
-  color: #c8aa6e;
-}
-
-.col-header.level-product {
-  background: rgba(200, 170, 110, 0.18);
-  color: #c8aa6e;
-}
-
-.product-name-text {
-  color: #c8aa6e;
-  font-weight: 500;
-}
-
-/* ---- per-level tables side by side ---- */
-.levels-row {
+/* ---- Tab Bar ---- */
+.tab-bar {
   display: flex;
-  gap: 12px;
+  gap: 0;
   overflow-x: auto;
-  align-items: flex-start;
-  padding-bottom: 8px;
+  border-bottom: 2px solid #2a2a2a;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
-.level-col {
-  flex: 0 0 auto;
-  min-width: 200px;
+.tab-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: #8a8a8a;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  text-align: center;
 }
 
-.level-table {
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: collapse;
-  width: 100%;
+.tab-btn:hover {
+  color: #c8aa6e;
 }
 
-.level-table th,
-.level-table td {
-  padding: 6px 10px;
+.tab-active {
+  color: #c8aa6e;
+  border-bottom-color: #c8aa6e;
+}
+
+.tab-label {
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.col-header {
-  text-align: center;
-  font-size: 0.95em;
-  padding: 8px 10px;
-  position: relative;
+.tab-meta {
+  margin-top: 2px;
 }
 
-.col-header.level-0 { background: rgba(200, 170, 110, 0.12); color: #c8aa6e; }
-.col-header.level-1 { background: rgba(255, 152, 0, 0.12); color: #ff9800; }
-.col-header.level-2 { background: rgba(156, 39, 176, 0.12); color: #ce93d8; }
-.col-header.level-3 { background: rgba(76, 175, 80, 0.12); color: #81c784; }
-.col-header.level-4 { background: rgba(244, 67, 54, 0.12); color: #ef9a9a; }
-.col-header.level-summary { background: rgba(255, 255, 255, 0.08); color: #e6e6e6; }
-
-.level-header-top {
+.tab-stats {
   display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 6px;
-}
-
-.level-stats {
-  display: flex;
-  gap: 8px;
   justify-content: center;
-  margin-top: 4px;
-  flex-wrap: wrap;
 }
 
 .stat-item {
@@ -835,21 +822,55 @@ function formatNumber(n) {
 .stat-item.time { color: #8a8a8a; }
 .stat-item.loading-stat { color: #555; }
 
+/* ---- Tab Content ---- */
+.tab-content {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 0;
+}
+
+.tab-toolbar {
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+}
+
 .inventory-btn {
-  margin-left: 8px;
-  padding: 1px 8px;
-  font-size: 0.75em;
+  padding: 3px 10px;
+  font-size: 0.8em;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 3px;
-  color: inherit;
+  color: #8a8a8a;
   cursor: pointer;
-  transition: background 0.2s;
-  vertical-align: middle;
+  transition: background 0.2s, color 0.2s;
 }
 
 .inventory-btn:hover {
   background: rgba(255, 255, 255, 0.15);
+  color: #c8aa6e;
+}
+
+.product-name-text {
+  color: #c8aa6e;
+  font-weight: 500;
+}
+
+.level-table {
+  background: transparent;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.level-table th,
+.level-table td {
+  padding: 6px 12px;
 }
 
 .sub-header {

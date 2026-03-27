@@ -293,6 +293,7 @@ const expandedItems = ref([])
 const expandedJitaTotal = ref(null)
 const expandedJitaBuy = ref(null)
 const itemsLoading = ref(false)
+const contractItemsCache = {} // contract_id -> { items, total_jita_value, total_jita_buy }
 const copySuccess = ref(null)
 
 let regionTimer = null
@@ -355,7 +356,7 @@ async function fetchContracts(page = 1) {
 async function fetchJitaPricesForContracts() {
   // Fetch items + Jita prices for each item_exchange/auction contract in parallel (max 5 at a time)
   const itemContracts = contracts.value.filter(c => c.type === 'item_exchange' || c.type === 'auction')
-  const batchSize = 5
+  const batchSize = 10
 
   for (let i = 0; i < itemContracts.length; i += batchSize) {
     const batch = itemContracts.slice(i, i + batchSize)
@@ -365,6 +366,7 @@ async function fetchJitaPricesForContracts() {
         const { data } = await getContractItems(c.contract_id, {
           datasource: datasource.value,
         })
+        contractItemsCache[c.contract_id] = data
         c._jita_total = data.total_jita_buy
         // Store item names for display in title column
         const included = (data.items || []).filter(i => i.is_included !== false)
@@ -396,18 +398,26 @@ async function toggleDetail(contract) {
   expandedJitaBuy.value = null
 
   if (contract.type !== 'courier') {
-    itemsLoading.value = true
-    try {
-      const { data } = await getContractItems(contract.contract_id, {
-        datasource: datasource.value,
-      })
-      expandedItems.value = data.items
-      expandedJitaTotal.value = data.total_jita_value
-      expandedJitaBuy.value = data.total_jita_buy
-    } catch {
-      expandedItems.value = []
-    } finally {
-      itemsLoading.value = false
+    const cached = contractItemsCache[contract.contract_id]
+    if (cached) {
+      expandedItems.value = cached.items
+      expandedJitaTotal.value = cached.total_jita_value
+      expandedJitaBuy.value = cached.total_jita_buy
+    } else {
+      itemsLoading.value = true
+      try {
+        const { data } = await getContractItems(contract.contract_id, {
+          datasource: datasource.value,
+        })
+        contractItemsCache[contract.contract_id] = data
+        expandedItems.value = data.items
+        expandedJitaTotal.value = data.total_jita_value
+        expandedJitaBuy.value = data.total_jita_buy
+      } catch {
+        expandedItems.value = []
+      } finally {
+        itemsLoading.value = false
+      }
     }
   }
 }
