@@ -175,8 +175,8 @@ async function calculateAll() {
 
 function sellPrice(offer) {
   const p = prices.value[offer.t]
-  if (!p?.sell_price) return null
-  return p.sell_price * offer.q
+  if (!p?.buy_price) return null
+  return p.buy_price * offer.q
 }
 
 function reqCost(offer) {
