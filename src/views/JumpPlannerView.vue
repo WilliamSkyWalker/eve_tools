@@ -229,11 +229,10 @@ const { t, serverLabel } = useI18n()
 onMounted(() => loadNavigationData())
 
 const presets = computed(() => [
-  { label: `3.5 (${t('jump.presets.dread')})`, value: 3.5 },
-  { label: `5.0 (${t('jump.presets.carrier')})`, value: 5.0 },
-  { label: `6.5 (${t('jump.presets.super')})`, value: 6.5 },
-  { label: `7.0 (${t('jump.presets.jf')})`, value: 7.0 },
-  { label: `10.0 (${t('jump.presets.titan')})`, value: 10.0 },
+  { label: `6.0 (${t('jump.presets.super')}/${t('jump.presets.titan')})`, value: 6.0 },
+  { label: `7.0 (${t('jump.presets.dread')}/${t('jump.presets.carrier')})`, value: 7.0 },
+  { label: `8.0 (${t('jump.presets.blops')})`, value: 8.0 },
+  { label: `10.0 (${t('jump.presets.jf')})`, value: 10.0 },
   { label: `15.0 (${t('jump.presets.bowhead')})`, value: 15.0 },
 ])
 
