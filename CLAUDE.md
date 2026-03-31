@@ -21,7 +21,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 三个 JSON 文件，由 `scripts/convert-sde.mjs` 从 Fuzzwork CSV 转换生成：
 
-- **`industry.json`** (~2MB) — 物品类型（含中文名）、分组、蓝图、制造活动、材料、产品。使用短 key（n=name, nz=name_zh, g=groupId）压缩体积。
+- **`industry.json`** (~3MB) — 物品类型（含中文名、体积）、分组、蓝图、制造活动、材料、产品、化矿数据。使用短 key（n=name, nz=name_zh, g=groupId, v=volume, ps=portionSize）压缩体积。
 - **`navigation.json`** (~1.4MB) — 星系（含 3D 光年坐标、安全等级）、区域、星门跳跃连接。坐标已在构建时从米转换为光年。
 - **`wormhole.json`** (~125KB) — 虫洞星系（等级、效应、静态洞口）、虫洞类型属性。
 - **`lpstore.json`** (~2MB) — LP商店数据：NPC军团、兑换报价（物品、LP/ISK花费、所需材料）、相关物品类型名。由 `--fetch-lp` 从 ESI 获取。
@@ -37,7 +37,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`systemSearch.js`** — 星系名称前缀搜索
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
-- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格
+- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场页含三个标签：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索
 
 ### API 兼容层 (`src/api/`)
