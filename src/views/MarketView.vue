@@ -6,6 +6,7 @@
     <div class="tabs">
       <button :class="['tab', { active: tab === 'price' }]" @click="tab = 'price'">{{ t('market.tabPrice') }}</button>
       <button :class="['tab', { active: tab === 'reprocess' }]" @click="tab = 'reprocess'">{{ t('market.tabReprocess') }}</button>
+      <button :class="['tab', { active: tab === 'oreValue' }]" @click="tab = 'oreValue'; loadOreValues()">{{ t('market.tabOreValue') }}</button>
     </div>
 
     <!-- Price Query Tab -->
@@ -125,8 +126,8 @@
             <tr>
               <th class="col-name">{{ t('market.colName') }}</th>
               <th class="col-qty">{{ t('market.colQty') }}</th>
-              <th class="col-price">{{ t('market.colSell') }}</th>
-              <th class="col-price">{{ t('market.colSellTotal') }}</th>
+              <th class="col-price">{{ t('market.colBuy') }}</th>
+              <th class="col-price">{{ t('market.colBuyTotal') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -138,8 +139,8 @@
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(mat.quantity) }}</td>
-              <td class="col-price">{{ formatPrice(mat.sell_price) }}</td>
-              <td class="col-price">{{ formatSubtotal(mat.sell_price, mat.quantity) }}</td>
+              <td class="col-price">{{ formatPrice(mat.buy_price) }}</td>
+              <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
             </tr>
           </tbody>
           <tfoot>
@@ -150,6 +151,38 @@
               <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
             </tr>
           </tfoot>
+        </table>
+      </div>
+    </template>
+
+    <!-- Ore Value Tab -->
+    <template v-if="tab === 'oreValue'">
+      <div v-if="oreValueLoading" class="loading-msg">{{ t('market.oreLoading') }}</div>
+      <div v-if="oreValueError" class="error-msg">{{ oreValueError }}</div>
+      <div v-if="oreValues.length" class="result-section">
+        <h3 class="section-title">{{ t('market.oreValueTitle') }}</h3>
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th class="col-name">{{ t('market.colOre') }}</th>
+              <th class="col-price">{{ t('market.colIskM3') }}</th>
+              <th class="col-qty">{{ t('market.colVolume') }}</th>
+              <th class="col-price">{{ t('market.colPortionValue') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="ore in oreValues" :key="ore.type_id">
+              <td class="col-name">
+                <div class="name-cell">
+                  <img class="type-icon" :src="`https://images.evetech.net/types/${ore.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <span>{{ ore.type_name }}</span>
+                </div>
+              </td>
+              <td class="col-price">{{ formatPrice(ore.isk_per_m3) }}</td>
+              <td class="col-qty">{{ ore.volume }} m³</td>
+              <td class="col-price">{{ formatPrice(ore.portion_value) }}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </template>
@@ -290,12 +323,12 @@ async function calcReprocess() {
           type_id: tid,
           type_name: t ? locName(t) : String(tid),
           quantity: outputMap[tid],
-          sell_price: orderPrices[tid]?.sell_price ?? null,
+          buy_price: orderPrices[tid]?.buy_price ?? null,
         }
       })
       .sort((a, b) => {
-        const aVal = (a.sell_price || 0) * a.quantity
-        const bVal = (b.sell_price || 0) * b.quantity
+        const aVal = (a.buy_price || 0) * a.quantity
+        const bVal = (b.buy_price || 0) * b.quantity
         return bVal - aVal
       })
   } catch (e) {
@@ -307,10 +340,130 @@ async function calcReprocess() {
 
 const reprocessTotal = computed(() => {
   return reprocessResults.value.reduce((sum, mat) => {
-    if (mat.sell_price && mat.quantity) return sum + mat.sell_price * mat.quantity
+    if (mat.buy_price && mat.quantity) return sum + mat.buy_price * mat.quantity
     return sum
   }, 0)
 })
+
+// ── Ore Value ──
+// All ore group IDs (standard + moon + abyssal + new + newest), excluding ice (465) and non-ore (463, 464, 466)
+const ORE_VALUE_GROUPS = new Set([
+  450,451,452,453,454,455,456,457,458,459,460,461,462,465,467,468,469, // standard ores + ice
+  1884,1920,1921,1922,1923, // moon ores
+  4029,4030,4031, // abyssal ores
+  4513,4514,4515,4516, // new ores
+  4755,4756,4757,4758,4759, // newer ores
+])
+// Special ores with portionSize=1 that should be excluded (survey-scannable asteroids)
+const SPECIAL_ORE_IDS = new Set([28617,28618,28619,28620,28621,28622,28623,28624,28625,28626])
+
+const oreValues = ref([])
+const oreValueLoading = ref(false)
+const oreValueError = ref('')
+let oreValueLoaded = false
+
+function findBaseOres(indData) {
+  // Collect all non-compressed ore types with reprocess data grouped by groupId
+  const byGroup = {}
+  for (const [tid, t] of Object.entries(indData.types)) {
+    if (!ORE_VALUE_GROUPS.has(t.g)) continue
+    if (!indData.reprocess?.[tid]) continue
+    const name = t.n
+    if (name.includes('Compressed') || name.includes('Batch')) continue
+    if (SPECIAL_ORE_IDS.has(Number(tid))) continue
+    if (!byGroup[t.g]) byGroup[t.g] = []
+    byGroup[t.g].push({ type_id: Number(tid), name, t })
+  }
+
+  const baseOres = []
+  const groupNames = indData.groups
+
+  for (const [gid, types] of Object.entries(byGroup)) {
+    const groupName = groupNames[gid]?.n
+    // For standard ores: find the type whose name matches the group name
+    const exactMatch = types.find(o => o.name === groupName)
+    if (exactMatch) {
+      baseOres.push(exactMatch)
+      continue
+    }
+    // For moon ores and others: a type is a base if another type's name ends with this type's name
+    const nameSet = new Set(types.map(o => o.name))
+    for (const ore of types) {
+      const isVariant = types.some(other =>
+        other.name !== ore.name && ore.name.endsWith(other.name)
+      )
+      if (!isVariant) baseOres.push(ore)
+    }
+  }
+
+  return baseOres
+}
+
+async function loadOreValues() {
+  if (oreValueLoaded) return
+  oreValueLoading.value = true
+  oreValueError.value = ''
+
+  try {
+    const indData = getIndustryData()
+    if (!indData) throw new Error('Data not loaded')
+
+    const baseOres = findBaseOres(indData)
+    const RATE = 0.8
+
+    // Collect all mineral type IDs from reprocess data
+    const mineralIds = new Set()
+    for (const ore of baseOres) {
+      const mats = indData.reprocess[ore.type_id]
+      if (mats) for (const [matTid] of mats) mineralIds.add(matTid)
+    }
+
+    // Fetch Jita buy prices for all minerals
+    let orderPrices = {}
+    if (mineralIds.size) {
+      try {
+        orderPrices = await getOrderPricesForTypes([...mineralIds], settings.datasource)
+      } catch { /* prices optional */ }
+    }
+
+    // Calculate ISK/m³ for each base ore
+    const results = []
+    for (const ore of baseOres) {
+      const mats = indData.reprocess[ore.type_id]
+      if (!mats) continue
+      const portionSize = ore.t.ps || 1
+      const volume = ore.t.v || 0.1
+
+      // Calculate total mineral value per portion
+      let portionValue = 0
+      for (const [matTid, matQty] of mats) {
+        const output = Math.floor(matQty * RATE)
+        const buyPrice = orderPrices[matTid]?.buy_price || 0
+        portionValue += output * buyPrice
+      }
+
+      const totalVolume = volume * portionSize
+      const iskPerM3 = totalVolume > 0 ? portionValue / totalVolume : 0
+
+      results.push({
+        type_id: ore.type_id,
+        type_name: locName(ore.t),
+        isk_per_m3: iskPerM3,
+        volume,
+        portion_value: portionValue,
+      })
+    }
+
+    // Sort by ISK/m³ descending
+    results.sort((a, b) => b.isk_per_m3 - a.isk_per_m3)
+    oreValues.value = results
+    oreValueLoaded = true
+  } catch (e) {
+    oreValueError.value = t('market.error')
+  } finally {
+    oreValueLoading.value = false
+  }
+}
 
 // ── Shared ──
 function formatNumber(n) {
@@ -479,6 +632,12 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 .error-msg {
   text-align: center;
   color: #ef5350;
+  margin-bottom: 16px;
+}
+
+.loading-msg {
+  text-align: center;
+  color: #8a8a8a;
   margin-bottom: 16px;
 }
 

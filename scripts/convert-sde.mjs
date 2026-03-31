@@ -280,6 +280,7 @@ async function main() {
     if (t) {
       const entry = { n: t.n, nz: t.nz, g: t.g }
       if (t.ps && t.ps !== 1) entry.ps = t.ps
+      if (t.v != null && t.v > 0) entry.v = t.v
       filteredTypes[tid] = entry
       if (t.g && groups[t.g] && !filteredGroups[t.g]) {
         filteredGroups[t.g] = { n: groups[t.g].n }

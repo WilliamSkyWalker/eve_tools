@@ -120,7 +120,14 @@ const messages = {
     'market.reprocessRateScrap': '废铁效率',
     'market.reprocessCalc': '计算化矿',
     'market.reprocessInput': '输入物品',
-    'market.reprocessOutput': '化矿产物 (吉他卖单)',
+    'market.reprocessOutput': '化矿产物 (吉他收单)',
+    'market.tabOreValue': '矿石价值',
+    'market.oreValueTitle': '矿石化矿价值 (80%效率·吉他收单)',
+    'market.oreLoading': '计算中...',
+    'market.colOre': '矿石',
+    'market.colIskM3': 'ISK/m³',
+    'market.colVolume': '体积',
+    'market.colPortionValue': '每组价值',
 
     // JumpPlannerView
     'jump.title': '旗舰跳跃规划',
@@ -470,7 +477,14 @@ const messages = {
     'market.reprocessRateScrap': 'Scrap Rate',
     'market.reprocessCalc': 'Calculate',
     'market.reprocessInput': 'Input Items',
-    'market.reprocessOutput': 'Reprocessing Output (Jita Sell)',
+    'market.reprocessOutput': 'Reprocessing Output (Jita Buy)',
+    'market.tabOreValue': 'Ore Value',
+    'market.oreValueTitle': 'Ore Reprocessing Value (80% yield · Jita Buy)',
+    'market.oreLoading': 'Loading...',
+    'market.colOre': 'Ore',
+    'market.colIskM3': 'ISK/m³',
+    'market.colVolume': 'Volume',
+    'market.colPortionValue': 'Portion Value',
 
     // JumpPlannerView
     'jump.title': 'Jump Planner',
