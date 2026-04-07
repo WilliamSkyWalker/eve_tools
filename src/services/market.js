@@ -91,6 +91,7 @@ export function resolveItemNames(names) {
       name,
       type_id: entry?.tid ?? null,
       type_name: entry ? locName(entry.t) : null,
+      volume: entry?.t?.v ?? null,
       matched: entry != null,
     }
   })
@@ -116,6 +117,7 @@ export async function marketCompare(text, datasource = 'serenity') {
       name: res.name,
       type_id: res.type_id,
       type_name: res.type_name,
+      volume: res.volume,
       quantity: parsed[i].quantity,
       matched: res.matched,
       buy_price: op.buy_price ?? null,

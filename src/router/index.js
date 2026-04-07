@@ -58,6 +58,11 @@ const router = createRouter({
       component: () => import('../views/WormholeView.vue'),
     },
     {
+      path: '/:server(gf|of)/sovmap',
+      name: 'sovmap',
+      component: () => import('../views/SovMapView.vue'),
+    },
+    {
       path: '/credits',
       name: 'credits',
       component: () => import('../views/CreditsView.vue'),

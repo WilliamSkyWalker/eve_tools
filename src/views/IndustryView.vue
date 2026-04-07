@@ -170,6 +170,7 @@
                 :placeholder="t('industry.inventoryPlaceholder')"
                 rows="12"
                 @input="onInventoryInput"
+                @keydown="handleTabKeydown"
               ></textarea>
             </div>
 
@@ -214,6 +215,7 @@ import { getBatchBom } from '../api/blueprints'
 import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
+import { useTabInput } from '../composables/useTabInput'
 import { loadIndustryData, getIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
@@ -229,6 +231,7 @@ const SKIP_EXPAND_GROUPS = new Set([
   1041, // Advanced Commodities - Tier 4 (PI)
 ])
 const { t, serverLabel } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const levels = ref([])
 const summary = ref([])

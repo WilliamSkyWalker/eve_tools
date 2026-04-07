@@ -17,6 +17,7 @@
           class="material-input"
           :placeholder="t('market.placeholder')"
           rows="6"
+          @keydown="handleTabKeydown"
         ></textarea>
         <button class="query-btn" :disabled="loading || !inputText.trim()" @click="queryPrices">
           {{ loading ? t('market.querying') : t('market.query') }}
@@ -26,19 +27,44 @@
       <div v-if="error" class="error-msg">{{ error }}</div>
 
       <div v-if="items.length" class="result-section">
+        <!-- Price Summary -->
+        <div class="price-summary">
+          <div class="summary-card">
+            <div class="summary-label">{{ t('market.totalBuy') }}</div>
+            <div class="summary-value buy-total">{{ formatPrice(buyTotal) }}</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">{{ t('market.totalSell') }}</div>
+            <div class="summary-value sell-total">{{ formatPrice(sellTotal) }}</div>
+          </div>
+        </div>
+
         <table class="result-table">
           <thead>
             <tr>
               <th class="col-name">{{ t('market.colName') }}</th>
-              <th class="col-qty">{{ t('market.colQty') }}</th>
-              <th class="col-price">{{ t('market.colBuy') }}</th>
+              <th class="col-qty sortable" @click="sortBy('quantity')">
+                {{ t('market.colQty') }}
+                <span class="sort-indicator" :class="getSortClass('quantity')"></span>
+              </th>
+              <th class="col-volume sortable" @click="sortBy('volume')">
+                {{ t('market.colVolume') }}
+                <span class="sort-indicator" :class="getSortClass('volume')"></span>
+              </th>
+              <th class="col-price sortable" @click="sortBy('buy_price')">
+                {{ t('market.colBuy') }}
+                <span class="sort-indicator" :class="getSortClass('buy_price')"></span>
+              </th>
               <th class="col-price">{{ t('market.colBuyTotal') }}</th>
-              <th class="col-price">{{ t('market.colSell') }}</th>
+              <th class="col-price sortable" @click="sortBy('sell_price')">
+                {{ t('market.colSell') }}
+                <span class="sort-indicator" :class="getSortClass('sell_price')"></span>
+              </th>
               <th class="col-price">{{ t('market.colSellTotal') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in items" :key="item.name" :class="{ unmatched: !item.matched }">
+            <tr v-for="item in sortedItems" :key="item.name" :class="{ unmatched: !item.matched }">
               <td class="col-name">
                 <div class="name-cell">
                   <img v-if="item.matched" class="type-icon" :src="`https://images.evetech.net/types/${item.type_id}/icon?size=32`" alt="" loading="lazy">
@@ -49,6 +75,7 @@
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(item.quantity) }}</td>
+              <td class="col-volume">{{ item.matched ? formatVolume(item.volume, item.quantity) : '-' }}</td>
               <td class="col-price">{{ formatPrice(item.buy_price) }}</td>
               <td class="col-price">{{ formatSubtotal(item.buy_price, item.quantity) }}</td>
               <td class="col-price">{{ formatPrice(item.sell_price) }}</td>
@@ -77,6 +104,7 @@
           class="material-input"
           :placeholder="t('market.reprocessPlaceholder')"
           rows="6"
+          @keydown="handleTabKeydown"
         ></textarea>
         <div class="reprocess-controls">
           <label class="reprocess-label">{{ t('market.reprocessRateOre') }}</label>
@@ -121,6 +149,7 @@
       <!-- Reprocessing output -->
       <div v-if="reprocessResults.length" class="result-section">
         <h3 class="section-title">{{ t('market.reprocessOutput') }}</h3>
+        <div class="reprocess-total">{{ t('market.total') }}：<span class="total-val">{{ formatPrice(reprocessTotal) }}</span> ISK</div>
         <table class="result-table">
           <thead>
             <tr>
@@ -143,14 +172,6 @@
               <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td>{{ t('market.total') }}</td>
-              <td></td>
-              <td></td>
-              <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </template>
@@ -198,9 +219,11 @@ import { loadIndustryData, getIndustryData } from '../data/loader'
 import { parseMaterialText, resolveItemNames } from '../services/market'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { locName } from '../services/locale'
+import { useTabInput } from '../composables/useTabInput'
 
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const tab = ref('price')
 
@@ -209,6 +232,60 @@ const inputText = ref('')
 const items = ref([])
 const loading = ref(false)
 const error = ref('')
+
+// ── Sorting ──
+const sortField = ref('')
+const sortDirection = ref('asc') // 'asc' or 'desc'
+
+const sortedItems = computed(() => {
+  if (!sortField.value) return items.value
+  
+  return [...items.value].sort((a, b) => {
+    let valueA, valueB
+    
+    switch (sortField.value) {
+      case 'quantity':
+        valueA = a.quantity || 0
+        valueB = b.quantity || 0
+        break
+      case 'volume':
+        valueA = a.matched ? (a.volume || 0) : 0
+        valueB = b.matched ? (b.volume || 0) : 0
+        break
+      case 'buy_price':
+        valueA = a.buy_price || 0
+        valueB = b.buy_price || 0
+        break
+      case 'sell_price':
+        valueA = a.sell_price || 0
+        valueB = b.sell_price || 0
+        break
+      default:
+        return 0
+    }
+    
+    if (valueA === valueB) return 0
+    if (sortDirection.value === 'asc') {
+      return valueA > valueB ? 1 : -1
+    } else {
+      return valueA < valueB ? 1 : -1
+    }
+  })
+})
+
+function sortBy(field) {
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDirection.value = 'asc'
+  }
+}
+
+function getSortClass(field) {
+  if (sortField.value !== field) return ''
+  return sortDirection.value === 'asc' ? 'sort-asc' : 'sort-desc'
+}
 
 onMounted(() => loadIndustryData())
 
@@ -475,6 +552,16 @@ function formatPrice(p) {
   return Number(p).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatVolume(volume, quantity = 1) {
+  if (volume == null || quantity == null) return '-'
+  const total = volume * quantity
+  if (total < 1000) {
+    return `${total.toLocaleString()} m³`
+  } else {
+    return `${(total / 1000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km³`
+  }
+}
+
 function formatSubtotal(price, quantity) {
   if (price == null || quantity == null) return '-'
   return (price * quantity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -635,6 +722,19 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   margin-bottom: 16px;
 }
 
+.reprocess-total {
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #d0d0d0;
+  margin-bottom: 12px;
+}
+
+.reprocess-total .total-val {
+  color: #c8aa6e;
+  font-size: 1.1em;
+}
+
 .loading-msg {
   text-align: center;
   color: #8a8a8a;
@@ -652,6 +752,42 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   margin-bottom: 20px;
 }
 
+.price-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  justify-content: flex-start;
+}
+
+.summary-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-width: 140px;
+  text-align: center;
+}
+
+.summary-label {
+  color: #8a8a8a;
+  font-size: 0.85em;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.buy-total {
+  color: #4caf50;
+}
+
+.sell-total {
+  color: #ff9800;
+}
+
 .result-table {
   width: 100%;
   background: #1a1a1a;
@@ -667,6 +803,30 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   font-size: 0.9em;
   font-weight: 500;
   border-bottom: 1px solid #2a2a2a;
+  position: relative;
+}
+
+.result-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.result-table th.sortable:hover {
+  background: rgba(200, 170, 110, 0.12);
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.6;
+}
+
+.sort-indicator.sort-asc::after {
+  content: '↑';
+}
+
+.sort-indicator.sort-desc::after {
+  content: '↓';
 }
 
 .result-table td {
@@ -692,6 +852,7 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 }
 
 .col-qty,
+.col-volume,
 .col-price {
   text-align: right;
   white-space: nowrap;

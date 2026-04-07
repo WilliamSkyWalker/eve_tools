@@ -53,6 +53,7 @@
             class="import-textarea"
             :placeholder="t('queue.importPlaceholder')"
             rows="10"
+            @keydown="handleTabKeydown"
           ></textarea>
           <p v-if="importError" class="import-error">{{ importError }}</p>
           <div class="modal-actions">
@@ -113,8 +114,10 @@ import { searchBlueprints } from '../../api/blueprints'
 import { useI18n } from '../../i18n'
 import { resolveItemNames } from '../../services/market'
 import { getSourceForProduct, getTypeName } from '../../services/calculator'
+import { useTabInput } from '../../composables/useTabInput'
 
 const { t } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const emit = defineEmits(['calculate'])
 

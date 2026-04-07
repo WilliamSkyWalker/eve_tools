@@ -43,9 +43,13 @@
               <th class="col-num">{{ t('lp.lpCost') }}</th>
               <th class="col-num">{{ t('lp.iskCost') }}</th>
               <th class="col-req">{{ t('lp.requiredItems') }}</th>
+              <th class="col-num">{{ t('lp.buyPrice') }}</th>
               <th class="col-num">{{ t('lp.sellPrice') }}</th>
-              <th class="col-num sortable" :class="{ sorted: sortKey === 'iskPerLp' }" @click="toggleSort">
-                {{ t('lp.iskPerLp') }} {{ sortDir === 'desc' ? '▼' : '▲' }}
+              <th class="col-num sortable" :class="{ sorted: sortKey === 'iskPerLpBuy' }" @click="setSortKey('iskPerLpBuy')">
+                {{ t('lp.iskPerLpBuy') }} {{ getSortIcon('iskPerLpBuy') }}
+              </th>
+              <th class="col-num sortable" :class="{ sorted: sortKey === 'iskPerLpSell' }" @click="setSortKey('iskPerLpSell')">
+                {{ t('lp.iskPerLpSell') }} {{ getSortIcon('iskPerLpSell') }}
               </th>
             </tr>
           </thead>
@@ -53,7 +57,13 @@
             <tr v-for="o in sortedOffers" :key="o.t">
               <td class="col-name">
                 <div class="name-cell">
-                  <img class="type-icon" :src="`https://images.evetech.net/types/${o.t}/icon?size=32`" alt="" loading="lazy">
+                  <img 
+                    class="type-icon" 
+                    :src="`https://images.evetech.net/types/${o.t}/icon?size=32`" 
+                    alt="" 
+                    loading="lazy"
+                    @error="handleImageError($event)"
+                  >
                   <span class="copyable" @click="copyName(typeName(o.t), $event)">{{ typeName(o.t) }}</span>
                 </div>
               </td>
@@ -68,8 +78,10 @@
                 </div>
                 <span v-else class="no-req">-</span>
               </td>
+              <td class="col-num">{{ formatPrice(buyPrice(o)) }}</td>
               <td class="col-num">{{ formatPrice(sellPrice(o)) }}</td>
-              <td class="col-num" :class="iskPerLpClass(o)">{{ formatIskPerLp(o) }}</td>
+              <td class="col-num" :class="iskPerLpBuyClass(o)">{{ formatIskPerLp(iskPerLpBuy(o)) }}</td>
+              <td class="col-num" :class="iskPerLpSellClass(o)">{{ formatIskPerLp(iskPerLpSell(o)) }}</td>
             </tr>
           </tbody>
         </table>
@@ -96,7 +108,7 @@ const dropdownOpen = ref(false)
 const selectedCorpId = ref(null)
 const priceLoading = ref(false)
 const prices = ref({})  // typeId -> { sell_price, buy_price }
-const sortKey = ref('iskPerLp')
+const sortKey = ref('iskPerLpSell')
 const sortDir = ref('desc')
 
 onMounted(async () => {
@@ -173,10 +185,16 @@ async function calculateAll() {
   finally { priceLoading.value = false }
 }
 
-function sellPrice(offer) {
+function buyPrice(offer) {
   const p = prices.value[offer.t]
   if (!p?.buy_price) return null
   return p.buy_price * offer.q
+}
+
+function sellPrice(offer) {
+  const p = prices.value[offer.t]
+  if (!p?.sell_price) return null
+  return p.sell_price * offer.q
 }
 
 function reqCost(offer) {
@@ -189,7 +207,15 @@ function reqCost(offer) {
   return total
 }
 
-function iskPerLp(offer) {
+function iskPerLpBuy(offer) {
+  const buy = buyPrice(offer)
+  if (buy == null || !offer.lp) return null
+  const totalCost = offer.isk + reqCost(offer)
+  const profit = buy - totalCost
+  return profit / offer.lp
+}
+
+function iskPerLpSell(offer) {
   const sell = sellPrice(offer)
   if (sell == null || !offer.lp) return null
   const totalCost = offer.isk + reqCost(offer)
@@ -198,16 +224,37 @@ function iskPerLp(offer) {
 }
 
 // ── Sorting ──
-function toggleSort() {
-  sortDir.value = sortDir.value === 'desc' ? 'asc' : 'desc'
+function setSortKey(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'desc' ? 'asc' : 'desc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'desc'
+  }
+}
+
+function getSortIcon(key) {
+  if (sortKey.value !== key) return ''
+  return sortDir.value === 'desc' ? '▼' : '▲'
 }
 
 const sortedOffers = computed(() => {
   const list = [...currentOffers.value]
   const dir = sortDir.value === 'desc' ? -1 : 1
   return list.sort((a, b) => {
-    const va = iskPerLp(a)
-    const vb = iskPerLp(b)
+    let va, vb
+    if (sortKey.value === 'iskPerLpBuy') {
+      va = iskPerLpBuy(a)
+      vb = iskPerLpBuy(b)
+    } else if (sortKey.value === 'iskPerLpSell') {
+      va = iskPerLpSell(a)
+      vb = iskPerLpSell(b)
+    } else {
+      // Default to sell price sorting
+      va = iskPerLpSell(a)
+      vb = iskPerLpSell(b)
+    }
+    
     if (va == null && vb == null) return 0
     if (va == null) return 1
     if (vb == null) return -1
@@ -225,14 +272,22 @@ function formatPrice(n) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatIskPerLp(offer) {
-  const v = iskPerLp(offer)
-  if (v == null) return '-'
-  return v.toLocaleString(undefined, { maximumFractionDigits: 0 })
+function formatIskPerLp(value) {
+  if (value == null) return '-'
+  return value.toLocaleString(undefined, { maximumFractionDigits: 0 })
 }
 
-function iskPerLpClass(offer) {
-  const v = iskPerLp(offer)
+function iskPerLpBuyClass(offer) {
+  const v = iskPerLpBuy(offer)
+  if (v == null) return ''
+  if (v >= 2000) return 'isk-lp-great'
+  if (v >= 1000) return 'isk-lp-good'
+  if (v > 0) return 'isk-lp-ok'
+  return 'isk-lp-bad'
+}
+
+function iskPerLpSellClass(offer) {
+  const v = iskPerLpSell(offer)
   if (v == null) return ''
   if (v >= 2000) return 'isk-lp-great'
   if (v >= 1000) return 'isk-lp-good'
@@ -243,6 +298,11 @@ function iskPerLpClass(offer) {
 function clearCopied() {
   const prev = document.querySelector('.copyable.copied')
   if (prev) prev.classList.remove('copied')
+}
+
+function handleImageError(event) {
+  // Use a generic blueprint icon when type-specific icon fails to load
+  event.target.src = 'https://images.evetech.net/types/9/icon?size=32'
 }
 
 function copyName(name, e) {

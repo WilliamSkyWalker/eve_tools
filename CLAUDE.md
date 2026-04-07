@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、D-Scan/Local解析器、旗舰跳跃路线规划、公开合同查询（隐藏功能，连点logo 5次解锁）和虫洞系统查询。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
+eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、D-Scan/Local解析器、旗舰跳跃路线规划、公开合同查询（隐藏功能，连点logo 5次解锁）、虫洞系统查询和00主权势力地图。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
 
 ## Tech Stack
 
@@ -36,6 +36,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`routeFinder.js`** — 旗舰跳跃 BFS 路径算法，星门 BFS，高安目的地双路线选项
 - **`systemSearch.js`** — 星系名称前缀搜索
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表
+- **`sovereignty.js`** — 00主权数据（ESI sovereignty/map）、按区域聚合、凸包计算、联盟颜色生成
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
 - **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场页含三个标签：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索

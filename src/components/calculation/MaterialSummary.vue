@@ -11,6 +11,7 @@
       :placeholder="t('summary.inventoryPlaceholder')"
       rows="5"
       @input="parseInventory"
+      @keydown="handleTabKeydown"
     ></textarea>
   </div>
   <table class="summary-table">
@@ -46,8 +47,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from '../../i18n'
+import { useTabInput } from '../../composables/useTabInput'
 
 const { t } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const props = defineProps({
   materials: { type: Array, required: true },

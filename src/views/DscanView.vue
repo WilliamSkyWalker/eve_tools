@@ -17,6 +17,7 @@
           :placeholder="t('dscan.placeholder')"
           rows="8"
           @input="parseDscan"
+          @keydown="handleTabKeydown"
         ></textarea>
       </div>
 
@@ -63,6 +64,7 @@
           :placeholder="t('dscan.localPlaceholder')"
           rows="8"
           @input="parseLocal"
+          @keydown="handleTabKeydown"
         ></textarea>
       </div>
 
@@ -95,8 +97,10 @@
 <script setup>
 import { ref, computed, reactive } from 'vue'
 import { useI18n } from '../i18n'
+import { useTabInput } from '../composables/useTabInput'
 
 const { t } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const tab = ref('dscan')
 

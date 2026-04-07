@@ -14,6 +14,7 @@
         <router-link :to="`/${server}/fitting`">{{ t('nav.fitting') }}</router-link>
         <router-link :to="`/${server}/dscan`">{{ t('nav.dscan') }}</router-link>
         <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
+        <!-- <router-link :to="`/${server}/sovmap`">{{ t('nav.sovmap') }}</router-link> -->
       </nav>
       <div class="header-controls">
         <div class="toggle-group">

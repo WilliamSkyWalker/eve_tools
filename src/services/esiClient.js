@@ -65,6 +65,7 @@ export async function getPricesForTypes(typeIds, datasource = 'serenity') {
 // ── Market orders ──
 
 const DEFAULT_REGION_ID = 10000002  // The Forge (Jita)
+const JITA_SYSTEM_ID = 30000142     // Jita system ID
 
 export async function getMarketOrders(regionId, typeId, datasource = 'serenity') {
   const { data } = await esiGet(datasource, `/markets/${regionId}/orders/`, {
@@ -85,8 +86,12 @@ async function fetchOrderPricesForType(regionId, typeId, datasource) {
   }
   try {
     const orders = await getMarketOrders(regionId, typeId, datasource)
-    const buys = orders.filter(o => o.is_buy_order).map(o => o.price)
-    const sells = orders.filter(o => !o.is_buy_order).map(o => o.price)
+    
+    // Filter orders to only include Jita system orders
+    const jitaOrders = orders.filter(o => o.system_id === JITA_SYSTEM_ID)
+    
+    const buys = jitaOrders.filter(o => o.is_buy_order).map(o => o.price)
+    const sells = jitaOrders.filter(o => !o.is_buy_order).map(o => o.price)
     const data = {
       buy_price: buys.length ? Math.max(...buys) : null,
       sell_price: sells.length ? Math.min(...sells) : null,

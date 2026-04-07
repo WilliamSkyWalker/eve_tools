@@ -9,6 +9,7 @@
         :placeholder="t('fit.placeholder')"
         rows="12"
         @input="parseEft"
+        @keydown="handleTabKeydown"
       ></textarea>
       <button class="calc-btn" :disabled="!items.length || priceLoading" @click="fetchPrices">
         {{ priceLoading ? t('fit.fetchingPrices') : t('fit.calculate') }}
@@ -75,10 +76,12 @@ import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadIndustryData, getIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
+import { useTabInput } from '../composables/useTabInput'
 import { locName } from '../services/locale'
 
 const settings = useSettingsStore()
 const { t, locale } = useI18n()
+const { handleTabKeydown } = useTabInput()
 
 const eftText = ref('')
 const shipName = ref('')
