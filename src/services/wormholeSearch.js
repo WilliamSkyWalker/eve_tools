@@ -12,6 +12,56 @@ const CLASS_DISPLAY = {
   17: 'Conflux', 18: 'Redoubt',
 }
 
+// Wormhole effect multipliers by class (C1-C6)
+// Values represent the multiplier applied (e.g., 0.85 = -15%, 1.30 = +30%)
+const EFFECT_MULTIPLIERS = {
+  'Black Hole': [
+    { attr: 'missileVelocity',    values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+    { attr: 'missileExpVelocity',  values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+    { attr: 'shipVelocity',       values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'stasisWebStr',       values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'inertia',            values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'targetingRange',     values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+  ],
+  'Cataclysmic Variable': [
+    { attr: 'localArmorRep',      values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'localShieldBoost',   values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'shieldTransfer',     values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'remoteArmorRep',     values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'capCapacity',        values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'capRechargeTime',    values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+    { attr: 'remoteCapTransfer',  values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+  ],
+  'Magnetar': [
+    { attr: 'damage',             values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'missileExpRadius',   values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+    { attr: 'droneTracking',      values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'targetingRange',     values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'trackingSpeed',      values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'targetPainterStr',   values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+  ],
+  'Pulsar': [
+    { attr: 'shieldHP',           values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'armorResist',        values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'capRechargeTime',    values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'signatureRadius',    values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'nosNeutDrain',       values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+  ],
+  'Red Giant': [
+    { attr: 'heatDamage',         values: [1.15, 1.22, 1.30, 1.37, 1.44, 1.51] },
+    { attr: 'overloadBonus',      values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'smartBombRange',     values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'smartBombDamage',    values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'bombDamage',         values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+  ],
+  'Wolf-Rayet': [
+    { attr: 'armorHP',            values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'shieldResist',       values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+    { attr: 'smallWeaponDmg',     values: [1.30, 1.44, 1.58, 1.72, 1.86, 2.00] },
+    { attr: 'signatureRadius',    values: [0.85, 0.78, 0.70, 0.63, 0.56, 0.49] },
+  ],
+}
+
 const CLASS_LOOKUP = {}
 for (const [k, v] of Object.entries(CLASS_DISPLAY)) {
   CLASS_LOOKUP[v.toLowerCase()] = parseInt(k)
@@ -109,6 +159,17 @@ export function getWormholeSystem(systemId) {
       }
       return info
     })
+  }
+
+  // Resolve effect multipliers for this system's class
+  if (whSys.e && whSys.c >= 1 && whSys.c <= 6) {
+    const effectDef = EFFECT_MULTIPLIERS[whSys.e]
+    if (effectDef) {
+      data.effect_details = effectDef.map(({ attr, values }) => ({
+        attr,
+        value: values[whSys.c - 1],
+      }))
+    }
   }
 
   return data

@@ -35,7 +35,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`blueprintLookup.js`** — 蓝图搜索（中英文），自动过滤特别版/AT奖励舰船
 - **`routeFinder.js`** — 旗舰跳跃 BFS 路径算法，星门 BFS，高安目的地双路线选项
 - **`systemSearch.js`** — 星系名称前缀搜索
-- **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表
+- **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表、效应信标加成数据（硬编码C1-C6各效应乘数）
 - **`sovereignty.js`** — 00主权数据（ESI sovereignty/map）、按区域聚合、凸包计算、联盟颜色生成
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
 - **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场页含三个标签：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）

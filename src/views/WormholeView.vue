@@ -126,6 +126,21 @@
           </div>
         </div>
 
+        <!-- Effect Beacon -->
+        <div v-if="detail.effect_details && detail.effect_details.length > 0" class="effect-section">
+          <h3>{{ t('wh.effectBeacon') }}</h3>
+          <table class="effect-table">
+            <tbody>
+              <tr v-for="ed in detail.effect_details" :key="ed.attr">
+                <td class="effect-attr-name">{{ t(`wh.attr.${ed.attr}`) }}</td>
+                <td class="effect-attr-value">
+                  {{ formatMultiplier(ed.value) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Statics Detail -->
         <div v-if="detail.static_details && detail.static_details.length > 0" class="statics-section">
           <h3>{{ t('wh.statics') }}</h3>
@@ -137,6 +152,7 @@
                 <th>{{ t('wh.lifetime') }}</th>
                 <th>{{ t('wh.maxMass') }}</th>
                 <th>{{ t('wh.maxJumpMass') }}</th>
+                <th>{{ t('wh.massRegen') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +167,7 @@
                 <td>{{ s.max_stable_time ? formatTime(s.max_stable_time) : '-' }}</td>
                 <td>{{ s.max_stable_mass ? formatMass(s.max_stable_mass) : '-' }}</td>
                 <td>{{ s.max_jump_mass ? formatMass(s.max_jump_mass) : '-' }}</td>
+                <td>{{ s.mass_regen ? formatMass(s.mass_regen) + '/h' : '-' }}</td>
               </tr>
             </tbody>
           </table>
@@ -261,6 +278,10 @@ function formatMass(kg) {
   if (kg >= 1e9) return `${(kg / 1e9).toFixed(1)}B kg`
   if (kg >= 1e6) return `${(kg / 1e6).toFixed(0)}M kg`
   return `${kg.toLocaleString()} kg`
+}
+
+function formatMultiplier(value) {
+  return `${value.toFixed(2)}x`
 }
 </script>
 
@@ -581,6 +602,39 @@ function formatMass(kg) {
   color: #8a8a8a;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Effect Beacon */
+.effect-section {
+  margin-bottom: 20px;
+}
+
+.effect-section h3 {
+  color: #c8aa6e;
+  font-size: 1em;
+  margin-bottom: 12px;
+}
+
+.effect-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.effect-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+  font-size: 0.9em;
+}
+
+.effect-attr-name {
+  color: #b0b0b0;
+}
+
+.effect-attr-value {
+  text-align: right;
+  font-weight: 600;
+  font-family: monospace;
+  color: #c8aa6e;
 }
 
 /* Statics Detail Table */

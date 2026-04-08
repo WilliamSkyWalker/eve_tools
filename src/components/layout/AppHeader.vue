@@ -12,7 +12,7 @@
         <router-link :to="`/${server}/navigation`">{{ t('nav.navigation') }}</router-link>
         <router-link v-if="settings.contractsUnlocked" :to="`/${server}/contracts`">{{ t('nav.contracts') }}</router-link>
         <router-link :to="`/${server}/fitting`">{{ t('nav.fitting') }}</router-link>
-        <router-link :to="`/${server}/dscan`">{{ t('nav.dscan') }}</router-link>
+        <!-- <router-link :to="`/${server}/dscan`">{{ t('nav.dscan') }}</router-link> -->
         <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
         <!-- <router-link :to="`/${server}/sovmap`">{{ t('nav.sovmap') }}</router-link> -->
       </nav>
