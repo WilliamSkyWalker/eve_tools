@@ -186,7 +186,15 @@ function getModifierValue(item, mi, data) {
   if (modifyingAttrId === SKILL_LEVEL_ATTR) return 5
   let val = item.attrs.get(modifyingAttrId)
   if (val == null) val = data.attrs[modifyingAttrId]?.dv
-  return val ?? null
+  if (val == null) return null
+
+  // Ship per-level bonuses: LocationRequiredSkillModifier from ship
+  // The modifyingAttribute is the per-level bonus value, needs ×skillLevel
+  if (item.role === 'ship' && mi.f === 'LocationRequiredSkillModifier' && mi.sk) {
+    val *= 5  // All Skills V
+  }
+
+  return val
 }
 
 /** Check if a modifier applies to a specific module item */
