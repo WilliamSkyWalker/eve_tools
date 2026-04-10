@@ -11,6 +11,7 @@
  *   frontend/public/data/industry.json   — types, groups, blueprints, materials, products
  *   frontend/public/data/navigation.json — systems, regions, jumps
  *   frontend/public/data/wormhole.json   — wormhole systems, types
+ *   frontend/public/data/dogma.json     — dogma attributes, effects, modifiers for fitting sim
  */
 
 import fs from 'node:fs'
@@ -118,6 +119,62 @@ function toInt(s) { const n = parseInt(s, 10); return isNaN(n) ? null : n }
 function toFloat(s) { const n = parseFloat(s); return isNaN(n) ? null : n }
 
 // ──────────────────────────────────────────
+// Simple YAML parser for dgmEffects modifierInfo
+// ──────────────────────────────────────────
+
+/**
+ * Parse the modifierInfo YAML from dgmEffects.csv.
+ * Format is a list of dicts with known keys:
+ *   - domain: shipID
+ *     func: ItemModifier
+ *     modifiedAttributeID: 263
+ *     modifyingAttributeID: 72
+ *     operation: 2
+ *     skillTypeID: 3307  (optional)
+ *     groupID: 55        (optional)
+ */
+function parseModifierInfoYaml(yaml) {
+  if (!yaml || yaml === 'null' || yaml === 'None') return []
+  const result = []
+  let current = null
+  for (const line of yaml.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (trimmed.startsWith('- ')) {
+      if (current) result.push(current)
+      current = {}
+      const kv = trimmed.slice(2)
+      parseYamlKV(current, kv)
+    } else if (current) {
+      parseYamlKV(current, trimmed)
+    }
+  }
+  if (current) result.push(current)
+  // Compact: use short keys
+  return result.map(m => {
+    const c = {}
+    if (m.domain) c.d = m.domain
+    if (m.func) c.f = m.func
+    if (m.modifiedAttributeID != null) c.ma = m.modifiedAttributeID
+    if (m.modifyingAttributeID != null) c.ya = m.modifyingAttributeID
+    if (m.operation != null) c.op = m.operation
+    if (m.skillTypeID != null) c.sk = m.skillTypeID
+    if (m.groupID != null) c.gid = m.groupID
+    return c
+  })
+}
+
+function parseYamlKV(obj, str) {
+  const idx = str.indexOf(':')
+  if (idx < 0) return
+  const key = str.slice(0, idx).trim()
+  const val = str.slice(idx + 1).trim()
+  // Try to parse as number
+  const num = Number(val)
+  obj[key] = isNaN(num) ? val : num
+}
+
+// ──────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────
 
@@ -134,6 +191,7 @@ async function main() {
       'industryActivityMaterials', 'industryActivityProducts',
       'mapRegions', 'mapSolarSystems', 'mapSolarSystemJumps',
       'trnTranslations', 'dgmTypeAttributes', 'invTypeMaterials',
+      'dgmAttributeTypes', 'dgmEffects', 'dgmTypeEffects',
       'crpNPCCorporations',
       'planetSchematics', 'planetSchematicsTypeMap',
     ]
@@ -144,15 +202,20 @@ async function main() {
 
   // ── Step 1: Read Chinese translations ──
   console.log('Reading Chinese translations...')
-  const zhTypeNames = {}  // typeID -> zh name
+  const zhTypeNames = {}   // typeID -> zh name (tcID=8)
+  const zhGroupNames = {}  // groupID -> zh name (tcID=7)
   await readCsv('trnTranslations', (row) => {
-    if (row.tcID === '8' && row.languageID === 'zh') {
-      const keyId = toInt(row.keyID)
-      const text = row.text?.trim()
-      if (keyId && text) zhTypeNames[keyId] = text
+    if (row.languageID !== 'zh') return
+    const keyId = toInt(row.keyID)
+    const text = row.text?.trim()
+    if (!keyId || !text) return
+    if (row.tcID === '8') {
+      zhTypeNames[keyId] = text
+    } else if (row.tcID === '7') {
+      zhGroupNames[keyId] = text
     }
   })
-  console.log(`  Found ${Object.keys(zhTypeNames).length} Chinese type names`)
+  console.log(`  Found ${Object.keys(zhTypeNames).length} Chinese type names, ${Object.keys(zhGroupNames).length} group names`)
 
   // ── Step 2: Read invGroups ──
   console.log('Reading invGroups...')
@@ -177,6 +240,9 @@ async function main() {
       pub: row.published === '1',
       v: toFloat(row.volume),
       ps: toInt(row.portionSize) || 1,
+      mass: toFloat(row.mass),
+      cap: toFloat(row.capacity),
+      rid: toInt(row.raceID),
     }
   })
 
@@ -539,7 +605,157 @@ async function main() {
   console.log(`  ${Object.keys(piProduction).length} PI schematics, ${piTypeIds.size} types`)
   console.log(`  -> ${piPath} (${(fs.statSync(piPath).size / 1024).toFixed(0)} KB)`)
 
-  // ── Step 11: Build LP store data ──
+  // ── Step 11: Build dogma.json for fitting simulator ──
+  console.log('Building dogma data for fitting simulator...')
+
+  // Fittable categories: 6=Ship, 7=Module, 8=Charge, 16=Skill, 18=Drone, 20=Implant, 32=Subsystem, 87=Fighter
+  const FITTABLE_CATS = new Set([6, 7, 8, 16, 18, 20, 32, 87])
+  const fittableTypeIds = new Set()
+  for (const [tid, t] of Object.entries(allTypes)) {
+    if (!t.pub) continue
+    const grp = groups[t.g]
+    if (grp && FITTABLE_CATS.has(grp.c)) {
+      fittableTypeIds.add(parseInt(tid))
+    }
+  }
+  console.log(`  Fittable published types: ${fittableTypeIds.size}`)
+
+  // Read dgmAttributeTypes
+  const dgmAttrs = {}  // attrID -> { n, dv, hi, st, uid }
+  await readCsv('dgmAttributeTypes', (row) => {
+    const aid = toInt(row.attributeID)
+    if (aid == null) return
+    dgmAttrs[aid] = {
+      n: row.attributeName || '',
+      dv: toFloat(row.defaultValue) ?? 0,
+      hi: row.highIsGood === '1' ? 1 : 0,
+      st: row.stackable === '1' ? 1 : 0,
+    }
+    const uid = toInt(row.unitID)
+    if (uid != null) dgmAttrs[aid].uid = uid
+  })
+  console.log(`  Attribute definitions: ${Object.keys(dgmAttrs).length}`)
+
+  // Read dgmTypeAttributes for fittable types
+  const dgmTypeAttrs = {}  // typeID -> [[attrID, value], ...]
+  await readCsv('dgmTypeAttributes', (row) => {
+    const tid = toInt(row.typeID)
+    if (!tid || !fittableTypeIds.has(tid)) return
+    const aid = toInt(row.attributeID)
+    if (aid == null) return
+    const val = toFloat(row.valueFloat) ?? toFloat(row.valueInt) ?? null
+    if (val == null) return
+    if (!dgmTypeAttrs[tid]) dgmTypeAttrs[tid] = []
+    dgmTypeAttrs[tid].push([aid, val])
+  })
+  console.log(`  Type attributes loaded: ${Object.values(dgmTypeAttrs).reduce((s, a) => s + a.length, 0)} rows`)
+
+  // Read dgmTypeEffects for fittable types
+  const dgmTypeEffects = {}  // typeID -> [effectID, ...]
+  await readCsv('dgmTypeEffects', (row) => {
+    const tid = toInt(row.typeID)
+    if (!tid || !fittableTypeIds.has(tid)) return
+    const eid = toInt(row.effectID)
+    if (eid == null) return
+    if (!dgmTypeEffects[tid]) dgmTypeEffects[tid] = []
+    dgmTypeEffects[tid].push(eid)
+  })
+  console.log(`  Type effects loaded: ${Object.values(dgmTypeEffects).reduce((s, a) => s + a.length, 0)} rows`)
+
+  // Read dgmEffects and parse modifierInfo YAML
+  const dgmEffects = {}  // effectID -> { n, ec, mi, dur, dis, ra, fo }
+  await readCsv('dgmEffects', (row) => {
+    const eid = toInt(row.effectID)
+    if (eid == null) return
+    const effect = {
+      n: row.effectName || '',
+      ec: toInt(row.effectCategory) ?? 0,
+    }
+    // Parse modifierInfo YAML
+    const mi = parseModifierInfoYaml(row.modifierInfo || '')
+    if (mi.length) effect.mi = mi
+    // Duration / discharge / range / falloff / tracking attributes
+    const dur = toInt(row.durationAttributeID)
+    const dis = toInt(row.dischargeAttributeID)
+    const ra = toInt(row.rangeAttributeID)
+    const fo = toInt(row.falloffAttributeID)
+    const ts = toInt(row.trackingSpeedAttributeID)
+    if (dur) effect.dur = dur
+    if (dis) effect.dis = dis
+    if (ra) effect.ra = ra
+    if (fo) effect.fo = fo
+    if (ts) effect.ts = ts
+    dgmEffects[eid] = effect
+  })
+  console.log(`  Effects loaded: ${Object.keys(dgmEffects).length}, with modifiers: ${Object.values(dgmEffects).filter(e => e.mi).length}`)
+
+  // Slot effect IDs
+  const SLOT_EFFECTS = { 12: 'hi', 13: 'med', 11: 'lo', 2663: 'rig', 3772: 'sub' }
+
+  // Build dogma types
+  const dogmaTypes = {}
+  for (const tid of fittableTypeIds) {
+    const t = allTypes[tid]
+    if (!t) continue
+    const grp = groups[t.g]
+    const cat = grp?.c
+    const entry = {
+      n: t.n,
+      g: t.g,
+      cg: cat,
+    }
+    if (t.nz) entry.nz = t.nz
+    // Merge dgmTypeAttributes; inject mass (attr 4) and capacity (attr 38) from invTypes if missing
+    const attrs = dgmTypeAttrs[tid] ? [...dgmTypeAttrs[tid]] : []
+    if (t.mass != null && !attrs.some(([a]) => a === 4)) attrs.push([4, t.mass])
+    if (t.cap != null && t.cap > 0 && !attrs.some(([a]) => a === 38)) attrs.push([38, t.cap])
+    if (attrs.length) entry.a = attrs
+    if (dgmTypeEffects[tid]) entry.e = dgmTypeEffects[tid]
+    if (t.rid) entry.rid = t.rid
+
+    // Determine slot type for modules (category 7)
+    if (cat === 7 && dgmTypeEffects[tid]) {
+      for (const eid of dgmTypeEffects[tid]) {
+        if (SLOT_EFFECTS[eid]) {
+          entry.sl = SLOT_EFFECTS[eid]
+          break
+        }
+      }
+    }
+
+    dogmaTypes[tid] = entry
+  }
+
+  // Build dogma groups (only fittable)
+  const dogmaGroups = {}
+  for (const t of Object.values(dogmaTypes)) {
+    if (t.g && groups[t.g] && !dogmaGroups[t.g]) {
+      const grp = groups[t.g]
+      const entry = { n: grp.n, c: grp.c }
+      if (zhGroupNames[t.g]) entry.nz = zhGroupNames[t.g]
+      dogmaGroups[t.g] = entry
+    }
+  }
+
+  // Read invCategories for category names
+  const categories = {}
+  await readCsv('invCategories', (row) => {
+    const cid = toInt(row.categoryID)
+    if (cid != null) categories[cid] = row.categoryName || ''
+  })
+
+  const dogmaJson = {
+    attrs: dgmAttrs,
+    effects: dgmEffects,
+    types: dogmaTypes,
+    groups: dogmaGroups,
+    categories,
+  }
+  const dogmaPath = path.join(OUT_DIR, 'dogma.json')
+  fs.writeFileSync(dogmaPath, JSON.stringify(dogmaJson))
+  console.log(`  -> ${dogmaPath} (${(fs.statSync(dogmaPath).size / 1024).toFixed(0)} KB)`)
+
+  // ── Step 12: Build LP store data ──
   if (FETCH_LP) {
     console.log('Building LP store data...')
 

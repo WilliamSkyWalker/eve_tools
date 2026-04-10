@@ -228,12 +228,13 @@ const { t, serverLabel } = useI18n()
 
 onMounted(() => loadNavigationData())
 
+// Base jump range × JDC V (20%/level × 5 = ×2.0)
+// Super/Titan base 3.0→6.0, Dread/Carrier/FAX base 3.5→7.0, Blops base 4.0→8.0, JF/Rorqual base 5.0→10.0
 const presets = computed(() => [
   { label: `6.0 (${t('jump.presets.super')}/${t('jump.presets.titan')})`, value: 6.0 },
   { label: `7.0 (${t('jump.presets.dread')}/${t('jump.presets.carrier')})`, value: 7.0 },
   { label: `8.0 (${t('jump.presets.blops')})`, value: 8.0 },
   { label: `10.0 (${t('jump.presets.jf')})`, value: 10.0 },
-  { label: `15.0 (${t('jump.presets.bowhead')})`, value: 15.0 },
 ])
 
 const startSystem = ref('')

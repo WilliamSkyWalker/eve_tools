@@ -30,6 +30,24 @@
         </a>
       </div>
 
+      <div class="credit-card">
+        <h2>Pyfa</h2>
+        <p class="credit-author">pyfa-org</p>
+        <p class="credit-desc">{{ t('credits.pyfa.desc') }}</p>
+        <a href="https://github.com/pyfa-org/Pyfa" target="_blank" rel="noopener" class="credit-link">
+          github.com/pyfa-org/Pyfa
+        </a>
+      </div>
+
+      <div class="credit-card">
+        <h2>EVEShip.fit</h2>
+        <p class="credit-author">EVEShipFit</p>
+        <p class="credit-desc">{{ t('credits.eveshipfit.desc') }}</p>
+        <a href="https://github.com/EVEShipFit/dogma-engine" target="_blank" rel="noopener" class="credit-link">
+          github.com/EVEShipFit/dogma-engine
+        </a>
+      </div>
+
     </div>
 
     <div class="legal-notice">

@@ -81,7 +81,22 @@ export async function loadPiData() {
 
 export function getPiData() { return piData }
 
+let dogmaData = null
+let dogmaPromise = null
+
+export async function loadDogmaData() {
+  if (dogmaData) return dogmaData
+  if (!dogmaPromise) {
+    dogmaPromise = fetchJson(`${import.meta.env.BASE_URL}data/dogma.json`).then(data => {
+      dogmaData = data
+      return data
+    })
+  }
+  return dogmaPromise
+}
+
 export function getIndustryData() { return industryData }
 export function getNavigationData() { return navigationData }
 export function getWormholeData() { return wormholeData }
 export function getLpStoreData() { return lpStoreData }
+export function getDogmaData() { return dogmaData }
