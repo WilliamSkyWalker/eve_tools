@@ -72,7 +72,20 @@ export function calculateFit(store, data) {
     droneItems.push(d)
   }
 
-  const allItems = [shipItem, ...moduleItems, ...droneItems]
+  // Include all skills (category 16) at level V so skill-based bonuses (e.g., Drone
+  // Interfacing, ship-racial skills) are applied. Skill attrs are pre-processed so
+  // per-level bonus attrs (like 292) are scaled by skill level before other effects
+  // read them via OwnerRequiredSkillModifier.
+  const skillItems = getAllSkillItems(data)
+
+  // Pre-apply skill-to-ship modifiers (ItemModifier d=shipID) to shipItem.attrs
+  // directly. E.g., Gallente Battleship skill multiplies Dominix attr 561 by 5,
+  // Caldari Cruiser multiplies attr 658 by 5 on Stratios. This way when the ship's
+  // own bonus effect reads those attrs later, it gets the resolved per-level × level
+  // value rather than the raw per-level base.
+  applySkillToShipAttrs(shipItem, skillItems, data)
+
+  const allItems = [shipItem, ...moduleItems, ...droneItems, ...skillItems]
   // Add charges as items for effect collection
   for (const m of moduleItems) {
     if (m.charge) allItems.push(m.charge)
@@ -86,10 +99,23 @@ export function calculateFit(store, data) {
     if (!item.effectIds) continue
     for (const eid of item.effectIds) {
       const effect = data.effects[eid]
-      if (!effect?.mi) continue
+      if (!effect) continue
       const ec = effect.ec
       if (ec === 2 || ec === 3 || ec === 7) continue  // skip target, area, dungeon
-      // Skip overload (ec=5) unless item is overloaded (future)
+
+      // Effect 1730 (droneDmgBonus): marker on drone skills (Light/Medium/Heavy Drone Op,
+      // Drone Specializations). Synthesize an OwnerRequiredSkillModifier applying attr 292
+      // (post-processed, already ×skillLevel) as +% damage to items with this skill as req.
+      if (eid === 1730 && item.role === 'skill') {
+        const bonus = item.attrs.get(292)
+        if (bonus != null && bonus !== 0) {
+          const virtualMi = { d: 'charID', f: 'OwnerRequiredSkillModifier', ma: 64, ya: 292, op: OP_POST_PERCENT, sk: item.typeId }
+          moduleMods.push({ source: item, mi: virtualMi, modValue: bonus })
+        }
+        continue
+      }
+
+      if (!effect.mi) continue
 
       for (const mi of effect.mi) {
         const modValue = getModifierValue(item, mi, data)
@@ -97,7 +123,10 @@ export function calculateFit(store, data) {
         const entry = { source: item, mi, modValue }
 
         // Route modifier to ship or module bucket
-        if (mi.f === 'ItemModifier' && mi.d === 'shipID' && item.role !== 'ship') {
+        if (mi.f === 'ItemModifier' && mi.d === 'shipID' && item.role === 'skill') {
+          // Already pre-applied to shipItem.attrs via applySkillToShipAttrs
+          continue
+        } else if (mi.f === 'ItemModifier' && mi.d === 'shipID' && item.role !== 'ship') {
           shipMods.push(entry)
         } else if (mi.f === 'ItemModifier' && item.role === 'ship') {
           shipMods.push(entry)
@@ -145,11 +174,18 @@ export function calculateFit(store, data) {
   })
 
   // ── Drones ──
-  const drones = droneItems.map(d => ({
-    typeId: d.typeId,
-    attrs: new Map(d.attrs),  // base attrs (no modifier application for simplicity)
-    count: d.count,
-  }))
+  // Apply modifiers targeting drones: ship bonuses with matching required skill
+  // (OwnerRequiredSkillModifier / LocationRequiredSkillModifier / LocationGroupModifier)
+  // plus skill-based drone bonuses (Drone Interfacing, etc.) via skill items.
+  const drones = droneItems.map(d => {
+    const applicableMods = moduleMods.filter(m => modifierAppliesToItem(m, d, data))
+    const calcAttrs = applyModifiers(d.attrs, applicableMods, d, data)
+    return {
+      typeId: d.typeId,
+      attrs: calcAttrs,
+      count: d.count,
+    }
+  })
 
   return { shipAttrs, modules, drones }
 }
@@ -188,13 +224,94 @@ function getModifierValue(item, mi, data) {
   if (val == null) val = data.attrs[modifyingAttrId]?.dv
   if (val == null) return null
 
-  // Ship per-level bonuses: LocationRequiredSkillModifier from ship
-  // The modifyingAttribute is the per-level bonus value, needs ×skillLevel
-  if (item.role === 'ship' && mi.f === 'LocationRequiredSkillModifier' && mi.sk) {
-    val *= 5  // All Skills V
-  }
-
   return val
+}
+
+/**
+ * Pre-apply skill-to-ship ItemModifier modifiers to shipItem.attrs in place.
+ * This resolves per-level bonus attrs (like Dominix attr 561) to their skill-V value
+ * before the ship's own bonus effects read them via ya.
+ */
+function applySkillToShipAttrs(shipItem, skillItems, data) {
+  // Group all ship-targeted ItemModifier modifiers by target attr
+  const grouped = new Map()
+  for (const skill of skillItems) {
+    for (const eid of skill.effectIds) {
+      const effect = data.effects[eid]
+      if (!effect?.mi) continue
+      const ec = effect.ec
+      if (ec === 2 || ec === 3 || ec === 7) continue
+      for (const mi of effect.mi) {
+        if (mi.f !== 'ItemModifier' || mi.d !== 'shipID' || mi.ma == null) continue
+        const modValue = getModifierValue(skill, mi, data)
+        if (modValue == null) continue
+        if (!grouped.has(mi.ma)) {
+          grouped.set(mi.ma, { preMul: [], preDivs: [], adds: [], subs: [], postMul: [], postDiv: [], postPct: [], postAssign: [] })
+        }
+        const g = grouped.get(mi.ma)
+        const entry = { val: modValue, stackable: true }  // skills don't stack penalize
+        switch (mi.op) {
+          case OP_PRE_MUL: g.preMul.push(entry); break
+          case OP_PRE_DIV: g.preDivs.push(entry); break
+          case OP_MOD_ADD: g.adds.push(entry); break
+          case OP_MOD_SUB: g.subs.push(entry); break
+          case OP_POST_MUL: g.postMul.push(entry); break
+          case OP_POST_DIV: g.postDiv.push(entry); break
+          case OP_POST_PERCENT: g.postPct.push(entry); break
+          case OP_POST_ASSIGN: g.postAssign.push(entry); break
+        }
+      }
+    }
+  }
+  for (const [aid, m] of grouped) {
+    let val = shipItem.attrs.get(aid) ?? data.attrs[aid]?.dv ?? 0
+    for (const e of m.preMul) val *= e.val
+    for (const e of m.preDivs) if (e.val !== 0) val /= e.val
+    for (const e of m.adds) val += e.val
+    for (const e of m.subs) val -= e.val
+    for (const e of m.postMul) val *= e.val
+    for (const e of m.postDiv) if (e.val !== 0) val /= e.val
+    for (const e of m.postPct) val *= (1 + e.val / 100)
+    if (m.postAssign.length) val = m.postAssign[m.postAssign.length - 1].val
+    shipItem.attrs.set(aid, val)
+  }
+}
+
+let _skillItemsCache = null
+let _skillItemsCacheData = null
+
+/** Build skill items for all skills (category 16) at level V. Cached per data ref. */
+function getAllSkillItems(data) {
+  if (_skillItemsCacheData === data && _skillItemsCache) return _skillItemsCache
+  const items = []
+  for (const [tid, t] of Object.entries(data.types)) {
+    if (t.cg === 16) items.push(buildSkillItem(Number(tid), data))
+  }
+  _skillItemsCacheData = data
+  _skillItemsCache = items
+  return items
+}
+
+/**
+ * Build a skill item at level V. Pre-applies the common skill-level self-multiplier
+ * pattern (ItemModifier d=itemID ya=280 op=0) so that per-level bonus attrs like 292
+ * are already scaled by skillLevel when another effect's modifier reads them via ya.
+ */
+function buildSkillItem(typeId, data) {
+  const item = buildItem(typeId, data, 'skill')
+  item.attrs.set(SKILL_LEVEL_ATTR, 5)
+  for (const eid of item.effectIds) {
+    const effect = data.effects[eid]
+    if (!effect?.mi) continue
+    for (const mi of effect.mi) {
+      if (mi.f === 'ItemModifier' && mi.d === 'itemID' &&
+          mi.ya === SKILL_LEVEL_ATTR && mi.op === OP_PRE_MUL && mi.ma != null) {
+        const cur = item.attrs.get(mi.ma) ?? data.attrs[mi.ma]?.dv ?? 0
+        item.attrs.set(mi.ma, cur * 5)
+      }
+    }
+  }
+  return item
 }
 
 /** Check if a modifier applies to a specific module item */
@@ -226,14 +343,17 @@ function applyModifiers(baseAttrs, modifiers, targetItem, data) {
 
   // Group by target attribute
   const grouped = new Map()
-  for (const { mi, modValue } of modifiers) {
+  for (const { source, mi, modValue } of modifiers) {
     const aid = mi.ma
     if (aid == null) continue
     if (!grouped.has(aid)) {
       grouped.set(aid, { preMul: [], preDivs: [], adds: [], subs: [], postMul: [], postDiv: [], postPct: [], postAssign: [] })
     }
     const g = grouped.get(aid)
-    const stackable = data.attrs[aid]?.st !== 0
+    // Ship hull bonuses and skill bonuses are NOT stacking-penalized in EVE.
+    // Module/rig bonuses on penalized attrs (st=0) are.
+    const isPenaltyExempt = source?.role === 'ship' || source?.role === 'skill'
+    const stackable = data.attrs[aid]?.st !== 0 || isPenaltyExempt
     const entry = { val: modValue, stackable }
     switch (mi.op) {
       case OP_PRE_MUL: g.preMul.push(entry); break

@@ -291,7 +291,7 @@ const messages = {
     'systemSearch.placeholder': '输入星系名称...',
 
     // Fitting
-    'nav.fitting': '装配',
+    'nav.fitting': '装配（测试中）',
     'fit.title': '模拟配船',
     'fit.placeholder': '粘贴 EFT 格式装配...\n\n例如:\n[Raven, 我的渡鸦]\nBallistic Control System II\n...',
     'fit.ship': '船体',
@@ -726,7 +726,7 @@ const messages = {
     'systemSearch.placeholder': 'Enter system name...',
 
     // Fitting
-    'nav.fitting': 'Fitting',
+    'nav.fitting': 'Fitting (beta)',
     'fit.title': 'Fitting Simulator',
     'fit.placeholder': 'Paste EFT format fitting...\n\ne.g.:\n[Raven, My Raven]\nBallistic Control System II\n...',
     'fit.ship': 'Ship',
