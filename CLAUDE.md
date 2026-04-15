@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、D-Scan/Local解析器、旗舰跳跃路线规划、公开合同查询（隐藏功能，连点logo 5次解锁）、虫洞系统查询和00主权势力地图。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
+eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、D-Scan/Local解析器、旗舰跳跃路线规划、公开合同查询（隐藏功能，连点logo 5次解锁）、友情链接（EVE常用工具网站）和00主权势力地图。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
 
 ## Tech Stack
 

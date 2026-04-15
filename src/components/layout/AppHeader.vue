@@ -13,11 +13,12 @@
         <router-link v-if="settings.contractsUnlocked" :to="`/${server}/contracts`">{{ t('nav.contracts') }}</router-link>
         <router-link :to="`/${server}/fitting`">{{ t('nav.fitting') }}</router-link>
         <!-- <router-link :to="`/${server}/dscan`">{{ t('nav.dscan') }}</router-link> -->
-        <router-link :to="`/${server}/wormhole`">{{ t('nav.wormhole') }}</router-link>
         <!-- <router-link :to="`/${server}/sovmap`">{{ t('nav.sovmap') }}</router-link> -->
       </nav>
       <div class="header-controls">
         <div class="toggle-group">
+          <router-link :to="`/${server}/links`" class="toggle-item">{{ t('nav.links') }}</router-link>
+          <span class="toggle-sep"></span>
           <a href="https://github.com/WilliamSkyWalker/eve_tools/issues" target="_blank" rel="noopener" class="toggle-item">{{ t('nav.feedback') }}</a>
           <span class="toggle-sep"></span>
           <button class="toggle-item" @click="showDonate = true">{{ t('nav.donate') }}</button>

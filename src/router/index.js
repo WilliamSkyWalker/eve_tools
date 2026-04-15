@@ -53,9 +53,9 @@ const router = createRouter({
       },
     },
     {
-      path: '/:server(gf|of)/wormhole',
-      name: 'wormhole',
-      component: () => import('../views/WormholeView.vue'),
+      path: '/:server(gf|of)/links',
+      name: 'links',
+      component: () => import('../views/LinksView.vue'),
     },
     {
       path: '/:server(gf|of)/sovmap',
