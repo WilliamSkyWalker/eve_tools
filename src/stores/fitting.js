@@ -16,6 +16,7 @@ export const useFittingStore = defineStore('fitting', () => {
   const drones = ref([])        // [{ typeId, count }]
   const fighters = ref([])      // [{ typeId, count }]
   const offlineSlots = ref({})  // "hi-0" -> true (offline)
+  const implants = ref(Array(10).fill(null))  // slots 1-10, index 0=slot1
 
   const shipAttrs = computed(() => {
     if (!shipTypeId.value) return null
@@ -126,6 +127,21 @@ export const useFittingStore = defineStore('fitting', () => {
     return matches
   }
 
+  function setImplant(slotIndex, typeId) {
+    if (slotIndex < 0 || slotIndex >= 10) return
+    if (typeId) {
+      const data = getDogmaData()
+      const t = data?.types[typeId]
+      if (t) {
+        const slot = t.a?.find(([aid]) => aid === 331)?.[1]
+        if (slot != null && slot !== slotIndex + 1) return  // slot mismatch
+      }
+    }
+    implants.value[slotIndex] = typeId
+  }
+
+  function removeImplant(slotIndex) { setImplant(slotIndex, null) }
+
   function setShip(typeId) {
     shipTypeId.value = typeId
     fitName.value = ''
@@ -139,6 +155,7 @@ export const useFittingStore = defineStore('fitting', () => {
     lowSlots.value = Array(sc.lo).fill(null)
     rigSlots.value = Array(sc.rig).fill(null)
     subSlots.value = Array(sc.sub).fill(null)
+    // Keep implants across ship changes (implants are character-level)
   }
 
   function getSlotArray(slotType) {
@@ -219,6 +236,7 @@ export const useFittingStore = defineStore('fitting', () => {
     highSlots.value = []; midSlots.value = []; lowSlots.value = []
     rigSlots.value = []; subSlots.value = []
     charges.value = {}; drones.value = []; fighters.value = []; offlineSlots.value = {}
+    implants.value = Array(10).fill(null)
   }
 
   const allFittedModules = computed(() => {
@@ -255,6 +273,7 @@ export const useFittingStore = defineStore('fitting', () => {
       drones: drones.value.map(d => ({ ...d })),
       fighters: fighters.value.map(f => ({ ...f })),
       offline: { ...offlineSlots.value },
+      implants: [...implants.value],
       ts: Date.now(),
     }
     const fits = getSavedFits()
@@ -277,6 +296,7 @@ export const useFittingStore = defineStore('fitting', () => {
     drones.value = (fit.drones || []).map(d => ({ ...d }))
     fighters.value = (fit.fighters || []).map(f => ({ ...f }))
     offlineSlots.value = fit.offline || {}
+    implants.value = fit.implants || Array(10).fill(null)
   }
 
   function deleteSavedFit(name) {
@@ -297,6 +317,7 @@ export const useFittingStore = defineStore('fitting', () => {
       d: drones.value,
       f: fighters.value,
       o: offlineSlots.value,
+      i: implants.value,
     }
     return btoa(JSON.stringify(obj))
   }
@@ -315,6 +336,7 @@ export const useFittingStore = defineStore('fitting', () => {
       drones.value = (obj.d || []).map(d => ({ ...d }))
       fighters.value = (obj.f || []).map(f => ({ ...f }))
       offlineSlots.value = obj.o || {}
+      implants.value = obj.i || Array(10).fill(null)
       return true
     } catch { return false }
   }
@@ -322,12 +344,13 @@ export const useFittingStore = defineStore('fitting', () => {
   return {
     shipTypeId, fitName,
     highSlots, midSlots, lowSlots, rigSlots, subSlots,
-    charges, drones, fighters, offlineSlots,
+    charges, drones, fighters, offlineSlots, implants,
     shipAttrs, slotCounts, allFittedModules,
     turretHardpoints, launcherHardpoints, fittedTurrets, fittedLaunchers,
     canFitModule, getCompatibleCharges,
     setShip, setModule, removeModule, setCharge,
     toggleOffline, isOffline,
+    setImplant, removeImplant,
     addDrone, removeDrone, setDroneCount,
     addFighter, removeFighter, setFighterCount,
     clearFit, getSlotArray,

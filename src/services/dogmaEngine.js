@@ -72,6 +72,14 @@ export function calculateFit(store, data) {
     droneItems.push(d)
   }
 
+  // ── Implants ──
+  const implantItems = []
+  if (store.implants) {
+    for (const tid of store.implants) {
+      if (tid && data.types[tid]) implantItems.push(buildItem(tid, data, 'implant'))
+    }
+  }
+
   // Include all skills (category 16) at level V so skill-based bonuses (e.g., Drone
   // Interfacing, ship-racial skills) are applied. Skill attrs are pre-processed so
   // per-level bonus attrs (like 292) are scaled by skill level before other effects
@@ -85,7 +93,7 @@ export function calculateFit(store, data) {
   // value rather than the raw per-level base.
   applySkillToShipAttrs(shipItem, skillItems, data)
 
-  const allItems = [shipItem, ...moduleItems, ...droneItems, ...skillItems]
+  const allItems = [shipItem, ...moduleItems, ...droneItems, ...implantItems, ...skillItems]
   // Add charges as items for effect collection
   for (const m of moduleItems) {
     if (m.charge) allItems.push(m.charge)

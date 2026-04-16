@@ -42,6 +42,9 @@
         <!-- Drone Bay -->
         <DroneBay />
 
+        <!-- Implant Bay -->
+        <ImplantBay />
+
         <!-- EFT Import/Export -->
         <EftPanel />
       </div>
@@ -66,6 +69,7 @@ import ShipSearch from '../components/fitting/ShipSearch.vue'
 import ModuleBrowser from '../components/fitting/ModuleBrowser.vue'
 import SlotLayout from '../components/fitting/SlotLayout.vue'
 import DroneBay from '../components/fitting/DroneBay.vue'
+import ImplantBay from '../components/fitting/ImplantBay.vue'
 import EftPanel from '../components/fitting/EftPanel.vue'
 import StatsPanel from '../components/fitting/StatsPanel.vue'
 
