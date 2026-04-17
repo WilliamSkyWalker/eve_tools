@@ -130,23 +130,27 @@ export function calculateFit(store, data) {
         if (modValue == null) continue
         const entry = { source: item, mi, modValue }
 
-        // Route modifier to ship or module bucket
-        if (mi.f === 'ItemModifier' && mi.d === 'shipID' && item.role === 'skill') {
+        // Route modifier to ship or module bucket.
+        // For fitting sim, treat d=charID same as d=shipID (character-owned items
+        // include the ship and all fitted items).
+        const domain = mi.d
+        const isShipDomain = domain === 'shipID' || domain === 'charID'
+
+        if (mi.f === 'ItemModifier' && domain === 'shipID' && item.role === 'skill') {
           // Already pre-applied to shipItem.attrs via applySkillToShipAttrs
           continue
-        } else if (mi.f === 'ItemModifier' && mi.d === 'shipID' && item.role !== 'ship') {
+        } else if (mi.f === 'ItemModifier' && isShipDomain && item.role !== 'ship') {
           shipMods.push(entry)
         } else if (mi.f === 'ItemModifier' && item.role === 'ship') {
           shipMods.push(entry)
-        } else if (mi.f === 'LocationModifier' && mi.d === 'shipID') {
-          // Affects all items in location - route to both
+        } else if (mi.f === 'LocationModifier' && isShipDomain) {
           shipMods.push(entry)
           moduleMods.push(entry)
         } else if (mi.f === 'LocationRequiredSkillModifier') {
           if (item.role === 'ship') {
             shipMods.push(entry)  // ship bonuses
           }
-          moduleMods.push(entry)  // skill effects on modules
+          moduleMods.push(entry)  // skill/implant effects on modules
         } else if (mi.f === 'LocationGroupModifier') {
           moduleMods.push(entry)
         } else if (mi.f === 'OwnerRequiredSkillModifier') {
@@ -165,10 +169,13 @@ export function calculateFit(store, data) {
     const applicableMods = moduleMods.filter(m => modifierAppliesToItem(m, modItem, data))
     const calcAttrs = applyModifiers(modItem.attrs, applicableMods, modItem, data)
 
-    // Also apply charge attributes to the module (merge damage values)
+    // Apply modifiers to charge as well (e.g., missile damage implants target charge attrs)
     let chargeAttrs = null
     if (modItem.charge) {
-      chargeAttrs = new Map(modItem.charge.attrs)
+      const chargeMods = moduleMods.filter(m => modifierAppliesToItem(m, modItem.charge, data))
+      chargeAttrs = chargeMods.length
+        ? applyModifiers(modItem.charge.attrs, chargeMods, modItem.charge, data)
+        : new Map(modItem.charge.attrs)
     }
 
     return {
