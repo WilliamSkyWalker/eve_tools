@@ -36,6 +36,19 @@
         </span>
       </div>
     </div>
+
+    <!-- Active Tank -->
+    <div v-if="stats.shieldBoostPerSec > 0 || stats.armorRepPerSec > 0" class="active-tank">
+      <div class="section-label">{{ t('fit.activeTank') }}</div>
+      <div v-if="stats.shieldBoostPerSec > 0" class="tank-row">
+        <span class="tank-label">{{ t('fit.shieldBoostPerSec') }}</span>
+        <span class="tank-value shield">{{ stats.shieldBoostPerSec.toFixed(1) }} HP/s</span>
+      </div>
+      <div v-if="stats.armorRepPerSec > 0" class="tank-row">
+        <span class="tank-label">{{ t('fit.armorRepPerSec') }}</span>
+        <span class="tank-value armor">{{ stats.armorRepPerSec.toFixed(1) }} HP/s</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -145,4 +158,38 @@ function resistClass(val) {
 .resist-mid { background: rgba(200, 170, 110, 0.1); color: #c8aa6e; }
 .resist-low { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
 .resist-none { background: rgba(239, 83, 80, 0.08); color: #ef5350; }
+
+.active-tank {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.section-label {
+  color: #8a8a8a;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.tank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.tank-label {
+  color: #8a8a8a;
+  font-size: 0.82em;
+}
+
+.tank-value {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.tank-value.shield { color: #42a5f5; }
+.tank-value.armor { color: #ff9800; }
 </style>

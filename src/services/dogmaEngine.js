@@ -93,6 +93,12 @@ export function calculateFit(store, data) {
   // value rather than the raw per-level base.
   applySkillToShipAttrs(shipItem, skillItems, data)
 
+  // Pre-apply implant set bonuses: implants modify each other's attrs via
+  // LocationGroupModifier (e.g., Ascendancy set pieces multiply each other's
+  // attr 624 warp speed bonus). Must happen before the main modifier collection
+  // so that getModifierValue reads the boosted attrs when building ship modifiers.
+  applyImplantSetBonuses(implantItems, data)
+
   const allItems = [shipItem, ...moduleItems, ...droneItems, ...implantItems, ...skillItems]
   // Add charges as items for effect collection
   for (const m of moduleItems) {
@@ -292,6 +298,55 @@ function applySkillToShipAttrs(shipItem, skillItems, data) {
   }
 }
 
+/**
+ * Pre-apply implant set bonuses: implants can modify each other's attrs via
+ * LocationGroupModifier (e.g., Ascendancy set pieces each multiply other
+ * pieces' attr 624 by their attr 1932). Applied in-place to implantItem.attrs
+ * before main modifier collection.
+ */
+function applyImplantSetBonuses(implantItems, data) {
+  if (implantItems.length < 2) return
+  // Collect inter-implant modifiers
+  const mods = []  // { source, mi, modValue }
+  for (const item of implantItems) {
+    for (const eid of item.effectIds) {
+      const effect = data.effects[eid]
+      if (!effect?.mi) continue
+      for (const mi of effect.mi) {
+        if (mi.f === 'LocationGroupModifier' && mi.ma != null) {
+          const modValue = getModifierValue(item, mi, data)
+          if (modValue != null) mods.push({ source: item, mi, modValue })
+        }
+      }
+    }
+  }
+  if (!mods.length) return
+  // Apply to each implant that matches the target group (exclude self-application)
+  for (const target of implantItems) {
+    const applicable = mods.filter(m => m.source !== target && m.mi.gid != null && target.groupId === m.mi.gid)
+    if (!applicable.length) continue
+    // Group by target attr
+    const grouped = new Map()
+    for (const { mi, modValue } of applicable) {
+      const aid = mi.ma
+      if (!grouped.has(aid)) grouped.set(aid, [])
+      grouped.get(aid).push({ val: modValue, op: mi.op })
+    }
+    for (const [aid, entries] of grouped) {
+      let val = target.attrs.get(aid) ?? data.attrs[aid]?.dv ?? 0
+      for (const e of entries) {
+        switch (e.op) {
+          case OP_PRE_MUL: val *= e.val; break
+          case OP_MOD_ADD: val += e.val; break
+          case OP_POST_MUL: val *= e.val; break
+          case OP_POST_PERCENT: val *= (1 + e.val / 100); break
+        }
+      }
+      target.attrs.set(aid, val)
+    }
+  }
+}
+
 let _skillItemsCache = null
 let _skillItemsCacheData = null
 
@@ -365,9 +420,9 @@ function applyModifiers(baseAttrs, modifiers, targetItem, data) {
       grouped.set(aid, { preMul: [], preDivs: [], adds: [], subs: [], postMul: [], postDiv: [], postPct: [], postAssign: [] })
     }
     const g = grouped.get(aid)
-    // Ship hull bonuses and skill bonuses are NOT stacking-penalized in EVE.
-    // Module/rig bonuses on penalized attrs (st=0) are.
-    const isPenaltyExempt = source?.role === 'ship' || source?.role === 'skill'
+    // Ship hull, skill, and implant bonuses are NOT stacking-penalized in EVE.
+    // Only module/rig/drone bonuses on penalized attrs (st=0) are.
+    const isPenaltyExempt = source?.role === 'ship' || source?.role === 'skill' || source?.role === 'implant'
     const stackable = data.attrs[aid]?.st !== 0 || isPenaltyExempt
     const entry = { val: modValue, stackable }
     switch (mi.op) {

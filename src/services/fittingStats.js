@@ -24,9 +24,15 @@ const A = {
   maxTargetRange: 76, scanRes: 564, maxTargets: 192,
   dmgMult: 64, rof: 51,
   emDmg: 114, thDmg: 118, kiDmg: 117, exDmg: 116,
-  droneBw: 1271,
+  droneBw: 1271, droneBwNeed: 1272,
   capNeed: 6, duration: 73,
   missileDmgMult: 212,
+  // Active tank
+  armorRepAmount: 84, shieldBoostAmount: 68,
+  // Turret
+  optimalRange: 54, falloff: 158, trackingSpeed: 160,
+  // Missile (on charge)
+  missileFlightTime: 281, missileExpRadius: 654, missileExpVelocity: 653,
 }
 
 function g(map, id, fallback = 0) {
@@ -64,6 +70,20 @@ export function computeStats(calc, data) {
     + armorHp / (1 - avgResist(armorEm, armorTh, armorKi, armorEx))
     + hullHp / (1 - avgResist(hullEm, hullTh, hullKi, hullEx))
 
+  // ── Active Tank ──
+  let shieldBoostPerSec = 0
+  let armorRepPerSec = 0
+  if (calc.modules) {
+    for (const m of calc.modules) {
+      const dur = g(m.attrs, A.duration)
+      if (dur <= 0) continue
+      const armorRep = g(m.attrs, A.armorRepAmount)
+      if (armorRep > 0) armorRepPerSec += armorRep / (dur / 1000)
+      const shieldBoost = g(m.attrs, A.shieldBoostAmount)
+      if (shieldBoost > 0) shieldBoostPerSec += shieldBoost / (dur / 1000)
+    }
+  }
+
   // ── Navigation ──
   const maxVelocity = get(A.maxVelocity)
   const mass = get(A.mass)
@@ -76,6 +96,8 @@ export function computeStats(calc, data) {
   let turretDps = 0, turretVolley = 0
   let missileDps = 0, missileVolley = 0
   let droneDps = 0, droneVolley = 0
+  const turretOptimals = [], turretFalloffs = [], turretTrackings = []
+  const missileRanges = [], missileExpRadii = [], missileExpVels = []
 
   if (calc.modules) {
     for (const m of calc.modules) {
@@ -83,24 +105,43 @@ export function computeStats(calc, data) {
         const { dps, volley } = calcTurretDps(m)
         turretDps += dps
         turretVolley += volley
+        turretOptimals.push(g(m.attrs, A.optimalRange))
+        turretFalloffs.push(g(m.attrs, A.falloff))
+        turretTrackings.push(g(m.attrs, A.trackingSpeed))
       } else if (m.isLauncher && m.chargeAttrs) {
         const { dps, volley } = calcMissileDps(m)
         missileDps += dps
         missileVolley += volley
+        const ft = g(m.chargeAttrs, A.missileFlightTime)
+        const vel = g(m.chargeAttrs, A.maxVelocity)
+        if (ft > 0 && vel > 0) missileRanges.push(vel * ft / 1000)
+        const er = g(m.chargeAttrs, A.missileExpRadius)
+        if (er > 0) missileExpRadii.push(er)
+        const ev = g(m.chargeAttrs, A.missileExpVelocity)
+        if (ev > 0) missileExpVels.push(ev)
       }
     }
   }
 
+  let droneBwUsed = 0
   if (calc.drones) {
     for (const d of calc.drones) {
       const { dps, volley } = calcDroneDps(d)
       droneDps += dps * d.count
       droneVolley += volley * d.count
+      droneBwUsed += g(d.attrs, A.droneBwNeed) * d.count
     }
   }
 
   const totalDps = turretDps + missileDps + droneDps
   const totalVolley = turretVolley + missileVolley + droneVolley
+  const turretOptimal = turretOptimals.length ? Math.min(...turretOptimals) : 0
+  const turretFalloff = turretFalloffs.length ? Math.min(...turretFalloffs) : 0
+  const turretTracking = turretTrackings.length ? Math.min(...turretTrackings) : 0
+  const missileRange = missileRanges.length ? Math.min(...missileRanges) : 0
+  const missileExpRadius = missileExpRadii.length ? Math.max(...missileExpRadii) : 0
+  const missileExpVelocity = missileExpVels.length ? Math.min(...missileExpVels) : 0
+  const droneBwTotal = get(A.droneBw)
 
   // ── Capacitor ──
   const capTotal = get(A.capCapacity)
@@ -139,8 +180,12 @@ export function computeStats(calc, data) {
     capTotal, capRecharge: capRechargeMs, capUsagePerSec, peakRecharge,
     capStable, capStablePct, capLastsSec,
     targetRange, scanRes, maxTargets,
+    shieldBoostPerSec, armorRepPerSec,
     turretDps, missileDps, droneDps, totalDps,
     turretVolley, missileVolley, droneVolley, totalVolley,
+    turretOptimal, turretFalloff, turretTracking,
+    missileRange, missileExpRadius, missileExpVelocity,
+    droneBwUsed, droneBwTotal,
   }
 }
 
