@@ -94,7 +94,7 @@
                 <tr v-if="idx === 0 || mat.group_name !== lvl.materials[idx - 1].group_name" class="group-row">
                   <td :colspan="colSpan(lvl)" class="group-label">{{ mat.group_name }}</td>
                 </tr>
-                <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id) }">
+                <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.level, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.level, mat.type_id, mat.quantity)">
                   <td class="name-cell">
                     <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
                     <span
@@ -106,7 +106,6 @@
                       }"
                       :data-tid="mat.type_id"
                       @click="copyName(mat.type_name, $event)"
-                      @contextmenu.prevent="toggleSkip(mat.type_id)"
                     >{{ mat.type_name }}</span>
                   </td>
                   <td class="num">{{ formatNumber(mat.quantity) }}</td>
@@ -140,7 +139,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="mat in summary" :key="mat.type_id">
+              <tr v-for="mat in summary" :key="mat.type_id" :class="{ 'owned-row': isOwned('summary', mat.type_id, mat.total_quantity) }" @contextmenu.prevent="toggleOwned('summary', mat.type_id, mat.total_quantity)">
                 <td class="name-cell">
                   <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
                   <span class="copyable" :data-tid="mat.type_id" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
@@ -494,6 +493,20 @@ function onSummaryCopy(event) {
   if (lines.length) {
     event.preventDefault()
     event.clipboardData.setData('text/plain', lines.join('\n'))
+  }
+}
+
+function isOwned(level, typeId, required) {
+  return (inventoryByLevel[level]?.[typeId] || 0) >= required
+}
+
+function toggleOwned(level, typeId, quantity) {
+  if (!inventoryByLevel[level]) inventoryByLevel[level] = {}
+  if (inventoryByLevel[level][typeId] >= quantity) {
+    delete inventoryByLevel[level][typeId]
+    if (!Object.keys(inventoryByLevel[level]).length) delete inventoryByLevel[level]
+  } else {
+    inventoryByLevel[level][typeId] = quantity
   }
 }
 
@@ -964,6 +977,14 @@ function formatNumber(n) {
 
 .name-mfg:hover {
   color: #81c784;
+}
+
+.owned-row {
+  opacity: 0.45;
+}
+
+.owned-row .num {
+  color: #4caf50;
 }
 
 .skipped-row {
