@@ -555,11 +555,7 @@ function formatPrice(p) {
 function formatVolume(volume, quantity = 1) {
   if (volume == null || quantity == null) return '-'
   const total = volume * quantity
-  if (total < 1000) {
-    return `${total.toLocaleString()} m³`
-  } else {
-    return `${(total / 1000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km³`
-  }
+  return `${total.toLocaleString()} m³`
 }
 
 function formatSubtotal(price, quantity) {
