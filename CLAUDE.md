@@ -10,7 +10,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 - **Frontend**: Vue 3 (Vite + Pinia + Vue Router)，纯静态 SPA，无后端
 - **ESI**: 浏览器直连 `https://ali-esi.evepc.163.com` (Serenity) / `https://esi.evetech.net` (Tranquility)
-- **SDE**: Fuzzwork CSV dump（欧服）+ Serenity ESI 中文名 → JSON 转换脚本 (`scripts/convert-sde.mjs`)，数据存于 `public/data/`。注意：国服专属物品（如座头鲸）无公开 SDE，暂不支持
+- **SDE**: Fuzzwork CSV dump（欧服）+ Serenity ESI 中文名 → JSON 转换脚本 (`scripts/convert-sde.mjs`)，数据存于 `public/data/`。国服独有物品（如座头鲸）通过 `--fetch-serenity-extras` 从 Serenity ESI `/universe/types` 拉取并合并进 `industry.json`，仅含名字/分组/体积等基础字段（无蓝图/材料数据）
 - **部署**: Cloudflare Pages，push 到 main 自动部署（GitHub Actions + wrangler）
 
 ## Architecture
@@ -21,7 +21,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 三个 JSON 文件，由 `scripts/convert-sde.mjs` 从 Fuzzwork CSV 转换生成：
 
-- **`industry.json`** (~3MB) — 物品类型（含中文名、体积）、分组、蓝图、制造活动、材料、产品、化矿数据。使用短 key（n=name, nz=name_zh, g=groupId, v=volume, ps=portionSize）压缩体积。
+- **`industry.json`** (~3.4MB) — 物品类型（含中文名、体积）、分组、蓝图、制造活动、材料、产品、化矿数据。使用短 key（n=name, nz=name_zh, g=groupId, v=volume, ps=portionSize）压缩体积。包含国服独有物品（仅基础字段，由 `--fetch-serenity-extras` 拉取，约 2500 个）。
 - **`navigation.json`** (~1.4MB) — 星系（含 3D 光年坐标、安全等级）、区域、星门跳跃连接。坐标已在构建时从米转换为光年。
 - **`wormhole.json`** (~125KB) — 虫洞星系（等级、效应、静态洞口）、虫洞类型属性。
 - **`lpstore.json`** (~2MB) — LP商店数据：NPC军团、兑换报价（物品、LP/ISK花费、所需材料）、相关物品类型名。由 `--fetch-lp` 从 ESI 获取。
@@ -109,6 +109,7 @@ node scripts/convert-sde.mjs                     # 从已有 CSV 生成 JSON
 node scripts/convert-sde.mjs --download           # 下载最新 CSV 后生成 JSON
 node scripts/convert-sde.mjs --fetch-zh-names     # 同时从 Serenity ESI 获取中文物品名+地图名
 node scripts/convert-sde.mjs --fetch-lp           # 从 ESI 获取 LP 商店数据（需联网，约30秒）
+node scripts/convert-sde.mjs --fetch-serenity-extras  # 拉取国服独有物品（座头鲸等）并合并进 industry.json（约1分钟）
 
 # 前端开发（从项目根目录执行）
 npm install
@@ -121,7 +122,7 @@ npm run build && npx wrangler pages deploy dist/  # 手动部署到 Cloudflare P
 
 # 每周数据维护（push 后自动部署，无需手动 wrangler）
 git pull
-node scripts/convert-sde.mjs --download --fetch-zh-names
+node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras
 git add public/data/
 git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
 ```
