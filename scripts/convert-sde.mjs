@@ -249,10 +249,12 @@ async function main() {
 
   // ── Step 3.5: Fetch Serenity-only types (国服独有物品) ──
   // Tranquility SDE doesn't include Serenity-exclusive items (e.g. 座头鲸/北海巨妖).
-  // List all Serenity type IDs, diff against allTypes, fetch details for the gap.
+  // List all Serenity type IDs (used later to build the per-server industry file),
+  // diff against allTypes, fetch details for the gap.
   const serenityOnlyIds = new Set()
+  let serenityAllTypeIds = null  // null means --fetch-serenity-extras was not used
   if (FETCH_SERENITY_EXTRAS) {
-    await fetchSerenityOnlyTypes(allTypes, groups, serenityOnlyIds)
+    serenityAllTypeIds = await fetchSerenityOnlyTypes(allTypes, groups, serenityOnlyIds)
   }
 
   // ── Step 4: Read industry data ──
@@ -350,51 +352,68 @@ async function main() {
   // Always include Serenity-only types (no industry refs but needed for market lookup)
   for (const tid of serenityOnlyIds) industryTypeIds.add(tid)
 
-  const filteredTypes = {}
-  const filteredGroups = {}
-  for (const tid of industryTypeIds) {
-    const t = allTypes[tid]
-    if (t) {
-      const entry = { n: t.n, nz: t.nz, g: t.g }
+  // ── Step 5b: Fetch Serenity Chinese names for all relevant types ──
+  // NetEase translations differ from CCP's TQ Chinese (e.g. type 85062 is
+  // "侧进蛇级" on Serenity but "响尾蛇级" on TQ). We need each server's own
+  // names so paste-resolution doesn't collide.
+  const serenityZhNames = {}
+  if (serenityAllTypeIds) {
+    const targetIds = [...industryTypeIds].filter(id => serenityAllTypeIds.has(id))
+    console.log(`Fetching Serenity Chinese names for ${targetIds.length} types...`)
+    const fetched = await fetchUniverseNames(targetIds)
+    for (const [id, name] of Object.entries(fetched)) {
+      if (name) serenityZhNames[id] = name
+    }
+    console.log(`  Got ${Object.keys(serenityZhNames).length} names`)
+  }
+
+  // ── Step 6: Build per-server industry files ──
+  // Tranquility: types from CSV, exclude Serenity-only items, zh from CSV (CCP).
+  // Serenity: types intersected with Serenity ESI list + Serenity-only items,
+  //   zh from Serenity ESI (NetEase) when available.
+  function buildTypes({ skipSerenityOnly, restrictToSerenity, zhSource }) {
+    const types = {}, groups2 = {}
+    for (const tid of industryTypeIds) {
+      const t = allTypes[tid]
+      if (!t) continue
+      if (skipSerenityOnly && serenityOnlyIds.has(tid)) continue
+      if (restrictToSerenity && !serenityAllTypeIds.has(tid)) continue
+      // Serenity prefers NetEase zh, falls back to whatever's in t.nz
+      // (Serenity-only items have their NetEase name stored there).
+      const zh = zhSource === 'serenity'
+        ? (serenityZhNames[tid] || t.nz || '')
+        : (t.nz || '')
+      const entry = { n: t.n, nz: zh && zh !== t.n ? zh : '', g: t.g }
       if (t.ps && t.ps !== 1) entry.ps = t.ps
       if (t.v != null && t.v > 0) entry.v = t.v
-      filteredTypes[tid] = entry
-      if (t.g && groups[t.g] && !filteredGroups[t.g]) {
-        filteredGroups[t.g] = { n: groups[t.g].n }
+      types[tid] = entry
+      if (t.g && groups[t.g] && !groups2[t.g]) {
+        groups2[t.g] = { n: groups[t.g].n }
       }
     }
+    return { types, groups: groups2 }
   }
-  console.log(`  Industry types: ${Object.keys(filteredTypes).length}, groups: ${Object.keys(filteredGroups).length}`)
 
-  // ── Step 5b: Fetch Chinese type names from Serenity ESI ──
-  if (FETCH_ZH) {
-    console.log('Fetching Chinese type names from Serenity ESI...')
-    const typeIds = Object.keys(filteredTypes).map(Number)
-    const zhTypeNamesESI = await fetchUniverseNames(typeIds)
-    let updated = 0
-    for (const [id, name] of Object.entries(zhTypeNamesESI)) {
-      if (filteredTypes[id] && name && name !== filteredTypes[id].n) {
-        filteredTypes[id].nz = name
-        updated++
-      }
+  const tqOut = buildTypes({ skipSerenityOnly: true, restrictToSerenity: false, zhSource: 'tranquility' })
+  const srOut = serenityAllTypeIds
+    ? buildTypes({ skipSerenityOnly: false, restrictToSerenity: true, zhSource: 'serenity' })
+    : tqOut  // fallback: identical to TQ when Serenity data wasn't fetched
+
+  for (const [server, out] of [['tranquility', tqOut], ['serenity', srOut]]) {
+    const json = {
+      types: out.types,
+      groups: out.groups,
+      blueprints,
+      activities,
+      materials,
+      reprocess,
+      products,
+      productsByBp,
     }
-    console.log(`  Updated ${updated} Chinese type names from ESI`)
+    const p = path.join(OUT_DIR, `industry-${server}.json`)
+    fs.writeFileSync(p, JSON.stringify(json))
+    console.log(`  -> ${p} (${(fs.statSync(p).size / 1024).toFixed(0)} KB, ${Object.keys(out.types).length} types)`)
   }
-
-  // ── Step 6: Build industry.json ──
-  const industryJson = {
-    types: filteredTypes,
-    groups: filteredGroups,
-    blueprints,
-    activities,
-    materials,
-    reprocess,
-    products,
-    productsByBp,
-  }
-  const industryPath = path.join(OUT_DIR, 'industry.json')
-  fs.writeFileSync(industryPath, JSON.stringify(industryJson))
-  console.log(`  -> ${industryPath} (${(fs.statSync(industryPath).size / 1024).toFixed(0)} KB)`)
 
   // ── Step 7: Read navigation data ──
   console.log('Reading navigation data...')
@@ -885,7 +904,10 @@ const fetchUniverseNamesSerenity = fetchUniverseNames
 /**
  * Fetch all Serenity type IDs, find the ones missing from Tranquility SDE,
  * and pull their details. Mutates allTypes and groups in place; collects
- * added IDs into outIds.
+ * Serenity-only added IDs into outIds.
+ *
+ * Returns the full set of Serenity type IDs (used downstream to filter out
+ * TQ-only items from the Serenity industry file).
  */
 async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
   console.log('Fetching Serenity-only types from ESI...')
@@ -895,7 +917,7 @@ async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
   const firstResp = await fetch(`${SERENITY_ESI}/universe/types/?datasource=serenity&page=1`)
   if (!firstResp.ok) {
     console.warn(`  Serenity types page 1 failed: ${firstResp.status}`)
-    return
+    return serIds
   }
   const firstData = await firstResp.json()
   for (const id of firstData) serIds.add(id)
@@ -921,79 +943,67 @@ async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
   // Find missing
   const missing = [...serIds].filter(id => !allTypes[id])
   console.log(`  ${missing.length} types not in Tranquility SDE`)
-  if (!missing.length) return
 
-  // Fetch details for each missing type
-  const queue = [...missing]
-  let attempted = 0
-  let added = 0
-  async function typeWorker() {
-    while (queue.length) {
-      const tid = queue.shift()
-      attempted++
-      try {
-        const resp = await fetch(`${SERENITY_ESI}/universe/types/${tid}/?datasource=serenity`)
-        if (!resp.ok) continue
-        const t = await resp.json()
-        if (!t.published) continue
-        const name = t.name || ''
-        if (!name) continue
-        allTypes[tid] = {
-          n: name,
-          nz: name,  // Serenity ESI returns Chinese name; no English available
-          g: t.group_id ?? null,
-          pub: !!t.published,
-          v: t.volume ?? null,
-          ps: t.portion_size || 1,
-          mass: t.mass ?? null,
-          cap: t.capacity ?? null,
-          rid: null,
-        }
-        outIds.add(tid)
-        added++
-      } catch { /* skip */ }
-      if (attempted % 200 === 0) console.log(`  ${attempted}/${missing.length}...`)
-    }
-  }
-  await Promise.all(Array.from({ length: 20 }, () => typeWorker()))
-  console.log(`  Added ${added} Serenity-only published types`)
-
-  // Fetch Chinese names via /universe/names/ (the typed endpoint returns English even on Serenity)
-  if (outIds.size) {
-    console.log(`  Fetching Chinese names for ${outIds.size} types...`)
-    const zhNames = await _fetchNames([...outIds], SERENITY_ESI, 'serenity')
-    let zhUpdated = 0
-    for (const [id, name] of Object.entries(zhNames)) {
-      if (allTypes[id] && name && name !== allTypes[id].n) {
-        allTypes[id].nz = name
-        zhUpdated++
-      }
-    }
-    console.log(`  Got ${zhUpdated} Chinese names`)
-  }
-
-  // Fetch any missing groups
-  const newGroupIds = new Set()
-  for (const tid of outIds) {
-    const gid = allTypes[tid]?.g
-    if (gid && !groups[gid]) newGroupIds.add(gid)
-  }
-  if (newGroupIds.size) {
-    console.log(`  Fetching ${newGroupIds.size} missing groups...`)
-    const gQueue = [...newGroupIds]
-    async function groupWorker() {
-      while (gQueue.length) {
-        const gid = gQueue.shift()
+  if (missing.length) {
+    const queue = [...missing]
+    let attempted = 0
+    let added = 0
+    async function typeWorker() {
+      while (queue.length) {
+        const tid = queue.shift()
+        attempted++
         try {
-          const resp = await fetch(`${SERENITY_ESI}/universe/groups/${gid}/?datasource=serenity`)
+          const resp = await fetch(`${SERENITY_ESI}/universe/types/${tid}/?datasource=serenity`)
           if (!resp.ok) continue
-          const g = await resp.json()
-          groups[gid] = { n: g.name || '', c: g.category_id ?? null }
+          const t = await resp.json()
+          if (!t.published) continue
+          const name = t.name || ''
+          if (!name) continue
+          allTypes[tid] = {
+            n: name,
+            nz: name,  // /universe/types returns English even on Serenity; zh comes later
+            g: t.group_id ?? null,
+            pub: !!t.published,
+            v: t.volume ?? null,
+            ps: t.portion_size || 1,
+            mass: t.mass ?? null,
+            cap: t.capacity ?? null,
+            rid: null,
+          }
+          outIds.add(tid)
+          added++
         } catch { /* skip */ }
+        if (attempted % 200 === 0) console.log(`  ${attempted}/${missing.length}...`)
       }
     }
-    await Promise.all(Array.from({ length: 10 }, () => groupWorker()))
+    await Promise.all(Array.from({ length: 20 }, () => typeWorker()))
+    console.log(`  Added ${added} Serenity-only published types`)
+
+    // Fetch any missing groups
+    const newGroupIds = new Set()
+    for (const tid of outIds) {
+      const gid = allTypes[tid]?.g
+      if (gid && !groups[gid]) newGroupIds.add(gid)
+    }
+    if (newGroupIds.size) {
+      console.log(`  Fetching ${newGroupIds.size} missing groups...`)
+      const gQueue = [...newGroupIds]
+      async function groupWorker() {
+        while (gQueue.length) {
+          const gid = gQueue.shift()
+          try {
+            const resp = await fetch(`${SERENITY_ESI}/universe/groups/${gid}/?datasource=serenity`)
+            if (!resp.ok) continue
+            const g = await resp.json()
+            groups[gid] = { n: g.name || '', c: g.category_id ?? null }
+          } catch { /* skip */ }
+        }
+      }
+      await Promise.all(Array.from({ length: 10 }, () => groupWorker()))
+    }
   }
+
+  return serIds
 }
 
 async function _fetchNames(ids, base, datasource) {

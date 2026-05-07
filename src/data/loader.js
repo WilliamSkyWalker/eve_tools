@@ -1,10 +1,18 @@
 /**
  * Data loading layer — fetches static JSON files and caches in memory.
  * Each dataset is loaded at most once; concurrent callers share the same promise.
+ *
+ * Industry data is per-server (Serenity and Tranquility have different items
+ * and Chinese translations, e.g. type 85062 is "侧进蛇级" on Serenity but
+ * "响尾蛇级" on TQ — colliding with Rattlesnake). The active dataset reflects
+ * the most recent loadIndustryData() call.
  */
 
+import { useSettingsStore } from '../stores/settings'
+
 let industryData = null
-let industryPromise = null
+const industryCache = {}     // datasource -> data
+const industryPromises = {}  // datasource -> Promise
 
 let navigationData = null
 let navigationPromise = null
@@ -19,14 +27,21 @@ async function fetchJson(url) {
 }
 
 export async function loadIndustryData() {
-  if (industryData) return industryData
-  if (!industryPromise) {
-    industryPromise = fetchJson(`${import.meta.env.BASE_URL}data/industry.json`).then(data => {
+  const ds = useSettingsStore().datasource
+  if (industryCache[ds]) {
+    industryData = industryCache[ds]
+    return industryData
+  }
+  if (!industryPromises[ds]) {
+    industryPromises[ds] = fetchJson(`${import.meta.env.BASE_URL}data/industry-${ds}.json`).then(data => {
+      industryCache[ds] = data
       industryData = data
       return data
     })
   }
-  return industryPromise
+  const data = await industryPromises[ds]
+  industryData = data
+  return data
 }
 
 export async function loadNavigationData() {

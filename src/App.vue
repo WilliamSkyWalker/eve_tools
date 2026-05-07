@@ -2,7 +2,9 @@
   <div id="app">
     <AppHeader />
     <main class="main-content">
-      <router-view />
+      <!-- Force remount on URL change so per-server data (industry.json) reloads
+           when toggling between /gf/* and /of/*. -->
+      <router-view :key="$route.fullPath" />
     </main>
   </div>
 </template>
