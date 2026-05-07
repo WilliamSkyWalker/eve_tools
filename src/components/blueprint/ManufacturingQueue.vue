@@ -112,7 +112,7 @@
 import { ref } from 'vue'
 import { searchBlueprints } from '../../api/blueprints'
 import { useI18n } from '../../i18n'
-import { resolveItemNames } from '../../services/market'
+import { resolveItemNames, parseMaterialText } from '../../services/market'
 import { getSourceForProduct, getTypeName } from '../../services/calculator'
 import { useTabInput } from '../../composables/useTabInput'
 
@@ -200,31 +200,30 @@ function doImport() {
   const text = importText.value.trim()
   if (!text) return
 
-  // Parse: extract product lines from shared plan or plain "name\tqty" format
-  const productLines = []
-  const lines = text.split('\n')
-  let inProducts = false
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (/^===.*===/.test(trimmed)) {
-      // Section header — check if it's the products section
-      inProducts = /最终产品|Final Product/i.test(trimmed)
-      continue
-    }
-    if (inProducts && trimmed === '') { inProducts = false; continue }
-    // If we're in products section, or if there's no section headers at all (plain format)
-    const target = inProducts ? trimmed : (text.includes('===') ? null : trimmed)
-    if (!target) continue
-    // Parse "name\tqty\tMEn" or "name\tqty" or "name qty"
-    const tabMatch = target.match(/^(.+?)\t(\d+)(?:\tME(\d+))?$/)
-    if (tabMatch) {
-      productLines.push({ name: tabMatch[1].trim(), runs: parseInt(tabMatch[2]), me: tabMatch[3] != null ? parseInt(tabMatch[3]) : null })
-    } else {
-      const spaceMatch = target.match(/^(.+?)\s+(\d+)$/)
-      if (spaceMatch) {
-        productLines.push({ name: spaceMatch[1].trim(), runs: parseInt(spaceMatch[2]), me: null })
+  // Two input formats:
+  //   1) Shared plan: "=== 最终产品 ===" sections with "name\tqty\tMEn" lines
+  //   2) Inventory paste (any format parseMaterialText accepts: tab-separated EVE
+  //      asset/contract dumps, "name x2", "name 100", etc.)
+  let productLines = []
+  if (text.includes('===')) {
+    let inProducts = false
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim()
+      if (/^===.*===/.test(trimmed)) {
+        inProducts = /最终产品|Final Product/i.test(trimmed)
+        continue
+      }
+      if (!inProducts || !trimmed) continue
+      const m = trimmed.match(/^(.+?)\t(\d+)(?:\tME(\d+))?$/)
+      if (m) {
+        productLines.push({ name: m[1].trim(), runs: parseInt(m[2]), me: m[3] != null ? parseInt(m[3]) : null })
       }
     }
+  }
+  if (!productLines.length) {
+    productLines = parseMaterialText(text)
+      .filter(p => p.quantity != null && p.quantity > 0)
+      .map(p => ({ name: p.name, runs: p.quantity, me: null }))
   }
 
   if (!productLines.length) {

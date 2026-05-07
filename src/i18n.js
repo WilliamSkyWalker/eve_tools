@@ -84,7 +84,7 @@ const messages = {
     'queue.calculate': '计算材料清单',
     'queue.import': '导入',
     'queue.importTitle': '导入生产计划',
-    'queue.importPlaceholder': '粘贴分享的生产计划，或直接输入：\n产品名\t数量\n\n例如：\n帕拉丁级\t1',
+    'queue.importPlaceholder': '粘贴分享的生产计划、游戏内库存、合同物品列表，或直接输入：\n帕拉丁级\t1\n响尾蛇级 x2\n座头鲸级 1',
     'queue.importError': '未能识别以下物品',
 
     // MaterialSummary
@@ -532,7 +532,7 @@ const messages = {
     'queue.calculate': 'Calculate Materials',
     'queue.import': 'Import',
     'queue.importTitle': 'Import Manufacturing Plan',
-    'queue.importPlaceholder': 'Paste a shared plan, or enter directly:\nProduct Name\tQuantity\n\nExample:\nPaladin\t1',
+    'queue.importPlaceholder': 'Paste a shared plan, in-game inventory, contract list, or enter directly:\nPaladin\t1\nRattlesnake x2\nHumpback 1',
     'queue.importError': 'Could not resolve these items',
 
     // MaterialSummary
