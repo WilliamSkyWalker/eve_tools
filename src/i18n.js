@@ -72,6 +72,8 @@ const messages = {
     'industry.share': '分享计划',
     'industry.haveQty': '已有',
     'industry.needQty': '还需',
+    'industry.toProcess': '待加工',
+    'industry.otherMaterials': '其他材料',
 
     // ManufacturingQueue
     'queue.searchPlaceholder': '搜索蓝图...',
@@ -517,6 +519,8 @@ const messages = {
     'industry.copied': 'Copied!',
     'industry.haveQty': 'Have',
     'industry.needQty': 'Need',
+    'industry.toProcess': 'To Process',
+    'industry.otherMaterials': 'Other Materials',
     'industry.sell': 'Sell',
     'industry.buy': 'Buy',
     'industry.share': 'Share Plan',

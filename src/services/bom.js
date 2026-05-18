@@ -189,10 +189,14 @@ export function flattenBomToLevels(trees) {
       group_name: getGroupName(parseInt(tid)),
     }))
     materials.sort((a, b) => {
+      // build=true items first (待加工), then others (其他材料)
+      if (a.build !== b.build) return a.build ? -1 : 1
       const gc = a.group_name.localeCompare(b.group_name)
       return gc !== 0 ? gc : a.type_name.localeCompare(b.type_name)
     })
-    return { level, materials }
+    const hasBuild = materials.some(m => m.build)
+    const hasOther = materials.some(m => !m.build)
+    return { level, materials, hasMixed: hasBuild && hasOther }
   })
 }
 

@@ -91,7 +91,10 @@
             </thead>
             <tbody>
               <template v-for="(mat, idx) in lvl.materials" :key="mat.type_id">
-                <tr v-if="idx === 0 || mat.group_name !== lvl.materials[idx - 1].group_name" class="group-row">
+                <tr v-if="lvl.hasMixed && (idx === 0 || mat.build !== lvl.materials[idx - 1].build)" class="super-group-row">
+                  <td :colspan="colSpan(lvl)" class="super-group-label">{{ mat.build ? t('industry.toProcess') : t('industry.otherMaterials') }}</td>
+                </tr>
+                <tr v-if="idx === 0 || mat.group_name !== lvl.materials[idx - 1].group_name || mat.build !== lvl.materials[idx - 1].build" class="group-row">
                   <td :colspan="colSpan(lvl)" class="group-label">{{ mat.group_name }}</td>
                 </tr>
                 <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.level, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.level, mat.type_id, mat.quantity)">
@@ -909,6 +912,19 @@ function formatNumber(n) {
   color: #555555;
   padding: 6px 10px 2px;
   letter-spacing: 0.5px;
+}
+
+.super-group-row td {
+  border-bottom: none;
+}
+
+.super-group-label {
+  font-size: 0.85em;
+  color: #c8aa6e;
+  padding: 10px 10px 4px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  border-top: 1px solid rgba(200, 170, 110, 0.15);
 }
 
 .name-cell {
