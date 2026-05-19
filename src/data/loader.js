@@ -97,17 +97,25 @@ export async function loadPiData() {
 export function getPiData() { return piData }
 
 let dogmaData = null
-let dogmaPromise = null
+const dogmaCache = {}     // datasource -> data
+const dogmaPromises = {}  // datasource -> Promise
 
 export async function loadDogmaData() {
-  if (dogmaData) return dogmaData
-  if (!dogmaPromise) {
-    dogmaPromise = fetchJson(`${import.meta.env.BASE_URL}data/dogma.json`).then(data => {
+  const ds = useSettingsStore().datasource
+  if (dogmaCache[ds]) {
+    dogmaData = dogmaCache[ds]
+    return dogmaData
+  }
+  if (!dogmaPromises[ds]) {
+    dogmaPromises[ds] = fetchJson(`${import.meta.env.BASE_URL}data/dogma-${ds}.json`).then(data => {
+      dogmaCache[ds] = data
       dogmaData = data
       return data
     })
   }
-  return dogmaPromise
+  const data = await dogmaPromises[ds]
+  dogmaData = data
+  return data
 }
 
 export function getIndustryData() { return industryData }

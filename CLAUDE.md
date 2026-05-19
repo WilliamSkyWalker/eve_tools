@@ -25,7 +25,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`navigation.json`** (~1.4MB) — 星系（含 3D 光年坐标、安全等级）、区域、星门跳跃连接。坐标已在构建时从米转换为光年。
 - **`wormhole.json`** (~125KB) — 虫洞星系（等级、效应、静态洞口）、虫洞类型属性。
 - **`lpstore.json`** (~2MB) — LP商店数据：NPC军团、兑换报价（物品、LP/ISK花费、所需材料）、相关物品类型名。由 `--fetch-lp` 从 ESI 获取。
-- **`dogma.json`** (~3MB) — 配船模拟器数据：属性定义（attrs）、效果定义含modifierInfo（effects）、可装配物品类型属性和效果（types：Ship/Module/Charge/Drone/Implant/Subsystem/Skill）、分组（groups）、类别（categories）。由 `dgmAttributeTypes`、`dgmEffects`、`dgmTypeEffects`、`dgmTypeAttributes` CSV 生成。modifierInfo 为从 CSV 中 YAML 格式解析的修改器列表，使用短 key（d=domain, f=func, ma=modifiedAttributeID, ya=modifyingAttributeID, op=operation, sk=skillTypeID, gid=groupID）。
+- **`dogma-serenity.json`** / **`dogma-tranquility.json`** (~3MB 每份) — 按服务器拆分。配船模拟器数据：属性定义（attrs）、效果定义含modifierInfo（effects）、可装配物品类型属性和效果（types：Ship/Module/Charge/Drone/Implant/Subsystem/Skill）、分组（groups）、类别（categories）。由 `dgmAttributeTypes`、`dgmEffects`、`dgmTypeEffects`、`dgmTypeAttributes` CSV 生成。**Serenity 文件包含国服特有可装配物品**（如座头鲸、莫斯级、国庆药剂等），其 dogma 属性和效果通过 `--fetch-serenity-extras` 从 Serenity ESI `/universe/types` 的响应中提取（同一请求里附带 dogma_attributes / dogma_effects，无额外网络开销）；不带此 flag 时 dogma-serenity.json = dogma-tranquility.json。Serenity 文件中物品中文名优先使用 NetEase 翻译（不在 `serenityZhNames` 覆盖范围内的，回退到 t.nz）。modifierInfo 为从 CSV 中 YAML 格式解析的修改器列表，使用短 key（d=domain, f=func, ma=modifiedAttributeID, ya=modifyingAttributeID, op=operation, sk=skillTypeID, gid=groupID）。`loader.js` 按 `settings.datasource` 加载对应文件。
 
 ### 服务层 (`src/services/`)
 
@@ -109,7 +109,7 @@ node scripts/convert-sde.mjs                     # 从已有 CSV 生成 JSON
 node scripts/convert-sde.mjs --download           # 下载最新 CSV 后生成 JSON
 node scripts/convert-sde.mjs --fetch-zh-names     # 同时从 Serenity ESI 获取中文物品名+地图名
 node scripts/convert-sde.mjs --fetch-lp           # 从 ESI 获取 LP 商店数据（需联网，约30秒）
-node scripts/convert-sde.mjs --fetch-serenity-extras  # 拉取国服独有物品（座头鲸等）+ 国服中文名，输出 industry-serenity.json（约1分钟，不带此 flag 时 industry-serenity.json = industry-tranquility.json）
+node scripts/convert-sde.mjs --fetch-serenity-extras  # 拉取国服独有物品（座头鲸等）+ 国服中文名 + 国服 dogma 数据，输出 industry-serenity.json / dogma-serenity.json（约1分钟，不带此 flag 时 *-serenity.json = *-tranquility.json）
 
 # 前端开发（从项目根目录执行）
 npm install

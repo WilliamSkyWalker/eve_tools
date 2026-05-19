@@ -11,7 +11,7 @@
  *   frontend/public/data/industry.json   — types, groups, blueprints, materials, products
  *   frontend/public/data/navigation.json — systems, regions, jumps
  *   frontend/public/data/wormhole.json   — wormhole systems, types
- *   frontend/public/data/dogma.json     — dogma attributes, effects, modifiers for fitting sim
+ *   frontend/public/data/dogma-{server}.json — per-server dogma data for fitting sim
  */
 
 import fs from 'node:fs'
@@ -635,7 +635,10 @@ async function main() {
   console.log(`  ${Object.keys(piProduction).length} PI schematics, ${piTypeIds.size} types`)
   console.log(`  -> ${piPath} (${(fs.statSync(piPath).size / 1024).toFixed(0)} KB)`)
 
-  // ── Step 11: Build dogma.json for fitting simulator ──
+  // ── Step 11: Build dogma JSON for fitting simulator ──
+  // Per-server output: dogma-tranquility.json / dogma-serenity.json. Serenity
+  // includes the Serenity-only items pulled from ESI (using their ESI dogma
+  // data and NetEase Chinese names); TQ excludes them.
   console.log('Building dogma data for fitting simulator...')
 
   // Fittable categories: 6=Ship, 7=Module, 8=Charge, 16=Skill, 18=Drone, 20=Implant, 32=Subsystem, 87=Fighter
@@ -692,6 +695,14 @@ async function main() {
   })
   console.log(`  Type effects loaded: ${Object.values(dgmTypeEffects).reduce((s, a) => s + a.length, 0)} rows`)
 
+  // Inject ESI-fetched dogma data for Serenity-only types (no rows in TQ CSV).
+  for (const tid of serenityOnlyIds) {
+    const t = allTypes[tid]
+    if (!t) continue
+    if (!dgmTypeAttrs[tid] && t.da && t.da.length) dgmTypeAttrs[tid] = t.da
+    if (!dgmTypeEffects[tid] && t.de && t.de.length) dgmTypeEffects[tid] = t.de
+  }
+
   // Read dgmEffects and parse modifierInfo YAML
   const dgmEffects = {}  // effectID -> { n, ec, mi, dur, dis, ra, fo }
   await readCsv('dgmEffects', (row) => {
@@ -722,51 +733,6 @@ async function main() {
   // Slot effect IDs
   const SLOT_EFFECTS = { 12: 'hi', 13: 'med', 11: 'lo', 2663: 'rig', 3772: 'sub' }
 
-  // Build dogma types
-  const dogmaTypes = {}
-  for (const tid of fittableTypeIds) {
-    const t = allTypes[tid]
-    if (!t) continue
-    const grp = groups[t.g]
-    const cat = grp?.c
-    const entry = {
-      n: t.n,
-      g: t.g,
-      cg: cat,
-    }
-    if (t.nz) entry.nz = t.nz
-    // Merge dgmTypeAttributes; inject mass (attr 4) and capacity (attr 38) from invTypes if missing
-    const attrs = dgmTypeAttrs[tid] ? [...dgmTypeAttrs[tid]] : []
-    if (t.mass != null && !attrs.some(([a]) => a === 4)) attrs.push([4, t.mass])
-    if (t.cap != null && t.cap > 0 && !attrs.some(([a]) => a === 38)) attrs.push([38, t.cap])
-    if (attrs.length) entry.a = attrs
-    if (dgmTypeEffects[tid]) entry.e = dgmTypeEffects[tid]
-    if (t.rid) entry.rid = t.rid
-
-    // Determine slot type for modules (category 7)
-    if (cat === 7 && dgmTypeEffects[tid]) {
-      for (const eid of dgmTypeEffects[tid]) {
-        if (SLOT_EFFECTS[eid]) {
-          entry.sl = SLOT_EFFECTS[eid]
-          break
-        }
-      }
-    }
-
-    dogmaTypes[tid] = entry
-  }
-
-  // Build dogma groups (only fittable)
-  const dogmaGroups = {}
-  for (const t of Object.values(dogmaTypes)) {
-    if (t.g && groups[t.g] && !dogmaGroups[t.g]) {
-      const grp = groups[t.g]
-      const entry = { n: grp.n, c: grp.c }
-      if (zhGroupNames[t.g]) entry.nz = zhGroupNames[t.g]
-      dogmaGroups[t.g] = entry
-    }
-  }
-
   // Read invCategories for category names
   const categories = {}
   await readCsv('invCategories', (row) => {
@@ -774,16 +740,82 @@ async function main() {
     if (cid != null) categories[cid] = row.categoryName || ''
   })
 
-  const dogmaJson = {
-    attrs: dgmAttrs,
-    effects: dgmEffects,
-    types: dogmaTypes,
-    groups: dogmaGroups,
-    categories,
+  function buildDogma({ skipSerenityOnly, restrictToSerenity, zhSource }) {
+    const dogmaTypes = {}
+    const usedGroupIds = new Set()
+
+    for (const tid of fittableTypeIds) {
+      const t = allTypes[tid]
+      if (!t) continue
+      if (skipSerenityOnly && serenityOnlyIds.has(tid)) continue
+      if (restrictToSerenity && !serenityAllTypeIds.has(tid)) continue
+
+      const grp = groups[t.g]
+      const cat = grp?.c
+      // Serenity prefers NetEase zh (fetched into serenityZhNames); for items
+      // not covered by the bulk-names pass, fall back to t.nz (which for
+      // Serenity-only types is the English name from /universe/types).
+      const zh = zhSource === 'serenity'
+        ? (serenityZhNames[tid] || t.nz || '')
+        : (t.nz || '')
+
+      const entry = {
+        n: t.n,
+        g: t.g,
+        cg: cat,
+      }
+      if (zh && zh !== t.n) entry.nz = zh
+      // Merge dgmTypeAttributes; inject mass (attr 4) and capacity (attr 38) from invTypes if missing
+      const attrs = dgmTypeAttrs[tid] ? [...dgmTypeAttrs[tid]] : []
+      if (t.mass != null && !attrs.some(([a]) => a === 4)) attrs.push([4, t.mass])
+      if (t.cap != null && t.cap > 0 && !attrs.some(([a]) => a === 38)) attrs.push([38, t.cap])
+      if (attrs.length) entry.a = attrs
+      if (dgmTypeEffects[tid]) entry.e = dgmTypeEffects[tid]
+      if (t.rid) entry.rid = t.rid
+
+      // Determine slot type for modules (category 7)
+      if (cat === 7 && dgmTypeEffects[tid]) {
+        for (const eid of dgmTypeEffects[tid]) {
+          if (SLOT_EFFECTS[eid]) {
+            entry.sl = SLOT_EFFECTS[eid]
+            break
+          }
+        }
+      }
+
+      dogmaTypes[tid] = entry
+      if (t.g) usedGroupIds.add(t.g)
+    }
+
+    const dogmaGroups = {}
+    for (const gid of usedGroupIds) {
+      const grp = groups[gid]
+      if (!grp) continue
+      const entry = { n: grp.n, c: grp.c }
+      if (zhGroupNames[gid]) entry.nz = zhGroupNames[gid]
+      dogmaGroups[gid] = entry
+    }
+
+    return { types: dogmaTypes, groups: dogmaGroups }
   }
-  const dogmaPath = path.join(OUT_DIR, 'dogma.json')
-  fs.writeFileSync(dogmaPath, JSON.stringify(dogmaJson))
-  console.log(`  -> ${dogmaPath} (${(fs.statSync(dogmaPath).size / 1024).toFixed(0)} KB)`)
+
+  const tqDogma = buildDogma({ skipSerenityOnly: true, restrictToSerenity: false, zhSource: 'tranquility' })
+  const srDogma = serenityAllTypeIds
+    ? buildDogma({ skipSerenityOnly: false, restrictToSerenity: true, zhSource: 'serenity' })
+    : tqDogma
+
+  for (const [server, out] of [['tranquility', tqDogma], ['serenity', srDogma]]) {
+    const dogmaJson = {
+      attrs: dgmAttrs,
+      effects: dgmEffects,
+      types: out.types,
+      groups: out.groups,
+      categories,
+    }
+    const p = path.join(OUT_DIR, `dogma-${server}.json`)
+    fs.writeFileSync(p, JSON.stringify(dogmaJson))
+    console.log(`  -> ${p} (${(fs.statSync(p).size / 1024).toFixed(0)} KB, ${Object.keys(out.types).length} types)`)
+  }
 
   // ── Step 12: Build LP store data ──
   if (FETCH_LP) {
@@ -969,6 +1001,14 @@ async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
             mass: t.mass ?? null,
             cap: t.capacity ?? null,
             rid: null,
+            // ESI also returns dogma data — capture it so Serenity-only items
+            // are fittable in the simulator (TQ SDE has no rows for them).
+            da: Array.isArray(t.dogma_attributes)
+              ? t.dogma_attributes.map(a => [a.attribute_id, a.value])
+              : null,
+            de: Array.isArray(t.dogma_effects)
+              ? t.dogma_effects.map(e => e.effect_id)
+              : null,
           }
           outIds.add(tid)
           added++
