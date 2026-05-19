@@ -456,7 +456,22 @@ async function main() {
     }
   })
 
-  // ── Step 8: Fetch Chinese map names from Serenity ESI ──
+  // ── Step 8: Chinese map names ──
+  // Always seed from cached navigation.json so transient ESI failures don't
+  // wipe existing zh names. When --fetch-zh-names is set, overlay fresh
+  // values from Serenity ESI on top of the cache.
+  const existingNavPath = path.join(OUT_DIR, 'navigation.json')
+  let cachedSysCount = 0, cachedRegCount = 0
+  if (fs.existsSync(existingNavPath)) {
+    const existing = JSON.parse(fs.readFileSync(existingNavPath, 'utf-8'))
+    for (const [sid, sys] of Object.entries(existing.systems || {})) {
+      if (systems[sid] && sys.nz) { systems[sid].nz = sys.nz; cachedSysCount++ }
+    }
+    for (const [rid, reg] of Object.entries(existing.regions || {})) {
+      if (regions[rid] && reg.nz) { regions[rid].nz = reg.nz; cachedRegCount++ }
+    }
+  }
+
   if (FETCH_ZH) {
     console.log('Fetching Chinese map names from Serenity ESI...')
     const allMapIds = [
@@ -464,30 +479,15 @@ async function main() {
       ...Object.keys(systems).map(Number),
     ]
     const zhNames = await fetchUniverseNames(allMapIds)
+    let freshCount = 0
     for (const [id, name] of Object.entries(zhNames)) {
       const numId = Number(id)
-      if (regions[numId]) {
-        // Only set zh if different from English
-        if (name !== regions[numId].n) regions[numId].nz = name
-      }
-      if (systems[numId]) {
-        if (name !== systems[numId].n) systems[numId].nz = name
-      }
+      if (regions[numId] && name !== regions[numId].n) { regions[numId].nz = name; freshCount++ }
+      if (systems[numId] && name !== systems[numId].n) { systems[numId].nz = name; freshCount++ }
     }
-    console.log(`  Got ${Object.keys(zhNames).length} Chinese names from ESI`)
-  } else {
-    // Try to read cached zh names from existing navigation.json
-    const existingNavPath = path.join(OUT_DIR, 'navigation.json')
-    if (fs.existsSync(existingNavPath)) {
-      console.log('  Reusing cached Chinese names from existing navigation.json...')
-      const existing = JSON.parse(fs.readFileSync(existingNavPath, 'utf-8'))
-      for (const [sid, sys] of Object.entries(existing.systems || {})) {
-        if (systems[sid] && sys.nz) systems[sid].nz = sys.nz
-      }
-      for (const [rid, reg] of Object.entries(existing.regions || {})) {
-        if (regions[rid] && reg.nz) regions[rid].nz = reg.nz
-      }
-    }
+    console.log(`  Got ${Object.keys(zhNames).length} Chinese names from ESI, applied ${freshCount} (ids not returned keep cached value)`)
+  } else if (cachedSysCount + cachedRegCount > 0) {
+    console.log(`  Reusing ${cachedSysCount} system + ${cachedRegCount} region Chinese names from cache`)
   }
 
   const navJson = { systems, regions, jumps }
@@ -1048,25 +1048,45 @@ async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
 
 async function _fetchNames(ids, base, datasource) {
   const BATCH = 1000
+  const MAX_ATTEMPTS = 3
   const result = {}
   for (let i = 0; i < ids.length; i += BATCH) {
     const chunk = ids.slice(i, i + BATCH)
-    try {
-      const resp = await fetch(`${base}/universe/names/?datasource=${datasource}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(chunk),
-      })
-      if (!resp.ok) {
-        console.warn(`  ESI /universe/names/ returned ${resp.status} for batch starting ${chunk[0]}`)
-        continue
+    // Retry transient failures (5xx, network errors). Callers downstream may
+    // fall back to cached data, but retrying first keeps the typical case
+    // healthy under ESI flakiness.
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const resp = await fetch(`${base}/universe/names/?datasource=${datasource}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chunk),
+        })
+        if (resp.ok) {
+          const data = await resp.json()
+          for (const item of data) {
+            result[item.id] = item.name
+          }
+          break
+        }
+        // 5xx is retryable; 4xx generally means the request itself is bad
+        const retryable = resp.status >= 500 && resp.status < 600
+        if (!retryable || attempt === MAX_ATTEMPTS) {
+          console.warn(`  ESI /universe/names/ returned ${resp.status} for batch starting ${chunk[0]}${retryable ? ` (gave up after ${attempt} attempts)` : ''}`)
+          break
+        }
+        const backoff = 500 * Math.pow(2, attempt - 1)
+        console.warn(`  ESI /universe/names/ returned ${resp.status} for batch starting ${chunk[0]}, retry ${attempt}/${MAX_ATTEMPTS - 1} after ${backoff}ms`)
+        await new Promise(r => setTimeout(r, backoff))
+      } catch (e) {
+        if (attempt === MAX_ATTEMPTS) {
+          console.warn(`  ESI /universe/names/ failed for batch starting ${chunk[0]}: ${e.message} (gave up after ${attempt} attempts)`)
+          break
+        }
+        const backoff = 500 * Math.pow(2, attempt - 1)
+        console.warn(`  ESI /universe/names/ failed for batch starting ${chunk[0]}: ${e.message}, retry ${attempt}/${MAX_ATTEMPTS - 1} after ${backoff}ms`)
+        await new Promise(r => setTimeout(r, backoff))
       }
-      const data = await resp.json()
-      for (const item of data) {
-        result[item.id] = item.name
-      }
-    } catch (e) {
-      console.warn(`  ESI /universe/names/ failed for batch starting ${chunk[0]}: ${e.message}`)
     }
     if (i + BATCH < ids.length) await new Promise(r => setTimeout(r, 100))
   }
