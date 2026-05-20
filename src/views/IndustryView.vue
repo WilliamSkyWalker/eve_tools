@@ -483,16 +483,12 @@ function toggleSkip(typeId) {
 }
 
 function onSummaryCopy(event) {
-  const sel = window.getSelection()
-  if (!sel || sel.isCollapsed) return
-  const text = sel.toString()
   const matMap = {}
-  for (const mat of summary.value) matMap[mat.type_name] = mat.total_quantity
-  const lines = []
-  for (const line of text.split('\n')) {
-    const name = line.trim().replace(/[\d,.\s]+$/, '').trim()
-    if (name && matMap[name] != null) lines.push(`${name}\t${matMap[name]}`)
-  }
+  for (const mat of summary.value) matMap[String(mat.type_id)] = mat
+  const lines = collectSelectedRows(event.currentTarget, tid => {
+    const mat = matMap[tid]
+    return mat ? `${mat.type_name}\t${mat.total_quantity}` : null
+  })
   if (lines.length) {
     event.preventDefault()
     event.clipboardData.setData('text/plain', lines.join('\n'))
@@ -526,29 +522,44 @@ function colSpan(lvl) {
 }
 
 function onTableCopy(event, lvl) {
-  // Build a lookup: name -> raw quantity (no commas)
   const matMap = {}
   for (const mat of lvl.materials) {
-    matMap[mat.type_name] = mat.quantity
+    matMap[String(mat.type_id)] = mat
   }
-  // Parse the default selection text and reformat
-  const sel = window.getSelection()
-  if (!sel || sel.isCollapsed) return
-  const text = sel.toString()
-  const lines = []
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    // Try to match "materialName  number" (with possible commas in number)
-    const name = trimmed.replace(/[\d,.\s]+$/, '').trim()
-    if (name && matMap[name] != null) {
-      lines.push(`${name}\t${matMap[name]}`)
-    }
-  }
+  const lines = collectSelectedRows(event.currentTarget, tid => {
+    const mat = matMap[tid]
+    return mat ? `${mat.type_name}\t${mat.quantity}` : null
+  })
   if (lines.length) {
     event.preventDefault()
     event.clipboardData.setData('text/plain', lines.join('\n'))
   }
+}
+
+// Walk rows in the table; for each row that intersects the current selection,
+// resolve it via `formatRow(typeId)`. Uses range-based intersection so a
+// selection that starts mid-cell (or whose first cell got chopped) still maps
+// cleanly back to whole-row data — the prior text-parsing approach lost the
+// first row in those cases, fell through to the browser's default, and
+// produced "name\nqty" instead of "name\tqty".
+function collectSelectedRows(table, formatRow) {
+  const sel = window.getSelection()
+  if (!sel || sel.isCollapsed || !sel.rangeCount || !table) return []
+  const ranges = []
+  for (let i = 0; i < sel.rangeCount; i++) ranges.push(sel.getRangeAt(i))
+  const seen = new Set()
+  const lines = []
+  for (const span of table.querySelectorAll('span.copyable[data-tid]')) {
+    const row = span.closest('tr')
+    if (!row) continue
+    if (!ranges.some(r => r.intersectsNode(row))) continue
+    const tid = span.getAttribute('data-tid')
+    if (seen.has(tid)) continue
+    seen.add(tid)
+    const line = formatRow(tid)
+    if (line) lines.push(line)
+  }
+  return lines
 }
 
 function formatInventory(level, typeId) {
