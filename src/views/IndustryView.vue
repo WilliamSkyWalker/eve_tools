@@ -501,12 +501,27 @@ function isOwned(level, typeId, required) {
 
 function toggleOwned(level, typeId, quantity) {
   if (!inventoryByLevel[level]) inventoryByLevel[level] = {}
-  if (inventoryByLevel[level][typeId] >= quantity) {
+  const wasOwned = inventoryByLevel[level][typeId] >= quantity
+  let bomChanged = false
+  if (wasOwned) {
     delete inventoryByLevel[level][typeId]
     if (!Object.keys(inventoryByLevel[level]).length) delete inventoryByLevel[level]
+    // Restore expansion so sub-materials reappear downstream.
+    const indData = getIndustryData()
+    const source = indData?.products?.[1]?.[typeId] || indData?.products?.[11]?.[typeId]
+    if (source && !buildItems.value[String(typeId)]?.build) {
+      buildItems.value[String(typeId)] = { me_level: globalMe.value, build: true }
+      bomChanged = true
+    }
   } else {
     inventoryByLevel[level][typeId] = quantity
+    // Stop expansion so deeper levels don't list materials we don't need.
+    if (buildItems.value[String(typeId)]?.build) {
+      delete buildItems.value[String(typeId)]
+      bomChanged = true
+    }
   }
+  if (bomChanged) fetchBom()
 }
 
 function hasManufacturable(lvl) {
