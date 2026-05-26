@@ -74,6 +74,10 @@ const messages = {
     'industry.needQty': '还需',
     'industry.toProcess': '待加工',
     'industry.otherMaterials': '其他材料',
+    'industry.guide.help': '使用指南',
+    'industry.guide.product': '显示要生产的最终产品和数量。\n• 在上方"制造队列"添加蓝图，设置 ME 和制造次数\n• 标签下方显示卖单/收单总价与最短~最长制造耗时',
+    'industry.guide.level': '该层级要准备的材料。\n• 绿色名字 = 可制造，橙色名字 = 可反应\n• 右键 = 标记已有，并停止向下展开该组件\n• 一级材料行右侧的 ME 输入可单独调整\n• 顶部"子组件材料效率"一键应用到所有组件\n• "已有"按钮：粘贴库存批量标记\n• 选中行 Ctrl+C 复制 "材料名 ↹ 数量"',
+    'industry.guide.summary': '所有最终需要购买/采集的原材料汇总（去重合并到最深层级）。\n• 右键标记已有\n• "已有"按钮批量粘贴库存\n• 选中行 Ctrl+C 复制 "材料名 ↹ 数量"',
 
     // ManufacturingQueue
     'queue.searchPlaceholder': '搜索蓝图...',
@@ -521,6 +525,10 @@ const messages = {
     'industry.needQty': 'Need',
     'industry.toProcess': 'To Process',
     'industry.otherMaterials': 'Other Materials',
+    'industry.guide.help': 'Usage guide',
+    'industry.guide.product': 'The final products you intend to manufacture.\n• Add blueprints, set ME and runs in the Manufacturing Queue above\n• Tab footer shows Jita sell/buy totals and min~max build time',
+    'industry.guide.level': 'Materials to prepare at this tier.\n• Green name = manufacturable, orange = reaction\n• Right-click = mark owned; stops expanding sub-materials for it\n• Tier 1 rows show per-component ME input on the right\n• "Sub-component ME" at top applies a value to all at once\n• "Inventory" button: paste stock to mark in bulk\n• Select rows + Ctrl+C copies "name ↹ qty"',
+    'industry.guide.summary': 'Aggregated raw materials you must buy or mine (deduped to deepest tier).\n• Right-click to mark owned\n• Use the "Inventory" button to paste stock\n• Select rows + Ctrl+C copies "name ↹ qty"',
     'industry.sell': 'Sell',
     'industry.buy': 'Buy',
     'industry.share': 'Share Plan',
