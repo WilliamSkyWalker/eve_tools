@@ -151,24 +151,28 @@ const fittingStats = computed(() => {
   text-align: center;
 }
 
-/* Top bar: ship search (left, grows) + EFT import/export panel (right). */
+/* Top bar: ship search + game-fit import/export, centered as a pair so they
+   read as one tool row rather than two disconnected widgets. */
 .top-bar {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  max-width: 1300px;
+  gap: 8px;
+  align-items: stretch;
+  justify-content: center;
+  max-width: 760px;
   margin: 0 auto;
+  position: relative;
 }
 
 .top-bar-search {
-  flex: 1 1 auto;
+  flex: 1 1 500px;
   min-width: 0;
+  margin: 0 !important;
+  max-width: none !important;
 }
 
 .top-bar-eft {
   flex: 0 0 auto;
   margin-top: 0 !important;
-  width: 360px;
 }
 
 .main-layout {

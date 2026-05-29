@@ -56,6 +56,12 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 所有功能页通过 `/:server(gf|of)/` 动态路由前缀区分服务器。`stores/settings.js` 持久化 server 和 locale 到 localStorage。`i18n.js` 提供双语翻译。捐赠弹窗根据语言切换：中文显示微信赞赏码（`public/donate-wechat.png`），英文显示 Ko-fi 按钮。
 
+### 工业视图 (`IndustryView.vue`)
+
+最终产品 / 每级材料 / 原材料汇总并排为窄列布局（`.tier-grid` flex-wrap）—— 没有 tab 切换，所有层级同时可见，一行放不下自动换行。每列顶部带 sell / buy / time 统计 + 已有按钮，列宽通过 `<colgroup>` 显式指定（qty 96px、me 52px），名字列吃剩余宽度。`tier-col-product` 把最终产品列收窄到 160/200/240，`tier-col-me` 把含 ME 输入的 tier-0 列加宽到 360/400/580。
+
+物料和产品名字（`mat.type_name` / `item.product_name`）在 BOM 计算时通过 `getTypeName(typeId)` 烘焙到结果里。`settings.locale` 切换时，`IndustryView` 和 `ManufacturingQueue` 都注册了 `watch` 重写这些字段并重跑 `fetchBom()`，保证语言切换后立刻刷新（不必重新算）。
+
 ## UI Design
 
 EVE Online 官网风格配色：深黑背景 (#0d0d0d)、深灰面板 (#1a1a1a)、金色强调色 (#c8aa6e)、金色hover (#e0c882)。功能性颜色：绿色 (#4caf50) 高安/制造，橙色 (#ff9800) 低安/反应，红色 (#ef5350) 零安/错误。物品名称旁显示 EVE 图标（`https://images.evetech.net/types/{type_id}/icon?size=32`）。
@@ -79,7 +85,7 @@ Dogma modifier 应用顺序: PreMul(0) → PreDiv(1) → ModAdd(2) → ModSub(3)
 
 ### 配船模拟器
 
-交互式 Pyfa 风格配船模拟器（`FittingView.vue`）。双栏布局：左栏船体选择+槽位布局+无人机+EFT导入导出，右栏属性面板（装配/防御/火力/导航/电容/锁定 6个标签）。
+交互式 Pyfa 风格配船模拟器（`FittingView.vue`）。顶部 `.top-bar` 把 `ShipSearch` 和 `EftPanel`（从游戏导入/导出装配的紧凑 SVG 按钮 + 浮层 dropdown）并排在一行；选定船型后下方展开三栏布局：左栏装备浏览器，中栏船体卡片 + 槽位 + 无人机 + 植入仓，右栏属性面板（装配/防御/火力/导航/电容/锁定 6 个标签）。EFT 面板放在 `v-if="store.shipTypeId"` 之外，所以可以先粘贴装配，导入时自动选船。
 
 核心文件：
 - **Store**: `stores/fitting.js` — Pinia store 管理配船状态（ship/modules/charges/drones）

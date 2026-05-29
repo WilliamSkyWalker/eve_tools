@@ -1,9 +1,14 @@
 <template>
   <div class="eft-panel">
-    <button class="toggle-btn" @click="open = !open">
-      {{ open ? '▾' : '▸' }} {{ t('fit.gameImportExport') }}
+    <button class="toggle-btn" :class="{ active: open }" @click="open = !open" :title="t('fit.gameImportExport')">
+      <!-- Horizontal swap arrows: top arrow → (import), bottom arrow ← (export). -->
+      <svg class="eft-icon" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M2 5h10m0 0-3-3m3 3-3 3M14 11H4m0 0 3-3m-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="eft-label">EFT</span>
     </button>
     <div v-if="open" class="eft-content">
+      <div class="eft-hint">{{ t('fit.gameImportExport') }}</div>
       <textarea
         v-model="eftText"
         class="eft-input"
@@ -66,28 +71,64 @@ function doExport() {
 <style scoped>
 .eft-panel {
   margin-top: 16px;
+  position: relative;
 }
 
+/* Sized to match the .search-input next to it (10px*14px padding + 1px border).
+   Compact icon + label so it reads as a small accessory next to the search. */
 .toggle-btn {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0d0d0d;
   border: 1px solid #2a2a2a;
   border-radius: 6px;
-  color: #8a8a8a;
-  padding: 6px 14px;
-  font-size: 0.82em;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-  width: 100%;
-  text-align: left;
-}
-
-.toggle-btn:hover {
   color: #c8aa6e;
-  border-color: #3a3a3a;
+  padding: 9px 14px;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  height: 100%;
+  box-sizing: border-box;
 }
 
+.toggle-btn:hover,
+.toggle-btn.active {
+  border-color: #c8aa6e;
+  background: #161616;
+}
+
+.eft-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.eft-label {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Float the panel below the toggle so it doesn't push the main layout down. */
 .eft-content {
-  margin-top: 8px;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 480px;
+  max-width: 90vw;
+  background: #0d0d0d;
+  border: 1px solid #c8aa6e;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+}
+
+.eft-hint {
+  color: #8a8a8a;
+  font-size: 0.78em;
+  margin-bottom: 8px;
 }
 
 .eft-input {

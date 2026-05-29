@@ -101,6 +101,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
   position: relative;
   max-width: 500px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .search-input {
