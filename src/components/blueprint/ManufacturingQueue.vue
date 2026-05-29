@@ -109,14 +109,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { searchBlueprints } from '../../api/blueprints'
 import { useI18n } from '../../i18n'
+import { useSettingsStore } from '../../stores/settings'
 import { resolveItemNames, parseMaterialText } from '../../services/market'
 import { getSourceForProduct, getTypeName } from '../../services/calculator'
 import { useTabInput } from '../../composables/useTabInput'
 
 const { t } = useI18n()
+const settings = useSettingsStore()
 const { handleTabKeydown } = useTabInput()
 
 const emit = defineEmits(['calculate'])
@@ -130,6 +132,15 @@ const meLevel = ref(0)
 const runs = ref(1)
 const items = ref([])
 let debounceTimer = null
+
+// product_name is captured at the moment a blueprint is added; relabel each
+// queued item when the user toggles the UI language so the table doesn't keep
+// showing the previous locale's names.
+watch(() => settings.locale, () => {
+  for (const item of items.value) {
+    item.product_name = getTypeName(item.product_type_id)
+  }
+})
 
 function onInput() {
   selectedBp.value = null

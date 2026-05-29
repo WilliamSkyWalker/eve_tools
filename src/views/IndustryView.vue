@@ -182,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getBatchBom } from '../api/blueprints'
 import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
 import { useSettingsStore } from '../stores/settings'
@@ -191,6 +191,7 @@ import { useTabInput } from '../composables/useTabInput'
 import { loadIndustryData, getIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
+import { getTypeName } from '../services/calculator'
 
 const settings = useSettingsStore()
 
@@ -255,6 +256,20 @@ onMounted(async () => {
   dataReady.value = true
   shareLabel.value = t('industry.share')
   copyLabel.value = t('industry.copyNeed')
+})
+
+// Material names (`mat.type_name`, `item.product_name`) are baked at BOM-compute
+// time by getTypeName(), which reads the current locale. When the user toggles
+// language afterwards the cached strings stay in the previous locale — so
+// re-resolve everything and recompute the BOM whenever locale changes.
+watch(() => settings.locale, () => {
+  shareLabel.value = t('industry.share')
+  copyLabel.value = t('industry.copyNeed')
+  if (!dataReady.value) return
+  for (const item of currentItems.value) {
+    item.product_name = getTypeName(item.product_type_id)
+  }
+  if (currentItems.value.length) fetchBom()
 })
 
 function levelLabel(n) {
