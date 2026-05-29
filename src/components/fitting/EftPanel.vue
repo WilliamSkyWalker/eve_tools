@@ -1,7 +1,7 @@
 <template>
   <div class="eft-panel">
     <button class="toggle-btn" @click="open = !open">
-      {{ open ? '▾' : '▸' }} EFT {{ t('fit.importEft') }} / {{ t('fit.exportEft') }}
+      {{ open ? '▾' : '▸' }} {{ t('fit.gameImportExport') }}
     </button>
     <div v-if="open" class="eft-content">
       <textarea

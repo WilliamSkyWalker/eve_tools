@@ -295,7 +295,8 @@ const messages = {
     // Fitting
     'nav.fitting': '装配（测试中）',
     'fit.title': '模拟配船',
-    'fit.placeholder': '粘贴 EFT 格式装配...\n\n例如:\n[Raven, 我的渡鸦]\nBallistic Control System II\n...',
+    'fit.placeholder': '粘贴游戏内"复制到剪贴板"导出的装配，或第三方 EFT/Pyfa 文本...\n\n例如:\n[Raven, 我的渡鸦]\nBallistic Control System II\n...',
+    'fit.gameImportExport': '从游戏导入 / 导出装配 (EFT)',
     'fit.ship': '船体',
     'fit.charge': '弹药/脚本',
     'fit.drone': '无人机',
@@ -745,7 +746,8 @@ const messages = {
     // Fitting
     'nav.fitting': 'Fitting (beta)',
     'fit.title': 'Fitting Simulator',
-    'fit.placeholder': 'Paste EFT format fitting...\n\ne.g.:\n[Raven, My Raven]\nBallistic Control System II\n...',
+    'fit.placeholder': 'Paste a fit copied from the in-game "Copy to clipboard" button, or any EFT/Pyfa text...\n\ne.g.:\n[Raven, My Raven]\nBallistic Control System II\n...',
+    'fit.gameImportExport': 'Import / export game fit (EFT)',
     'fit.ship': 'Ship',
     'fit.charge': 'Charges',
     'fit.drone': 'Drones',

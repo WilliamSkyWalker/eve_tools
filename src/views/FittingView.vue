@@ -2,8 +2,11 @@
   <div class="fitting-sim">
     <h1 class="title">{{ t('fit.title') }}</h1>
 
-    <!-- Ship Search -->
-    <ShipSearch @select="onShipSelect" />
+    <!-- Ship search + game-fit import/export, side by side at the top -->
+    <div class="top-bar">
+      <ShipSearch class="top-bar-search" @select="onShipSelect" />
+      <EftPanel class="top-bar-eft" />
+    </div>
 
     <!-- Main Layout: 3 columns -->
     <div v-if="store.shipTypeId" class="main-layout">
@@ -44,9 +47,6 @@
 
         <!-- Implant Bay -->
         <ImplantBay />
-
-        <!-- EFT Import/Export -->
-        <EftPanel />
       </div>
 
       <!-- Right: Stats -->
@@ -149,6 +149,26 @@ const fittingStats = computed(() => {
   font-size: 1.8em;
   margin-bottom: 16px;
   text-align: center;
+}
+
+/* Top bar: ship search (left, grows) + EFT import/export panel (right). */
+.top-bar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.top-bar-search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.top-bar-eft {
+  flex: 0 0 auto;
+  margin-top: 0 !important;
+  width: 360px;
 }
 
 .main-layout {
