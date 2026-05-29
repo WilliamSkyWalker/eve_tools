@@ -32,11 +32,11 @@
           <table class="tier-table">
             <tbody>
               <tr v-for="item in currentItems" :key="item.blueprint_type_id">
-                <td class="qty-cell">{{ formatNumber(item.runs) }}</td>
                 <td class="name-cell">
                   <img class="type-icon" :src="`https://images.evetech.net/types/${item.product_type_id}/icon?size=32`" alt="" loading="lazy">
                   <span class="product-name-text">{{ item.product_name }}</span>
                 </td>
+                <td class="qty-cell">{{ formatNumber(item.runs) }}</td>
               </tr>
             </tbody>
           </table>
@@ -66,7 +66,6 @@
                   <td :colspan="colSpan(lvl)" class="group-label">{{ mat.group_name }}</td>
                 </tr>
                 <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.level, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.level, mat.type_id, mat.quantity)">
-                  <td class="qty-cell">{{ formatNumber(mat.quantity) }}</td>
                   <td class="name-cell">
                     <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
                     <span
@@ -81,6 +80,7 @@
                       @click="copyName(mat.type_name, $event)"
                     >{{ mat.type_name }}</span>
                   </td>
+                  <td class="qty-cell">{{ formatNumber(mat.quantity) }}</td>
                   <td class="me-cell" v-if="lvl.level === 0 && hasManufacturable(lvl)">
                     <input
                       v-if="mat.build && !mat.is_reaction"
@@ -113,11 +113,11 @@
           <table class="tier-table" @copy="onSummaryCopy($event)">
             <tbody>
               <tr v-for="mat in summary" :key="mat.type_id" :class="{ 'owned-row': isOwned('summary', mat.type_id, mat.total_quantity) }" @contextmenu.prevent="toggleOwned('summary', mat.type_id, mat.total_quantity)">
-                <td class="qty-cell">{{ formatNumber(mat.total_quantity) }}</td>
                 <td class="name-cell">
                   <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
                   <span class="copyable" :data-tid="mat.type_id" :title="mat.type_name" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                 </td>
+                <td class="qty-cell">{{ formatNumber(mat.total_quantity) }}</td>
               </tr>
             </tbody>
           </table>
@@ -785,9 +785,9 @@ function formatNumber(n) {
 }
 
 .tier-col {
-  flex: 1 1 220px;
-  min-width: 200px;
-  max-width: 320px;
+  flex: 1 1 340px;
+  min-width: 300px;
+  max-width: 520px;
   background: #1a1a1a;
   border: 1px solid #2a2a2a;
   border-radius: 6px;
@@ -866,7 +866,7 @@ function formatNumber(n) {
 }
 
 .tier-table .qty-cell {
-  width: 60px;
+  width: 72px;
   text-align: right;
   color: #aaa;
   font-variant-numeric: tabular-nums;
@@ -881,7 +881,7 @@ function formatNumber(n) {
 }
 
 .tier-table .me-cell {
-  width: 48px;
+  width: 44px;
   text-align: right;
 }
 
@@ -932,12 +932,14 @@ function formatNumber(n) {
   border-radius: 2px;
 }
 
-.copyable {
+/* Keep material names on a single row; the title attribute exposes the full
+   text on hover when a column is too narrow for the longest names. */
+.tier-table .copyable {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .me-input {
