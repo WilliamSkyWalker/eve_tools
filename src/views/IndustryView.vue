@@ -18,7 +18,7 @@
       <!-- Tier columns grid -->
       <div class="tier-grid">
         <!-- Final product -->
-        <section class="tier-col">
+        <section class="tier-col tier-col-product">
           <header class="tier-head">
             <div class="tier-title-row">
               <span class="tier-name">{{ t('industry.finalProduct') }}</span>
@@ -30,6 +30,10 @@
             </div>
           </header>
           <table class="tier-table">
+            <colgroup>
+              <col><!-- product name fills remaining width -->
+              <col class="col-qty">
+            </colgroup>
             <tbody>
               <tr v-for="item in currentItems" :key="item.blueprint_type_id">
                 <td class="name-cell">
@@ -43,7 +47,7 @@
         </section>
 
         <!-- Level columns -->
-        <section v-for="lvl in levels" :key="lvl.level" class="tier-col">
+        <section v-for="lvl in levels" :key="lvl.level" class="tier-col" :class="{ 'tier-col-me': lvl.level === 0 && hasManufacturable(lvl) }">
           <header class="tier-head">
             <div class="tier-title-row">
               <span class="tier-name">{{ levelLabel(lvl.level) }}</span>
@@ -57,6 +61,11 @@
             <div v-else-if="priceLoading" class="tier-stats"><span class="stat-item loading-stat">...</span></div>
           </header>
           <table class="tier-table" @copy="onTableCopy($event, lvl)">
+            <colgroup>
+              <col><!-- material name fills remaining width -->
+              <col class="col-qty">
+              <col v-if="lvl.level === 0 && hasManufacturable(lvl)" class="col-me">
+            </colgroup>
             <tbody>
               <template v-for="(mat, idx) in lvl.materials" :key="mat.type_id">
                 <tr v-if="lvl.hasMixed && (idx === 0 || mat.build !== lvl.materials[idx - 1].build)" class="super-group-row">
@@ -111,6 +120,10 @@
             </div>
           </header>
           <table class="tier-table" @copy="onSummaryCopy($event)">
+            <colgroup>
+              <col><!-- material name fills remaining width -->
+              <col class="col-qty">
+            </colgroup>
             <tbody>
               <tr v-for="mat in summary" :key="mat.type_id" :class="{ 'owned-row': isOwned('summary', mat.type_id, mat.total_quantity) }" @contextmenu.prevent="toggleOwned('summary', mat.type_id, mat.total_quantity)">
                 <td class="name-cell">
@@ -811,6 +824,22 @@ function formatNumber(n) {
   overflow: hidden;
 }
 
+/* Final-product column carries only the product name + run count, so cap it
+   narrow and let the freed space flow to the material columns. */
+.tier-col-product {
+  flex: 0 1 200px;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+/* Tier-0 column adds a per-row ME input on the right, so reserve extra width
+   for the material name to avoid clipping (e.g. 旗舰级核心温度调节器). */
+.tier-col-me {
+  flex: 1 1 400px;
+  min-width: 360px;
+  max-width: 580px;
+}
+
 .tier-head {
   padding: 8px 10px 6px;
   border-bottom: 1px solid #2a2a2a;
@@ -880,8 +909,19 @@ function formatNumber(n) {
   vertical-align: middle;
 }
 
+/* Explicit column widths so a leading group-header row (colspan=N) doesn't
+   make `table-layout: fixed` divide the table into equal parts. The qty
+   column is sized for ~12-digit formatted quantities (e.g. 999,999,999,999);
+   the ME column fits the 38px input + side padding. */
+.tier-table .col-qty {
+  width: 96px;
+}
+
+.tier-table .col-me {
+  width: 52px;
+}
+
 .tier-table .qty-cell {
-  width: 72px;
   text-align: right;
   color: #aaa;
   font-variant-numeric: tabular-nums;
@@ -896,7 +936,6 @@ function formatNumber(n) {
 }
 
 .tier-table .me-cell {
-  width: 44px;
   text-align: right;
 }
 
