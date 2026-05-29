@@ -123,9 +123,14 @@ npm run build && npx wrangler pages deploy dist/  # 手动部署到 Cloudflare P
 # 每周数据维护（push 后自动部署，无需手动 wrangler）
 git pull
 node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras
+node scripts/apply-sisi-preview.mjs                # 临时：叠加 Sisi 预览数据（T2 指挥航母），TQ 上 Cradle of War 后可删
 git add public/data/
 git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
 ```
+
+## Sisi 预览数据
+
+`scripts/apply-sisi-preview.mjs` 把 Sisi 测试服上的 4 艘 T2 指挥航母（Salvation / Simurgh / Gaia / Ymir，typeID 92822–92825，蓝图 94072–94075，groupID 4900）合并进 `industry-{server}.json`。材料表、Morphite 用量、4,800,000 秒制造时长来自 2026-05-29 Hoboleaks Sisi diff。CCP 还没发 zh-CN 翻译，所以新条目不填 `nz`，UI 在中文模式下会回退到英文名（这是 TQ ESI 当前的真实状态）；groupID 4900 是本地占位。Cradle of War 6/9 上 TQ 后跑标准 SDE 刷新流程会用真实数据覆盖此补丁。每次 `convert-sde.mjs --download` 后必须再跑一遍 `apply-sisi-preview.mjs`，否则会丢失。
 
 ## 编码规范
 更新代码时，更新 [CLAUDE.md](CLAUDE.md)
