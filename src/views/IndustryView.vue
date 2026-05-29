@@ -18,10 +18,7 @@
       <!-- Tab Bar -->
       <div class="tab-bar">
         <button class="tab-btn" :class="{ 'tab-active': activeTab === 'product' }" @click="activeTab = 'product'">
-          <div class="tab-label">
-            {{ t('industry.finalProduct') }}
-            <span class="tab-help" :aria-label="t('industry.guide.help')" @click.stop @mousedown.stop @mouseenter="showHelp($event, 'product')" @mouseleave="hideHelp" @focus="showHelp($event, 'product')" @blur="hideHelp" tabindex="0">?</span>
-          </div>
+          <div class="tab-label">{{ t('industry.finalProduct') }}</div>
           <div v-if="productSellPrice != null || totalTime.max" class="tab-meta">
             <div v-if="productSellPrice != null" class="tab-stats">
               <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(productSellPrice) }}</span>
@@ -33,10 +30,7 @@
           </div>
         </button>
         <button v-for="lvl in levels" :key="lvl.level" class="tab-btn" :class="{ 'tab-active': activeTab === lvl.level }" @click="activeTab = lvl.level">
-          <div class="tab-label">
-            {{ levelLabel(lvl.level) }}
-            <span class="tab-help" :aria-label="t('industry.guide.help')" @click.stop @mousedown.stop @mouseenter="showHelp($event, 'level')" @mouseleave="hideHelp" @focus="showHelp($event, 'level')" @blur="hideHelp" tabindex="0">?</span>
-          </div>
+          <div class="tab-label">{{ levelLabel(lvl.level) }}</div>
           <div v-if="levelStats[lvl.level]" class="tab-meta">
             <div v-if="levelStats[lvl.level].sellTotal != null" class="tab-stats">
               <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
@@ -49,10 +43,7 @@
           <div v-else-if="priceLoading" class="tab-stats"><span class="stat-item loading-stat">...</span></div>
         </button>
         <button v-if="summary.length" class="tab-btn" :class="{ 'tab-active': activeTab === 'summary' }" @click="activeTab = 'summary'">
-          <div class="tab-label">
-            {{ t('industry.rawSummary') }}
-            <span class="tab-help" :aria-label="t('industry.guide.help')" @click.stop @mousedown.stop @mouseenter="showHelp($event, 'summary')" @mouseleave="hideHelp" @focus="showHelp($event, 'summary')" @blur="hideHelp" tabindex="0">?</span>
-          </div>
+          <div class="tab-label">{{ t('industry.rawSummary') }}</div>
           <div v-if="levelStats['summary']?.sellTotal" class="tab-meta">
             <div class="tab-stats">
               <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
@@ -163,15 +154,6 @@
         </div>
       </div>
     </template>
-
-    <!-- Tab help popup (Teleported so it escapes tab-bar overflow) -->
-    <Teleport to="body">
-      <div
-        v-if="helpPopup"
-        class="tab-help-floating"
-        :style="{ left: helpPopup.left + 'px', top: helpPopup.top + 'px' }"
-      >{{ helpPopup.text }}</div>
-    </Teleport>
 
     <!-- Inventory Modal -->
     <Teleport to="body">
@@ -291,25 +273,6 @@ const totalTime = computed(() => {
 const levelStats = reactive({}) // level -> { sellTotal, buyTotal, minTime, maxTime }
 const priceLoading = ref(false)
 const shareLabel = ref('')
-
-const helpPopup = ref(null)
-function showHelp(event, key) {
-  const rect = event.currentTarget.getBoundingClientRect()
-  // Clamp center so the translateX(-50%) popup doesn't overflow either edge.
-  const halfWidth = 180
-  const margin = 8
-  const center = rect.left + rect.width / 2
-  const minCenter = margin + halfWidth
-  const maxCenter = window.innerWidth - margin - halfWidth
-  helpPopup.value = {
-    text: t(`industry.guide.${key}`),
-    left: Math.max(minCenter, Math.min(maxCenter, center)),
-    top: rect.bottom + 8,
-  }
-}
-function hideHelp() {
-  helpPopup.value = null
-}
 
 // Per-level inventory: { levelIndex: { typeId: quantity } }
 const inventoryByLevel = reactive({})
@@ -881,37 +844,6 @@ function formatNumber(n) {
 .tab-label {
   font-weight: 600;
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tab-help {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: rgba(200, 170, 110, 0.15);
-  color: #c8aa6e;
-  font-size: 0.75em;
-  font-weight: 600;
-  cursor: help;
-  user-select: none;
-  transition: background 0.15s, color 0.15s;
-}
-
-.tab-help:hover {
-  background: rgba(200, 170, 110, 0.35);
-  color: #e0c882;
-}
-
-.tab-help:focus {
-  outline: none;
-  background: rgba(200, 170, 110, 0.35);
-  color: #e0c882;
 }
 
 .tab-meta {
@@ -1104,28 +1036,6 @@ function formatNumber(n) {
 .name-skipped {
   color: #555 !important;
   text-decoration: line-through;
-}
-
-/* ---- Tab help floating popup ---- */
-.tab-help-floating {
-  position: fixed;
-  transform: translateX(-50%);
-  min-width: 260px;
-  max-width: 360px;
-  padding: 10px 12px;
-  background: #0d0d0d;
-  border: 1px solid #c8aa6e;
-  border-radius: 6px;
-  color: #d0d0d0;
-  font-size: 0.85em;
-  font-weight: 400;
-  line-height: 1.55;
-  text-align: left;
-  white-space: pre-line;
-  letter-spacing: normal;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-  z-index: 1100;
 }
 
 /* ---- Inventory Modal ---- */
