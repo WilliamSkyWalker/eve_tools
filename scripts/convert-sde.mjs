@@ -833,7 +833,8 @@ async function main() {
     // Fetch corp names from ESI
     console.log(`  Fetching names for ${corpIds.length} NPC corporations...`)
     const corpNamesEn = await fetchUniverseNamesTQ(corpIds)
-    const corpNamesZh = FETCH_ZH ? await fetchUniverseNamesSerenity(corpIds) : {}
+    // Always fetch zh corp names — one ESI call, and skipping it silently drops 国服 names from the LP dropdown.
+    const corpNamesZh = await fetchUniverseNamesSerenity(corpIds).catch(() => ({}))
     for (const cid of corpIds) {
       npcCorps[cid].n = corpNamesEn[cid] || ''
       const zh = corpNamesZh[cid]
