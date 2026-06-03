@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1 class="title">{{ t('home.title') }}</h1>
+    <h1 class="title">{{ t('home.title') }}<PageHelp topic="home" /></h1>
 
     <div class="server-cards">
       <div class="server-card">
@@ -198,6 +198,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadNavigationData } from '../data/loader'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
 const { t, locale } = useI18n()

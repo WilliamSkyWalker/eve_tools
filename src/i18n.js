@@ -451,6 +451,178 @@ const messages = {
     'sovmap.systems': '星系',
     'sovmap.unclaimed': '无主权',
     'sovmap.topAlliances': '主要联盟',
+
+    // Help (per-page)
+    'help.btnTitle': '帮助',
+    'help.sectionUsage': '使用方法',
+    'help.sectionFormula': '计算公式',
+    'help.sectionNote': '说明',
+
+    'help.home.title': '首页',
+    'help.home.intro': 'EVE Kit 是一个纯前端的 EVE Online 工业/市场工具集，所有计算在浏览器本地完成,不存储个人数据。',
+    'help.home.usage': [
+      '顶部导航切换各功能页面；右上角切换国服 / 世界服与中 / 英文。',
+      '首页展示服务器在线状态、过去 1 小时全服击杀热度（PvP / PvE）以及正在进行的主权战役。',
+      '点击区域行可展开查看该区域内星系的击杀细分。',
+    ],
+    'help.home.notes': [
+      '数据通过 ESI 实时拉取，国服走网易反代 ali-esi.evepc.163.com，世界服走 esi.evetech.net。',
+      '隐藏功能：连点左上角 Logo 5 次可解锁公开合同查询。',
+    ],
+
+    'help.industry.title': '工业制造计算器',
+    'help.industry.intro': '输入要制造的蓝图与流程数,工具会递归展开 BOM 到原材料,并实时联网查询吉他价格。',
+    'help.industry.usage': [
+      '搜索蓝图加入队列,设置每个蓝图的 ME(材料效率)和 Runs(流程数),点击"计算材料清单"。',
+      '结果按层级横向排列:最终产品 / 一级材料 / 二级材料 / …… / 原材料汇总,一行放不下自动换行。',
+      '"子组件材料效率"批量设置后续 tier 的 ME(默认 10),点"应用"刷新计算。',
+      '点列顶部"已有"可粘贴游戏内库存,自动扣减后显示"还需"数量。',
+      '点物品名复制中/英文名;点蓝图图标进入蓝图详情页。',
+      '"分享计划"将当前队列编码到 URL,"导入"支持游戏库存 / 合同物品 / 分享链接三种格式。',
+    ],
+    'help.industry.formulas': [
+      'required = max(runs, ceil(round(runs × base_qty × (1 − ME × 0.01), 2)))',
+      '小计 = required × 单价(吉他卖单/收单可切换)',
+      'BOM 递归: T2 蓝图 → T2 组件(制造) → 反应中间体(反应) → 月矿原料',
+    ],
+    'help.industry.notes': [
+      'activityID: 1=制造(绿色), 11=反应(橙色)。',
+      '价格通过 ESI 实时查询,1 小时缓存。"卖单"为该区域最低卖价,"收单"为最高收单价。',
+      '特别版 / AT 奖励舰船蓝图已从搜索结果中过滤。',
+    ],
+
+    'help.market.title': '市场工具',
+    'help.market.intro': '三个独立标签:批量价格查询、化矿产物估值、矿石 ISK/m³ 排行,均使用吉他实时订单。',
+    'help.market.usage': [
+      '【价格查询】粘贴"物品名 数量"清单(支持空格或 Tab 分隔),返回吉他收单 / 卖单价与总计。',
+      '【化矿计算】粘贴物品清单,按 80% 化矿率展开为产物,并以吉他收单价合计。',
+      '【矿石价值】列出所有矿石按"每立方米 ISK"排序,可快速判断挖什么最赚。',
+    ],
+    'help.market.formulas': [
+      '小计(收单) = 数量 × 吉他最高收单价',
+      '小计(卖单) = 数量 × 吉他最低卖单价',
+      '化矿产出 = floor(数量 / 化矿单位) × 单位产出 × 化矿率(80%)',
+      'ISK/m³ = 每组化矿价值(吉他收单) / 每组体积',
+    ],
+    'help.market.notes': [
+      '价格仅取吉他(The Forge / Jita 4-4)一个空间站,适用于跑商主流参考。',
+      '化矿率 80% 为常用默认值(站化矿率 ≤ 50% + 化矿技能 V + 化矿效能 IV 即可达到)。',
+    ],
+
+    'help.pi.title': '行星开发计算器',
+    'help.pi.intro': '查询任意 PI 产品(P1–P4)的完整生产链,反向展开到 P0 原料,显示每周期产出与累计需求。',
+    'help.pi.usage': [
+      '搜索目标 PI 产品(如"机器人"),输入需要的轮次。',
+      '结果显示完整生产链:P0 → P1 → P2 → P3 → P4 的中间环节、每周期产出和总需求。',
+      '"P0 原料总需"汇总最底层的星球原料,用于规划开采星球。',
+    ],
+    'help.pi.formulas': [
+      '每周期产出按 SDE schematic 数据计算(基础工厂产能,未考虑高级指挥中心加成)。',
+      '上游需求 = 下游每周期消耗 × 周期数比例',
+    ],
+    'help.pi.notes': [
+      '不考虑路上运输损耗、星球开采率衰减、指挥中心等级加成等动态因素。',
+    ],
+
+    'help.lp.title': 'LP 商店计算器',
+    'help.lp.intro': '查询任意 NPC 军团 LP 商店的所有兑换项,实时计算每点 LP 的 ISK 价值,辅助挑选最高收益的兑换。',
+    'help.lp.usage': [
+      '搜索军团名(支持中 / 英),点击"计算收益"拉取所有兑换物品的吉他实时价格。',
+      '表格列出每项兑换的 LP / ISK 成本、所需材料、产物价格与最终 ISK/LP。',
+      '点列标题可切换排序(收单 / 卖单),默认按"卖单 ISK/LP"降序。',
+    ],
+    'help.lp.formulas': [
+      '总成本 = LP 兑换 ISK 费用 + 所需材料合计(按吉他卖单买入)',
+      'ISK/LP(收单) = (产物吉他收单价 × 数量 − 总成本) / LP 消耗',
+      'ISK/LP(卖单) = (产物吉他卖单价 × 数量 − 总成本) / LP 消耗',
+    ],
+    'help.lp.notes': [
+      '颜色编码: ≥2000(绿,优秀) / ≥1000(浅绿,良好) / >0(橙,一般) / ≤0(红,亏损)。',
+      '"收单"代表立刻抛售的现金回报,"卖单"代表挂单等待的理想回报,实际收益介于两者之间。',
+      '未计入物品税、经纪人费用以及大量出货对市场的冲击。',
+    ],
+
+    'help.jump.title': '旗舰跳跃规划',
+    'help.jump.intro': '为旗舰 / 跳货等带有跳跃引擎的舰船计算最少跳数路线,可选叠加普通星门路线进入高安目的地。',
+    'help.jump.usage': [
+      '输入起点 / 终点星系,选择跳跃范围预设(无畏 / 航母 / 超旗 / 跳货 / 泰坦 / 黑隐 / 座头鲸)。',
+      '可选填规避星系(逗号分隔),路径将绕开这些系。',
+      '若目的地为高安,会同时给出"跳到附近低安 + 星门跳剩余路段"的混合方案。',
+    ],
+    'help.jump.formulas': [
+      '路径搜索: 广度优先(BFS),以光年距离与目标安等过滤可跳节点。',
+      '旗舰跳跃只能从低安 / 零安 / 虫洞跳到低安 / 零安(无法直接跳入高安)。',
+    ],
+    'help.jump.notes': [
+      '坐标使用 SDE 中星系真实 3D 坐标(已转换为光年)。',
+      '不计算燃料消耗 / 跳跃疲劳,仅给出最短跳数路径。',
+    ],
+
+    'help.fitting.title': '模拟配船',
+    'help.fitting.intro': '类 Pyfa 的浏览器配船模拟器,默认假设全技能 V,使用 Dogma 引擎计算 CPU/PG/HP/抗性/EHP/DPS/电容稳定等属性。',
+    'help.fitting.usage': [
+      '左侧搜索船体,选定后在中间槽位放置装备:左键空槽搜索、左键已装备模块切换离线、右键移除、双击左侧浏览器自动放入空槽,也支持拖拽。',
+      '武器右键可选择弹药/脚本;无人机舱与脑插仓在中下方。',
+      '右栏 6 个标签:装配 / 防御 / 火力 / 导航 / 电容 / 锁定,实时反映属性。',
+      '顶部可粘贴/导出 EFT 格式装配;💾 保存到本地、🔗 生成分享链接(整个装配编码进 URL hash)。',
+    ],
+    'help.fitting.formulas': [
+      '堆叠惩罚: effectiveness[i] = 0.5 ^ ((i / 2.22292081) ^ 2),i 从 0 起按绝对值降序',
+      '起跳时间: alignTime = −ln(0.25) × mass × agility / 1,000,000',
+      'EHP = Σ ( HP_layer / (1 − avg_resist_layer) )  (盾 / 甲 / 壳 分层求和)',
+      '修改器顺序: PreMul → PreDiv → ModAdd → ModSub → PostMul → PostDiv → PostPercent(堆叠惩罚) → PostAssign',
+      'AB/MWD 速度增益: boost = thrust × speedFactor / final_mass,多推进器按 attr 37 堆叠惩罚',
+    ],
+    'help.fitting.notes': [
+      '默认所有技能 5 级,未实现按需调整技能等级。',
+      '武器伤害: 炮台 = 弹药伤害 × damageMultiplier / RoF;导弹 = 弹药伤害 × missileDmgMult / RoF;无人机 = 自身伤害 × dmgMult / RoF × 数量。',
+      '电容稳定: 按 dC/dt = 10·Cmax/τ·(√pct − pct) − usage 逐秒模拟 600 秒,稳定则报百分比,否则报持续时间。',
+    ],
+
+    'help.contracts.title': '公开合同查询',
+    'help.contracts.intro': '查询指定区域的公开未决合同,自动用吉他卖单价估值,标注折扣率方便捡漏。',
+    'help.contracts.usage': [
+      '输入区域名(中 / 英)选择类型(全部 / 物品交换 / 拍卖 / 快递)后点查询。',
+      '点"查看"展开合同物品清单,自动联网估值。',
+      '点"复制游戏内链接"可粘贴到游戏聊天框直接打开合同。',
+    ],
+    'help.contracts.formulas': [
+      '吉他卖单总价 = Σ(物品数量 × 吉他卖单价)',
+      '折扣 = (吉他卖单总价 − 合同价格) / 吉他卖单总价 × 100%',
+    ],
+    'help.contracts.notes': [
+      '合同列表来自 ESI 公开接口,每页 1000 条,通过翻页加载。',
+      '物品估值不包括蓝图属性 / 装配剩余电量 / 模块过载残值等差异。',
+    ],
+
+    'help.links.title': '友情链接',
+    'help.links.intro': 'EVE Online 玩家常用的第三方工具与社区站点合集,按用途分类。',
+    'help.links.usage': [
+      '点击卡片直接在新标签页打开对应站点。',
+      '"国服专用"分类下的站点服务于网易 Serenity 服务器。',
+    ],
+
+    'help.sovmap.title': '00 主权势力地图',
+    'help.sovmap.intro': '把零安(00)所有有主权的星系按区域聚合,展示各联盟占据的面积分布。',
+    'help.sovmap.usage': [
+      '页面加载时通过 ESI 拉取 sovereignty / map 数据,可能需要几秒钟。',
+      '每个区域显示主导联盟与星系数,鼠标悬停可看完整联盟列表。',
+    ],
+    'help.sovmap.formulas': [
+      '区域形状通过该区域内星系点集的凸包(Convex Hull)生成。',
+      '联盟颜色基于联盟 ID 的哈希,确保同一联盟在所有区域颜色一致。',
+    ],
+
+    'help.dscan.title': 'D-Scan / Local 解析',
+    'help.dscan.intro': '把游戏内"方向扫描"或"频道成员列表"原文粘进来,自动归类统计。',
+    'help.dscan.usage': [
+      '【D-Scan 标签】Ctrl+A → Ctrl+C 复制方向扫描表后粘贴。',
+      '【Local 标签】右键 Local 频道成员列表选"复制所有"后粘贴。',
+      '结果按物品类别 / 玩家军团联盟聚合显示数量。',
+    ],
+    'help.dscan.notes': [
+      '解析完全在浏览器本地,不会上传或保存粘贴的内容。',
+    ],
   },
 
   en: {
@@ -902,6 +1074,178 @@ const messages = {
     'sovmap.systems': 'systems',
     'sovmap.unclaimed': 'Unclaimed',
     'sovmap.topAlliances': 'Top Alliances',
+
+    // Help (per-page)
+    'help.btnTitle': 'Help',
+    'help.sectionUsage': 'How to use',
+    'help.sectionFormula': 'Formulas',
+    'help.sectionNote': 'Notes',
+
+    'help.home.title': 'Home',
+    'help.home.intro': 'EVE Kit is a static, frontend-only toolkit for EVE Online — every calculation runs locally in your browser; no personal data is stored.',
+    'help.home.usage': [
+      'Use the top nav to switch tools, and the top-right toggles for Serenity / Tranquility and language.',
+      'The home page shows live server status, the past hour of cluster-wide kill hotspots (PvP / PvE), and active sovereignty campaigns.',
+      'Click any region row to expand a per-system kill breakdown.',
+    ],
+    'help.home.notes': [
+      'All live data comes from ESI: Serenity uses NetEase\'s ali-esi.evepc.163.com proxy, Tranquility uses esi.evetech.net.',
+      'Hidden feature: click the logo 5 times to unlock the public contract browser.',
+    ],
+
+    'help.industry.title': 'Industry Calculator',
+    'help.industry.intro': 'Pick blueprints and run counts; the calculator expands the bill of materials down to raw ore and queries Jita prices live.',
+    'help.industry.usage': [
+      'Search blueprints to queue them, set each one\'s ME and Runs, then press "Calculate".',
+      'Results lay out horizontally by tier (Final Product → Tier 1 → … → Raw Summary); rows wrap when they don\'t fit.',
+      'Use "Sub-component ME" to bulk-set ME for downstream tiers (default 10), then click "Apply".',
+      'The "Have" button per tier accepts pasted inventory and subtracts it so you see exactly what\'s missing.',
+      'Click an item name to copy it, click the blueprint icon to open the blueprint detail page.',
+      '"Share Plan" encodes the queue into the URL; "Import" accepts inventory dumps, contract item lists, or shared links.',
+    ],
+    'help.industry.formulas': [
+      'required = max(runs, ceil(round(runs × base_qty × (1 − ME × 0.01), 2)))',
+      'subtotal = required × unit_price (Jita sell or buy, toggleable)',
+      'BOM recursion: T2 blueprint → T2 components (manufacturing) → reaction intermediates (reactions) → moon raw goo',
+    ],
+    'help.industry.notes': [
+      'activityID: 1 = manufacturing (green), 11 = reactions (orange).',
+      'Prices come from ESI live orders, cached for 1 hour. "Sell" is the lowest sell price in the region; "Buy" is the highest buy order.',
+      'Limited-edition and AT-reward ship blueprints are filtered out of search.',
+    ],
+
+    'help.market.title': 'Market Tools',
+    'help.market.intro': 'Three independent tabs: bulk price lookup, reprocessing yield, and ore ISK/m³ ranking — all priced against live Jita orders.',
+    'help.market.usage': [
+      '[Price] Paste lines of "name qty" (space or tab separated); get Jita buy / sell prices and totals.',
+      '[Reprocess] Paste an item list to expand into reprocessing output at 80% yield, valued at Jita buy.',
+      '[Ore Value] Lists every ore sorted by ISK per cubic meter — quick reference for what\'s worth mining.',
+    ],
+    'help.market.formulas': [
+      'subtotal(buy)  = qty × highest Jita buy order',
+      'subtotal(sell) = qty × lowest Jita sell order',
+      'reprocess yield = floor(qty / portion_size) × portion_output × yield_rate (80%)',
+      'ISK/m³ = per-portion reprocess value (Jita buy) / per-portion volume',
+    ],
+    'help.market.notes': [
+      'Prices are restricted to Jita 4-4 station only — the de-facto market reference.',
+      '80% yield is a common conservative default (station ≤ 50% base + Reprocessing V + Reprocessing Efficiency IV).',
+    ],
+
+    'help.pi.title': 'Planetary Industry Calculator',
+    'help.pi.intro': 'For any PI product (P1–P4) the tool unfolds the full production chain back to P0, showing per-cycle output and cumulative demand.',
+    'help.pi.usage': [
+      'Search for the target product (e.g. "Robotics") and set the number of cycles.',
+      'The result shows the full chain — P0 → P1 → P2 → P3 → P4 — with each step\'s output and total need.',
+      '"Total P0 Required" aggregates the planet-side raw resources so you can plan extractor coverage.',
+    ],
+    'help.pi.formulas': [
+      'Per-cycle output comes from SDE schematics (base facility throughput; no advanced command center bonuses).',
+      'Upstream need = downstream per-cycle consumption × cycle ratio',
+    ],
+    'help.pi.notes': [
+      'Hauling losses, planet depletion, and command center tier bonuses are not modeled.',
+    ],
+
+    'help.lp.title': 'LP Store Calculator',
+    'help.lp.intro': 'List every offer in a chosen NPC corp\'s LP store and rank them by live ISK-per-LP value, so you can spend LP where it pays.',
+    'help.lp.usage': [
+      'Search by corporation name (English or Chinese), then click "Calculate" to fetch live Jita prices for every offer.',
+      'The table shows LP/ISK cost, required items, output prices, and resulting ISK/LP.',
+      'Click any column header to toggle sort (buy or sell ISK/LP); default sort is sell ISK/LP descending.',
+    ],
+    'help.lp.formulas': [
+      'total cost = LP-store ISK fee + Σ (required item qty × Jita sell)',
+      'ISK/LP(buy)  = (offer qty × Jita buy  − total cost) / LP cost',
+      'ISK/LP(sell) = (offer qty × Jita sell − total cost) / LP cost',
+    ],
+    'help.lp.notes': [
+      'Colors: ≥2000 (green, great) / ≥1000 (light green, good) / >0 (orange, ok) / ≤0 (red, loss).',
+      '"Buy" represents instant-sell cash-out; "Sell" represents the optimistic price after order fulfillment.',
+      'Sales tax, broker fees, and market impact from large dumps are not included.',
+    ],
+
+    'help.jump.title': 'Capital Jump Planner',
+    'help.jump.intro': 'Plans the shortest jump-drive route for capitals / jump freighters, optionally splicing in a gate route to reach a highsec destination.',
+    'help.jump.usage': [
+      'Pick start and destination systems and a range preset (Dread / Carrier / Super / JF / Titan / BLOps / Bowhead).',
+      'Optionally enter systems to avoid (comma separated) — the search will route around them.',
+      'If the destination is in highsec, you also get a hybrid plan: jump to a nearby lowsec, then gate the rest.',
+    ],
+    'help.jump.formulas': [
+      'Route search: breadth-first (BFS) over the jump graph, filtered by light-year range and security requirements.',
+      'Capitals can only jump from low/null/wormhole to low/null — never directly into highsec.',
+    ],
+    'help.jump.notes': [
+      'Coordinates come from SDE (real 3D positions converted to light-years).',
+      'Fuel consumption and jump fatigue are not modeled — only the shortest jump path is returned.',
+    ],
+
+    'help.fitting.title': 'Ship Fitting Simulator',
+    'help.fitting.intro': 'A Pyfa-style fitting simulator that runs in the browser. Assumes All Skills V and uses a full Dogma engine for CPU/PG/HP/resists/EHP/DPS/cap stability.',
+    'help.fitting.usage': [
+      'Search a ship on the left, then fill slots in the middle: left-click empty to search, left-click a fitted module to toggle offline, right-click to remove, double-click items in the browser to auto-place, drag to drop.',
+      'Right-click a weapon to pick ammo/scripts; the drone bay and implant bar sit below the slot layout.',
+      'The right panel has 6 tabs: Fitting / Defense / Offense / Navigation / Capacitor / Targeting — all updated live.',
+      'Top bar: paste/export EFT-format fits; 💾 save locally; 🔗 generate a share link (the whole fit encodes into the URL hash).',
+    ],
+    'help.fitting.formulas': [
+      'Stacking penalty: effectiveness[i] = 0.5 ^ ((i / 2.22292081) ^ 2), i = 0,1,2… by descending |value|',
+      'Align time: alignTime = −ln(0.25) × mass × agility / 1,000,000',
+      'EHP = Σ ( HP_layer / (1 − avg_resist_layer) )  (sum over shield / armor / hull)',
+      'Modifier order: PreMul → PreDiv → ModAdd → ModSub → PostMul → PostDiv → PostPercent(stacking) → PostAssign',
+      'Prop-mod speed boost: boost = thrust × speedFactor / final_mass, stacking-penalized via attr 37',
+    ],
+    'help.fitting.notes': [
+      'All skills are fixed at V; per-skill tuning is not implemented.',
+      'Weapon DPS: turret = ammo dmg × damageMultiplier / RoF; missile = ammo dmg × missileDmgMult / RoF; drone = own dmg × dmgMult / RoF × count.',
+      'Cap stability: simulated second-by-second over 600s using dC/dt = 10·Cmax/τ·(√pct − pct) − usage; reports stable % or time-to-empty.',
+    ],
+
+    'help.contracts.title': 'Public Contract Browser',
+    'help.contracts.intro': 'Browses open public contracts in a chosen region, auto-prices them against Jita sell, and flags the discount percentage so deals stand out.',
+    'help.contracts.usage': [
+      'Enter a region name (Chinese or English), pick a type filter (all / item exchange / auction / courier), then search.',
+      'Click "View" on a row to expand the item list — prices are fetched on demand.',
+      '"Copy in-game link" gives you a chat-paste link that opens the contract directly in the EVE client.',
+    ],
+    'help.contracts.formulas': [
+      'Jita sell total = Σ (item qty × Jita sell price)',
+      'discount = (Jita sell total − contract price) / Jita sell total × 100%',
+    ],
+    'help.contracts.notes': [
+      'Contracts come from ESI public endpoints (1000 per page, paginated).',
+      'Per-item valuation does not adjust for BPO research, loaded charges, module damage, or fitting-specific extras.',
+    ],
+
+    'help.links.title': 'Community Links',
+    'help.links.intro': 'A curated set of third-party tools and community sites that EVE players rely on, grouped by purpose.',
+    'help.links.usage': [
+      'Click a card to open the site in a new tab.',
+      'The "Serenity-specific" group covers NetEase / Chinese-server tools.',
+    ],
+
+    'help.sovmap.title': 'Nullsec Sovereignty Map',
+    'help.sovmap.intro': 'Aggregates every claimed nullsec system by region to visualize which alliance controls how much space.',
+    'help.sovmap.usage': [
+      'Sovereignty / map data is pulled live from ESI on page load — give it a couple of seconds.',
+      'Each region shows the dominant alliance and system count; hover for the full alliance list.',
+    ],
+    'help.sovmap.formulas': [
+      'Region shapes are convex hulls of all systems inside that region.',
+      'Alliance colors are hashed from alliance ID so the same alliance is consistent across regions.',
+    ],
+
+    'help.dscan.title': 'D-Scan / Local Parser',
+    'help.dscan.intro': 'Paste the raw output of an in-game directional scan or a Local channel member list and the parser bins it by type / corp / alliance.',
+    'help.dscan.usage': [
+      '[D-Scan tab] In game: Ctrl+A → Ctrl+C in the directional scan window, then paste.',
+      '[Local tab] Right-click the Local member list → Copy All, then paste.',
+      'Results aggregate counts by item category or by player corp/alliance.',
+    ],
+    'help.dscan.notes': [
+      'Parsing is purely client-side — pasted content is never uploaded or stored.',
+    ],
   },
 }
 

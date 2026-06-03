@@ -1,6 +1,6 @@
 <template>
   <div class="market">
-    <h1 class="title">{{ serverLabel }} {{ t('market.title') }}</h1>
+    <h1 class="title">{{ serverLabel }} {{ t('market.title') }}<PageHelp topic="market" /></h1>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -220,6 +220,7 @@ import { parseMaterialText, resolveItemNames } from '../services/market'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { locName } from '../services/locale'
 import { useTabInput } from '../composables/useTabInput'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()

@@ -1,6 +1,6 @@
 <template>
   <div class="links-page">
-    <h1 class="title">{{ t('links.title') }}</h1>
+    <h1 class="title">{{ t('links.title') }}<PageHelp topic="links" /></h1>
     <p class="subtitle">{{ t('links.subtitle') }}</p>
 
     <div v-for="cat in categories" :key="cat.key" class="category">
@@ -25,6 +25,7 @@
 
 <script setup>
 import { useI18n } from '../i18n'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const { t } = useI18n()
 

@@ -1,6 +1,6 @@
 <template>
   <div class="industry">
-    <h1 class="title">{{ t('industry.title') }} ({{ serverLabel }})</h1>
+    <h1 class="title">{{ t('industry.title') }} ({{ serverLabel }})<PageHelp topic="industry" /></h1>
 
     <ManufacturingQueue @calculate="onCalculate" />
 
@@ -198,6 +198,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getBatchBom } from '../api/blueprints'
 import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
+import PageHelp from '../components/layout/PageHelp.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { useTabInput } from '../composables/useTabInput'

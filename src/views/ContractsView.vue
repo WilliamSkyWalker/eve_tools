@@ -1,6 +1,6 @@
 <template>
   <div class="contracts-page">
-    <h1 class="title">{{ t('contracts.title') }} ({{ serverLabel }})</h1>
+    <h1 class="title">{{ t('contracts.title') }} ({{ serverLabel }})<PageHelp topic="contracts" /></h1>
     <p class="subtitle">{{ t('contracts.subtitle') }}</p>
 
     <!-- Filters -->
@@ -264,6 +264,7 @@ import { getPublicContracts, getContractItems, searchRegions } from '../api/cont
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadIndustryData, loadNavigationData } from '../data/loader'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
 const { t, locale, serverLabel } = useI18n()

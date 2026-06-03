@@ -66,6 +66,8 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 EVE Online 官网风格配色：深黑背景 (#0d0d0d)、深灰面板 (#1a1a1a)、金色强调色 (#c8aa6e)、金色hover (#e0c882)。功能性颜色：绿色 (#4caf50) 高安/制造，橙色 (#ff9800) 低安/反应，红色 (#ef5350) 零安/错误。物品名称旁显示 EVE 图标（`https://images.evetech.net/types/{type_id}/icon?size=32`）。
 
+每个主页面 `<h1 class="title">` 末尾跟 `<PageHelp topic="..."/>`（`src/components/layout/PageHelp.vue`），点击金色 "?" 圆按钮弹出 modal 介绍该页用法、计算公式和注意事项。内容从 i18n 读取 `help.<topic>.{title,intro,usage,formulas,notes}`，usage/formulas/notes 为数组，`PageHelp` 自动按"使用方法 / 计算公式 / 说明"三段渲染（缺失的段不显示）。新增页面时按这套 key 加 zh/en 翻译并插入 `<PageHelp topic="<topic>" />` 即可。
+
 ## Key Formula
 
 
@@ -82,6 +84,10 @@ Dogma 堆叠惩罚: `effectiveness[i] = 0.5 ^ ((i / 2.22292081) ^ 2)`（i 从 0 
 EHP: `ehp = Σ(hp_layer / (1 - avg_resist_layer))`（对盾/甲/壳分别计算后求和）
 
 Dogma modifier 应用顺序: PreMul(0) → PreDiv(1) → ModAdd(2) → ModSub(3) → PostMul(4) → PostDiv(5) → PostPercent(6, 含堆叠惩罚) → PostAssign(7)
+
+`applySkillToShipAttrs` 只预乘 PRE_MUL（用于把船的每级加成属性 743/745/335/561 等放大到 ×skillLevel，供船自身效果按 ya 读取）；技能的 POST_PERCENT（如 Hull Upgrades V 给 armorHp +25%、Shield Management V 给 shieldHp +25%）必须走主流程，否则会被装甲板/盾延（MOD_ADD）之前消化掉，导致 HP 比 Pyfa 低。
+
+AB/MWD 效果（effect 6730/6731）SDE 里没有 modifierInfo，引擎用专门分支合成三个修改器：(1) 加质量 MOD_ADD attr 4 ← attr 796；(2) MWD 信号半径 POST_PERCENT attr 552 ← attr 554；(3) 速度提升在 ship 修改器算完之后做后处理：`boost = thrust × speedFactor / finalMass`，多个推进器按 attr 37 堆叠惩罚叠加。
 
 ### 配船模拟器
 

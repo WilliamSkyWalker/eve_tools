@@ -1,6 +1,6 @@
 <template>
   <div class="sovmap">
-    <h1 class="title">{{ t('sovmap.title') }}</h1>
+    <h1 class="title">{{ t('sovmap.title') }}<PageHelp topic="sovmap" /></h1>
     <p class="subtitle">{{ t('sovmap.subtitle') }}</p>
 
     <div v-if="loading" class="loading-text">{{ t('sovmap.loading') }}</div>
@@ -56,6 +56,7 @@ import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadNavigationData } from '../data/loader'
+import PageHelp from '../components/layout/PageHelp.vue'
 import {
   fetchSovereigntyMap,
   fetchAllianceNames,

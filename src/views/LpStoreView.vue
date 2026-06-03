@@ -1,6 +1,6 @@
 <template>
   <div class="lpstore">
-    <h1 class="title">{{ serverLabel }} {{ t('lp.title') }}</h1>
+    <h1 class="title">{{ serverLabel }} {{ t('lp.title') }}<PageHelp topic="lp" /></h1>
 
     <div v-if="!dataReady" class="loading-text">{{ t('lp.loading') }}</div>
 
@@ -98,6 +98,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadLpStoreData, getLpStoreData, loadIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
 const { t, locale, serverLabel } = useI18n()

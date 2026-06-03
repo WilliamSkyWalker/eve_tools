@@ -1,6 +1,6 @@
 <template>
   <div class="pi-view">
-    <h1 class="title">{{ t('pi.title') }}</h1>
+    <h1 class="title">{{ t('pi.title') }}<PageHelp topic="pi" /></h1>
 
     <div v-if="!dataReady" class="loading-text">Loading...</div>
 
@@ -69,6 +69,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '../i18n'
 import { loadPiData, getPiData } from '../data/loader'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const { t, locale } = useI18n()
 

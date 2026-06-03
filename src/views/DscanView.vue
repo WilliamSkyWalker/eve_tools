@@ -1,6 +1,6 @@
 <template>
   <div class="dscan">
-    <h1 class="title">{{ t('dscan.title') }}</h1>
+    <h1 class="title">{{ t('dscan.title') }}<PageHelp topic="dscan" /></h1>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -98,6 +98,7 @@
 import { ref, computed, reactive } from 'vue'
 import { useI18n } from '../i18n'
 import { useTabInput } from '../composables/useTabInput'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const { t } = useI18n()
 const { handleTabKeydown } = useTabInput()

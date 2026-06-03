@@ -1,6 +1,6 @@
 <template>
   <div class="jump-planner">
-    <h1 class="title">{{ t('jump.title') }} ({{ serverLabel }})</h1>
+    <h1 class="title">{{ t('jump.title') }} ({{ serverLabel }})<PageHelp topic="jump" /></h1>
     <p class="subtitle">{{ t('jump.subtitle') }}</p>
 
     <div class="form-section">
@@ -222,6 +222,7 @@ import SystemSearch from '../components/navigation/SystemSearch.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadNavigationData } from '../data/loader'
+import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()

@@ -1,6 +1,6 @@
 <template>
   <div class="fitting-sim">
-    <h1 class="title">{{ t('fit.title') }}</h1>
+    <h1 class="title">{{ t('fit.title') }}<PageHelp topic="fitting" /></h1>
 
     <!-- Ship search + game-fit import/export, side by side at the top -->
     <div class="top-bar">
@@ -65,6 +65,7 @@ import { loadDogmaData, getDogmaData } from '../data/loader'
 import { locName } from '../services/locale'
 import { calculateFit } from '../services/dogmaEngine'
 import { computeStats } from '../services/fittingStats'
+import PageHelp from '../components/layout/PageHelp.vue'
 import ShipSearch from '../components/fitting/ShipSearch.vue'
 import ModuleBrowser from '../components/fitting/ModuleBrowser.vue'
 import SlotLayout from '../components/fitting/SlotLayout.vue'
