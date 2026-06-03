@@ -30,6 +30,19 @@ const EFF_PROJECTILE_FIRED = 34
 const EFF_HI_POWER = 12
 const EFF_MED_POWER = 13
 const EFF_LO_POWER = 11
+// AB/MWD effects have no modifierInfo in SDE — handled below by injecting
+// synthetic mass/sig modifiers and a post-pass velocity boost.
+const EFF_MWD = 6730
+const EFF_AB = 6731
+
+// Attribute IDs used in special-effect handling
+const ATTR_MASS = 4
+const ATTR_MAX_VEL = 37
+const ATTR_SIG_RADIUS = 552
+const ATTR_MAX_VEL_BONUS = 20   // speed factor (e.g., 510 for 5MN MWD II)
+const ATTR_SIG_BONUS = 554       // sig radius % bonus (e.g., 500 for MWD II)
+const ATTR_THRUST = 567
+const ATTR_MASS_ADDITION = 796   // mass added by plate / MWD when active
 
 /**
  * @param {Object} store - fitting store
@@ -129,6 +142,31 @@ export function calculateFit(store, data) {
         continue
       }
 
+      // Effects 6730 (MWD) / 6731 (AB): no modifierInfo in SDE. Inject synthetic
+      // mass-add and sig-radius-bonus modifiers; velocity boost computed in a
+      // post-pass below since it depends on final ship mass.
+      if ((eid === EFF_MWD || eid === EFF_AB) && item.role === 'module') {
+        const massBonus = item.attrs.get(ATTR_MASS_ADDITION)
+        if (massBonus) {
+          shipMods.push({
+            source: item,
+            mi: { d: 'shipID', f: 'ItemModifier', ma: ATTR_MASS, ya: ATTR_MASS_ADDITION, op: OP_MOD_ADD },
+            modValue: massBonus,
+          })
+        }
+        if (eid === EFF_MWD) {
+          const sigBonus = item.attrs.get(ATTR_SIG_BONUS)
+          if (sigBonus) {
+            shipMods.push({
+              source: item,
+              mi: { d: 'shipID', f: 'ItemModifier', ma: ATTR_SIG_RADIUS, ya: ATTR_SIG_BONUS, op: OP_POST_PERCENT },
+              modValue: sigBonus,
+            })
+          }
+        }
+        continue
+      }
+
       if (!effect.mi) continue
 
       for (const mi of effect.mi) {
@@ -142,8 +180,11 @@ export function calculateFit(store, data) {
         const domain = mi.d
         const isShipDomain = domain === 'shipID' || domain === 'charID'
 
-        if (mi.f === 'ItemModifier' && domain === 'shipID' && item.role === 'skill') {
-          // Already pre-applied to shipItem.attrs via applySkillToShipAttrs
+        if (mi.f === 'ItemModifier' && domain === 'shipID' && item.role === 'skill' && mi.op === OP_PRE_MUL) {
+          // Per-level scaling of ship's per-level bonus attrs already pre-applied
+          // via applySkillToShipAttrs. Other ops (POST_PERCENT etc.) must go through
+          // the normal flow so they happen AFTER module MOD_ADDs (e.g. Hull Upgrades V
+          // % bonus to armor HP must apply on top of plate's flat add).
           continue
         } else if (mi.f === 'ItemModifier' && isShipDomain && item.role !== 'ship') {
           shipMods.push(entry)
@@ -186,6 +227,7 @@ export function calculateFit(store, data) {
 
     return {
       typeId: modItem.typeId,
+      effectIds: modItem.effectIds,
       attrs: calcAttrs,
       chargeAttrs,
       isTurret: modItem.isTurret,
@@ -193,6 +235,31 @@ export function calculateFit(store, data) {
       slotType: modItem.slotType,
     }
   })
+
+  // ── AB/MWD velocity post-pass ──
+  // Effects 6730/6731 lack modifierInfo, so velocity boost is computed here from
+  // each propulsion module's (post-skill) thrust and speed-factor attrs against
+  // final ship mass (which includes plate + MWD mass adds). Attr 37 is stacking-
+  // penalized for module sources.
+  const velocityBoosts = []
+  for (const m of modules) {
+    const isProp = m.effectIds.includes(EFF_MWD) || m.effectIds.includes(EFF_AB)
+    if (!isProp) continue
+    const thrust = m.attrs.get(ATTR_THRUST) ?? 0
+    const speedFactor = m.attrs.get(ATTR_MAX_VEL_BONUS) ?? 0
+    const shipMass = shipAttrs.get(ATTR_MASS) ?? 0
+    if (thrust > 0 && speedFactor > 0 && shipMass > 0) {
+      velocityBoosts.push(thrust * speedFactor / shipMass)  // already a percent
+    }
+  }
+  if (velocityBoosts.length) {
+    let vel = shipAttrs.get(ATTR_MAX_VEL) ?? 0
+    velocityBoosts.sort((a, b) => b - a)
+    for (let i = 0; i < velocityBoosts.length; i++) {
+      vel *= (1 + velocityBoosts[i] * stackingPenalty(i) / 100)
+    }
+    shipAttrs.set(ATTR_MAX_VEL, vel)
+  }
 
   // ── Drones ──
   // Apply modifiers targeting drones: ship bonuses with matching required skill
@@ -249,13 +316,15 @@ function getModifierValue(item, mi, data) {
 }
 
 /**
- * Pre-apply skill-to-ship ItemModifier modifiers to shipItem.attrs in place.
- * This resolves per-level bonus attrs (like Dominix attr 561) to their skill-V value
- * before the ship's own bonus effects read them via ya.
+ * Pre-apply skill-to-ship PRE_MUL modifiers to shipItem.attrs in place.
+ * This resolves per-level bonus attrs (like Drake attr 745 or Dominix attr 561)
+ * to their skill-V value before the ship's own bonus effects read them via ya.
+ *
+ * Only PRE_MUL is pre-applied here. Other ops (POST_PERCENT etc.) target stat
+ * attrs (HP/velocity/etc.) and must flow through the normal modifier order so
+ * they happen AFTER module MOD_ADDs (extender/plate/bulkhead).
  */
 function applySkillToShipAttrs(shipItem, skillItems, data) {
-  // Group all ship-targeted ItemModifier modifiers by target attr
-  const grouped = new Map()
   for (const skill of skillItems) {
     for (const eid of skill.effectIds) {
       const effect = data.effects[eid]
@@ -264,37 +333,13 @@ function applySkillToShipAttrs(shipItem, skillItems, data) {
       if (ec === 2 || ec === 3 || ec === 7) continue
       for (const mi of effect.mi) {
         if (mi.f !== 'ItemModifier' || mi.d !== 'shipID' || mi.ma == null) continue
+        if (mi.op !== OP_PRE_MUL) continue
         const modValue = getModifierValue(skill, mi, data)
         if (modValue == null) continue
-        if (!grouped.has(mi.ma)) {
-          grouped.set(mi.ma, { preMul: [], preDivs: [], adds: [], subs: [], postMul: [], postDiv: [], postPct: [], postAssign: [] })
-        }
-        const g = grouped.get(mi.ma)
-        const entry = { val: modValue, stackable: true }  // skills don't stack penalize
-        switch (mi.op) {
-          case OP_PRE_MUL: g.preMul.push(entry); break
-          case OP_PRE_DIV: g.preDivs.push(entry); break
-          case OP_MOD_ADD: g.adds.push(entry); break
-          case OP_MOD_SUB: g.subs.push(entry); break
-          case OP_POST_MUL: g.postMul.push(entry); break
-          case OP_POST_DIV: g.postDiv.push(entry); break
-          case OP_POST_PERCENT: g.postPct.push(entry); break
-          case OP_POST_ASSIGN: g.postAssign.push(entry); break
-        }
+        const cur = shipItem.attrs.get(mi.ma) ?? data.attrs[mi.ma]?.dv ?? 0
+        shipItem.attrs.set(mi.ma, cur * modValue)
       }
     }
-  }
-  for (const [aid, m] of grouped) {
-    let val = shipItem.attrs.get(aid) ?? data.attrs[aid]?.dv ?? 0
-    for (const e of m.preMul) val *= e.val
-    for (const e of m.preDivs) if (e.val !== 0) val /= e.val
-    for (const e of m.adds) val += e.val
-    for (const e of m.subs) val -= e.val
-    for (const e of m.postMul) val *= e.val
-    for (const e of m.postDiv) if (e.val !== 0) val /= e.val
-    for (const e of m.postPct) val *= (1 + e.val / 100)
-    if (m.postAssign.length) val = m.postAssign[m.postAssign.length - 1].val
-    shipItem.attrs.set(aid, val)
   }
 }
 
