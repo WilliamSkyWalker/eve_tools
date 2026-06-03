@@ -128,6 +128,8 @@ npm install
 npm run dev                                       # 启动 Vite 开发服务器 (端口 5174)
 npm run build                                     # 构建生产版本 (输出到 dist/)
 npm run preview                                   # 预览构建结果
+npm test                                          # 跑一次 Vitest(服务层 + 关键组件单测)
+npm run test:watch                                # watch 模式
 
 # 部署（push 到 main 自动触发 GitHub Actions 部署，也可手动）
 npm run build && npx wrangler pages deploy dist/  # 手动部署到 Cloudflare Pages
@@ -143,6 +145,14 @@ git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
 ## Sisi 预览数据
 
 `scripts/apply-sisi-preview.mjs` 把 Sisi 测试服上的 4 艘 T2 指挥航母（Salvation / Simurgh / Gaia / Ymir，typeID 92822–92825，蓝图 94072–94075，groupID 4900）合并进 `industry-{server}.json`。材料表、Morphite 用量、4,800,000 秒制造时长来自 2026-05-29 Hoboleaks Sisi diff。CCP 还没发 zh-CN 翻译，所以新条目不填 `nz`，UI 在中文模式下会回退到英文名（这是 TQ ESI 当前的真实状态）；groupID 4900 是本地占位。Cradle of War 6/9 上 TQ 后跑标准 SDE 刷新流程会用真实数据覆盖此补丁。每次 `convert-sde.mjs --download` 后必须再跑一遍 `apply-sisi-preview.mjs`，否则会丢失。
+
+## 自动化测试
+
+Vitest + @vue/test-utils + happy-dom。配置在 `vitest.config.js`,全局 setup 在 `src/__tests__/setup.js`(每个测试前重置 Pinia)。测试与被测代码同目录,文件名 `*.test.js`。
+
+- 服务层测试用 `vi.mock('../data/loader', ...)` 注入 `src/__tests__/fixtures/industry.js` 里的微型 fixture(Rifter + 2 矿,够覆盖 ME 公式 / BOM 递归 / 蓝图搜索过滤)。
+- 组件测试 mock `useI18n` 让消息可控,通过 `attachTo: document.body` 才能让 Teleport 渲染的 modal 可被 `document.querySelector` 拿到;每个 `it` 结尾必须 `wrapper.unmount()`,否则上一次测试遗留的 Teleport DOM 会污染下一次。
+- 当前已覆盖:calculator(ME 公式)、bom(递归 + 聚合)、dogma stackingPenalty、market parseMaterialText、blueprintLookup 搜索/过滤、PageHelp 组件交互。共 45 用例,全部本地跑,不接 CI。
 
 ## 编码规范
 更新代码时，更新 [CLAUDE.md](CLAUDE.md)

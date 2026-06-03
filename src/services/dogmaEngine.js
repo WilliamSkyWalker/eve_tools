@@ -9,7 +9,7 @@
 const SKILL_LEVEL_ATTR = 280
 
 const STACKING_COEFF = 2.22292081
-function stackingPenalty(index) {
+export function stackingPenalty(index) {
   return Math.pow(0.5, Math.pow(index / STACKING_COEFF, 2))
 }
 
