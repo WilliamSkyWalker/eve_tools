@@ -24,7 +24,9 @@ const ROOT = path.resolve(import.meta.dirname, '..')
 const SDE_DIR = path.join(ROOT, 'sde_data')
 const OUT_DIR = path.join(ROOT, 'public', 'data')
 
-const FUZZWORK_BASE = 'https://www.fuzzwork.co.uk/dump/latest/'
+// Fuzzwork moved CSV dumps under a /csv/ subdirectory and stopped bzip2-compressing
+// them around mid-2026 — the path is now /dump/latest/csv/<table>.csv (plain).
+const FUZZWORK_BASE = 'https://www.fuzzwork.co.uk/dump/latest/csv/'
 const SERENITY_ESI = 'https://ali-esi.evepc.163.com/latest'
 
 const args = process.argv.slice(2)
@@ -37,17 +39,15 @@ const FETCH_SERENITY_EXTRAS = args.includes('--fetch-serenity-extras')
 // CSV helpers
 // ──────────────────────────────────────────
 
-async function downloadBz2(tableName) {
-  const url = `${FUZZWORK_BASE}${tableName}.csv.bz2`
+async function downloadCsv(tableName) {
+  const url = `${FUZZWORK_BASE}${tableName}.csv`
   const csvPath = path.join(SDE_DIR, `${tableName}.csv`)
   console.log(`  Downloading ${url} ...`)
   const resp = await fetch(url)
   if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${url}`)
-  const bz2Buf = Buffer.from(await resp.arrayBuffer())
-  const bz2Path = csvPath + '.bz2'
-  fs.writeFileSync(bz2Path, bz2Buf)
-  execSync(`bunzip2 -f "${bz2Path}"`)
-  console.log(`  -> ${csvPath}`)
+  const buf = Buffer.from(await resp.arrayBuffer())
+  fs.writeFileSync(csvPath, buf)
+  console.log(`  -> ${csvPath} (${(buf.length / 1024).toFixed(1)} KB)`)
 }
 
 async function readCsv(tableName, handler) {
@@ -67,7 +67,10 @@ async function readCsv(tableName, handler) {
     if (quoteCount % 2 !== 0) continue  // incomplete quoted field, wait for next line
 
     if (!headers) {
-      headers = parseCsvLine(pendingLine)
+      // Fuzzwork's mid-2026 CSV dump prepends a UTF-8 BOM (EF BB BF); strip it
+      // before parsing so the first column name matches lookups downstream.
+      const firstLine = pendingLine.charCodeAt(0) === 0xfeff ? pendingLine.slice(1) : pendingLine
+      headers = parseCsvLine(firstLine)
       pendingLine = ''
       continue
     }
@@ -120,39 +123,35 @@ function toInt(s) { const n = parseInt(s, 10); return isNaN(n) ? null : n }
 function toFloat(s) { const n = parseFloat(s); return isNaN(n) ? null : n }
 
 // ──────────────────────────────────────────
-// Simple YAML parser for dgmEffects modifierInfo
+// Parser for dgmEffects modifierInfo
 // ──────────────────────────────────────────
 
 /**
- * Parse the modifierInfo YAML from dgmEffects.csv.
- * Format is a list of dicts with known keys:
- *   - domain: shipID
- *     func: ItemModifier
- *     modifiedAttributeID: 263
- *     modifyingAttributeID: 72
- *     operation: 2
- *     skillTypeID: 3307  (optional)
- *     groupID: 55        (optional)
+ * Parse the modifierInfo column from dgmEffects.csv. Fuzzwork emitted YAML
+ * blocks before mid-2026 and switched to compact JSON arrays afterwards; we
+ * detect by the leading character and fall back to the YAML parser for older
+ * dumps. Output uses short keys for compact JSON: d/f/ma/ya/op/sk/gid.
+ *
+ *   JSON:  [{"domain":"shipID","func":"ItemModifier","modifiedAttributeID":263,...}]
+ *   YAML:  - domain: shipID
+ *            func: ItemModifier
+ *            modifiedAttributeID: 263
  */
-function parseModifierInfoYaml(yaml) {
-  if (!yaml || yaml === 'null' || yaml === 'None') return []
-  const result = []
-  let current = null
-  for (const line of yaml.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    if (trimmed.startsWith('- ')) {
-      if (current) result.push(current)
-      current = {}
-      const kv = trimmed.slice(2)
-      parseYamlKV(current, kv)
-    } else if (current) {
-      parseYamlKV(current, trimmed)
+function parseModifierInfoYaml(raw) {
+  if (!raw || raw === 'null' || raw === 'None') return []
+  const trimmed = raw.trim()
+  let parsed
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      parsed = JSON.parse(trimmed)
+    } catch {
+      return []
     }
+    if (!Array.isArray(parsed)) parsed = [parsed]
+  } else {
+    parsed = parseModifierInfoYamlLegacy(trimmed)
   }
-  if (current) result.push(current)
-  // Compact: use short keys
-  return result.map(m => {
+  return parsed.map(m => {
     const c = {}
     if (m.domain) c.d = m.domain
     if (m.func) c.f = m.func
@@ -165,12 +164,29 @@ function parseModifierInfoYaml(yaml) {
   })
 }
 
+function parseModifierInfoYamlLegacy(yaml) {
+  const result = []
+  let current = null
+  for (const line of yaml.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (trimmed.startsWith('- ')) {
+      if (current) result.push(current)
+      current = {}
+      parseYamlKV(current, trimmed.slice(2))
+    } else if (current) {
+      parseYamlKV(current, trimmed)
+    }
+  }
+  if (current) result.push(current)
+  return result
+}
+
 function parseYamlKV(obj, str) {
   const idx = str.indexOf(':')
   if (idx < 0) return
   const key = str.slice(0, idx).trim()
   const val = str.slice(idx + 1).trim()
-  // Try to parse as number
   const num = Number(val)
   obj[key] = isNaN(num) ? val : num
 }
@@ -197,7 +213,7 @@ async function main() {
       'planetSchematics', 'planetSchematicsTypeMap',
     ]
     for (const t of tables) {
-      await downloadBz2(t)
+      await downloadCsv(t)
     }
   }
 

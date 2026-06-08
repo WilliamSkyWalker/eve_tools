@@ -144,7 +144,7 @@ git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
 
 ## Sisi 预览数据
 
-`scripts/apply-sisi-preview.mjs` 把 Sisi 测试服上的 4 艘 T2 指挥航母（Salvation / Simurgh / Gaia / Ymir，typeID 92822–92825，蓝图 94072–94075，groupID 4900）合并进 `industry-{server}.json`。材料表、Morphite 用量、4,800,000 秒制造时长来自 2026-05-29 Hoboleaks Sisi diff。CCP 还没发 zh-CN 翻译，所以新条目不填 `nz`，UI 在中文模式下会回退到英文名（这是 TQ ESI 当前的真实状态）；groupID 4900 是本地占位。Cradle of War 6/9 上 TQ 后跑标准 SDE 刷新流程会用真实数据覆盖此补丁。每次 `convert-sde.mjs --download` 后必须再跑一遍 `apply-sisi-preview.mjs`，否则会丢失。
+`scripts/apply-sisi-preview.mjs` 把 Sisi 测试服上的 4 艘 T2 指挥航母（Salvation / Simurgh / Gaia / Ymir，typeID 92822–92825，蓝图 94072–94075，groupID 4900）合并进 `industry-{server}.json`。typeID/蓝图/4,800,000 秒制造时长来自 2026-05-29 Hoboleaks Sisi diff；旗舰组件用量按 2026-06-08 游戏内蓝图 UI 校准（护盾发射器/装甲板 500、推进器/感应器/微处理器/电容器 1,000、反应堆 Amarr/Caldari = 1,500，Gallente/Minmatar = 2,000）。CCP 还没发 zh-CN 翻译，所以新条目不填 `nz`，UI 在中文模式下会回退到英文名（这是 TQ ESI 当前的真实状态）；groupID 4900 是本地占位。Cradle of War 6/9 上 TQ 后跑标准 SDE 刷新流程会用真实数据覆盖此补丁。每次 `convert-sde.mjs --download` 后必须再跑一遍 `apply-sisi-preview.mjs`，否则会丢失。
 
 ## 自动化测试
 

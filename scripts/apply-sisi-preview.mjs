@@ -2,7 +2,10 @@
 // generated industry JSON files.
 //
 // This patches data that does NOT yet exist on Tranquility (June 9, 2026 launch).
-// Source for IDs/materials/time: Hoboleaks Sisi diff page captured on 2026-05-29.
+// Source for IDs/time: Hoboleaks Sisi diff page captured on 2026-05-29.
+// Component quantities verified against in-game blueprint UI on 2026-06-08
+// (CCP buffed all component requirements ~25% from the original Sisi diff;
+// Gallente/Minmatar reactor units are 2,000 while Amarr/Caldari are 1,500).
 // After Cradle of War goes live on TQ and Fuzzwork picks up the new SDE, just
 // run `node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras`
 // — the regenerated files will overwrite this patch with the authoritative data.
@@ -40,13 +43,13 @@ const ships = [
     materials: [
       [23757, 1],     // Archon
       [11478, 100],   // R.A.M.- Starship Tech
-      [29067, 400],   // Capital Linear Shield Emitter
-      [29109, 400],   // Capital Tungsten Carbide Armor Plate
-      [29053, 800],   // Capital Fusion Thruster
-      [29073, 800],   // Capital Nanoelectrical Microprocessor
-      [29095, 800],   // Capital Radar Sensor Cluster
-      [29103, 800],   // Capital Tesseract Capacitor Unit
-      [29039, 1200],  // Capital Antimatter Reactor Unit
+      [29067, 500],   // Capital Linear Shield Emitter
+      [29109, 500],   // Capital Tungsten Carbide Armor Plate
+      [29053, 1000],  // Capital Fusion Thruster
+      [29073, 1000],  // Capital Nanoelectrical Microprocessor
+      [29095, 1000],  // Capital Radar Sensor Cluster
+      [29103, 1000],  // Capital Tesseract Capacitor Unit
+      [29039, 1500],  // Capital Antimatter Reactor Unit
       [3828, 2000],   // Construction Blocks
       [11399, 4000],  // Morphite
     ],
@@ -60,13 +63,13 @@ const ships = [
     materials: [
       [23915, 1],     // Chimera
       [11478, 100],   // R.A.M.- Starship Tech
-      [29101, 400],   // Capital Sustained Shield Emitter
-      [29107, 400],   // Capital Titanium Diborite Armor Plate
-      [29055, 800],   // Capital Gravimetric Sensor Cluster
-      [29071, 800],   // Capital Magpulse Thruster
-      [29093, 800],   // Capital Quantum Microprocessor
-      [29097, 800],   // Capital Scalar Capacitor Unit
-      [29059, 1200],  // Capital Graviton Reactor Unit
+      [29101, 500],   // Capital Sustained Shield Emitter
+      [29107, 500],   // Capital Titanium Diborite Armor Plate
+      [29055, 1000],  // Capital Gravimetric Sensor Cluster
+      [29071, 1000],  // Capital Magpulse Thruster
+      [29093, 1000],  // Capital Quantum Microprocessor
+      [29097, 1000],  // Capital Scalar Capacitor Unit
+      [29059, 1500],  // Capital Graviton Reactor Unit
       [3828, 2000],   // Construction Blocks
       [11399, 4000],  // Morphite
     ],
@@ -80,13 +83,13 @@ const ships = [
     materials: [
       [23911, 1],     // Thanatos
       [11478, 100],   // R.A.M.- Starship Tech
-      [29041, 400],   // Capital Crystalline Carbonide Armor Plate
-      [29091, 400],   // Capital Pulse Shield Emitter
-      [29061, 800],   // Capital Ion Thruster
-      [29069, 800],   // Capital Magnetometric Sensor Cluster
-      [29081, 800],   // Capital Oscillator Capacitor Unit
-      [29085, 800],   // Capital Photon Microprocessor
-      [29051, 1200],  // Capital Fusion Reactor Unit
+      [29041, 500],   // Capital Crystalline Carbonide Armor Plate
+      [29091, 500],   // Capital Pulse Shield Emitter
+      [29061, 1000],  // Capital Ion Thruster
+      [29069, 1000],  // Capital Magnetometric Sensor Cluster
+      [29081, 1000],  // Capital Oscillator Capacitor Unit
+      [29085, 1000],  // Capital Photon Microprocessor
+      [29051, 2000],  // Capital Fusion Reactor Unit
       [3828, 2000],   // Construction Blocks
       [11399, 4000],  // Morphite
     ],
@@ -100,13 +103,13 @@ const ships = [
     materials: [
       [24483, 1],     // Nidhoggur
       [11478, 100],   // R.A.M.- Starship Tech
-      [29043, 400],   // Capital Deflection Shield Emitter
-      [29049, 400],   // Capital Fernite Carbide Composite Armor Plate
-      [29045, 800],   // Capital Electrolytic Capacitor Unit
-      [29065, 800],   // Capital Ladar Sensor Cluster
-      [29075, 800],   // Capital Nanomechanical Microprocessor
-      [29089, 800],   // Capital Plasma Thruster
-      [29079, 1200],  // Capital Nuclear Reactor Unit
+      [29043, 500],   // Capital Deflection Shield Emitter
+      [29049, 500],   // Capital Fernite Carbide Composite Armor Plate
+      [29045, 1000],  // Capital Electrolytic Capacitor Unit
+      [29065, 1000],  // Capital Ladar Sensor Cluster
+      [29075, 1000],  // Capital Nanomechanical Microprocessor
+      [29089, 1000],  // Capital Plasma Thruster
+      [29079, 2000],  // Capital Nuclear Reactor Unit
       [3828, 2000],   // Construction Blocks
       [11399, 4000],  // Morphite
     ],
