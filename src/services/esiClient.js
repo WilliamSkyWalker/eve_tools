@@ -21,13 +21,26 @@ async function esiGet(datasource, path, params = {}) {
   const timer = setTimeout(() => controller.abort(), ESI_TIMEOUT)
   try {
     const resp = await fetch(url.toString(), { signal: controller.signal })
-    if (!resp.ok) throw new Error(`ESI ${resp.status}: ${path}`)
+    if (!resp.ok) {
+      const err = new Error(`ESI ${resp.status}: ${path}`)
+      err.status = resp.status
+      throw err
+    }
     const totalPages = parseInt(resp.headers.get('x-pages') || '1', 10)
     const data = await resp.json()
     return { data, totalPages }
   } finally {
     clearTimeout(timer)
   }
+}
+
+function isEsiUnavailableError(err) {
+  // 5xx, network failures, and aborted requests all count as "ESI side is broken".
+  // 4xx (404 etc.) are per-resource problems and should not surface as maintenance.
+  if (!err) return false
+  if (typeof err.status === 'number') return err.status >= 500
+  if (err.name === 'AbortError') return true
+  return true  // fetch threw with no status -> network/DNS/TLS failure
 }
 
 // ── Market prices (cached in memory with TTL) ──
@@ -82,14 +95,14 @@ async function fetchOrderPricesForType(regionId, typeId, datasource) {
   const key = `${datasource}:${regionId}:${typeId}`
   const cached = orderCache[key]
   if (cached && Date.now() - cached.timestamp < ORDER_TTL) {
-    return cached.data
+    return { ...cached.data, _source: 'cache' }
   }
   try {
     const orders = await getMarketOrders(regionId, typeId, datasource)
-    
+
     // Filter orders to only include Jita system orders
     const jitaOrders = orders.filter(o => o.system_id === JITA_SYSTEM_ID)
-    
+
     const buys = jitaOrders.filter(o => o.is_buy_order).map(o => o.price)
     const sells = jitaOrders.filter(o => !o.is_buy_order).map(o => o.price)
     const data = {
@@ -97,30 +110,44 @@ async function fetchOrderPricesForType(regionId, typeId, datasource) {
       sell_price: sells.length ? Math.min(...sells) : null,
     }
     orderCache[key] = { data, timestamp: Date.now() }
-    return data
-  } catch {
-    return { buy_price: null, sell_price: null }
+    return { ...data, _source: 'fresh' }
+  } catch (err) {
+    return { buy_price: null, sell_price: null, _source: isEsiUnavailableError(err) ? 'esi-down' : 'error' }
   }
 }
 
+/**
+ * Fetch Jita buy/sell prices for a batch of typeIDs.
+ * Returns { prices: { [typeId]: { buy_price, sell_price } }, esiUnavailable: boolean }.
+ * esiUnavailable flips true only when at least one fresh request hit a 5xx/network
+ * failure AND no fresh request succeeded — so a partial outage with some prices
+ * coming back stays silent, but a fully-broken ESI surfaces a maintenance hint.
+ * Cache hits don't count either way (the value is real, but the user might still
+ * want to retry to refresh).
+ */
 export async function getOrderPricesForTypes(typeIds, datasource = 'serenity', regionId = null) {
-  if (!typeIds.length) return {}
+  if (!typeIds.length) return { prices: {}, esiUnavailable: false }
   regionId = regionId || DEFAULT_REGION_ID
 
   // Concurrent with max 10 in-flight
-  const result = {}
+  const prices = {}
+  let freshSuccess = 0
+  let freshDown = 0
   const CONCURRENCY = 10
   const pending = [...typeIds]
 
   async function worker() {
     while (pending.length) {
       const tid = pending.shift()
-      result[tid] = await fetchOrderPricesForType(regionId, tid, datasource)
+      const r = await fetchOrderPricesForType(regionId, tid, datasource)
+      if (r._source === 'fresh') freshSuccess++
+      else if (r._source === 'esi-down') freshDown++
+      prices[tid] = { buy_price: r.buy_price, sell_price: r.sell_price }
     }
   }
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, typeIds.length) }, () => worker()))
-  return result
+  return { prices, esiUnavailable: freshDown > 0 && freshSuccess === 0 }
 }
 
 // ── Public contracts ──

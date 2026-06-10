@@ -361,7 +361,7 @@ async function fetchLevelPrices() {
     for (const mat of summary.value) allTypeIds.add(mat.type_id)
 
     // Fetch Jita order prices for all types at once
-    const prices = await getOrderPricesForTypes([...allTypeIds], settings.datasource)
+    const { prices } = await getOrderPricesForTypes([...allTypeIds], settings.datasource)
 
     // Product prices
     let prodSell = 0, prodBuy = 0

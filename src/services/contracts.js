@@ -41,7 +41,9 @@ export async function getContractItems(contractId, datasource = 'serenity') {
   const typeIds = [...new Set(items.filter(i => i.type_id).map(i => i.type_id))]
 
   // Fetch Jita prices
-  const jitaPrices = typeIds.length ? await getOrderPricesForTypes(typeIds, datasource, JITA_REGION_ID) : {}
+  const { prices: jitaPrices } = typeIds.length
+    ? await getOrderPricesForTypes(typeIds, datasource, JITA_REGION_ID)
+    : { prices: {} }
 
   let totalJitaSell = 0
   let totalJitaBuy = 0

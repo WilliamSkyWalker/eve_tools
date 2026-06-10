@@ -181,7 +181,8 @@ async function calculateAll() {
       typeIds.add(o.t)
       if (o.req) for (const [tid] of o.req) typeIds.add(tid)
     }
-    prices.value = await getOrderPricesForTypes([...typeIds], settings.datasource)
+    const { prices: p } = await getOrderPricesForTypes([...typeIds], settings.datasource)
+    prices.value = p
   } catch { /* prices optional */ }
   finally { priceLoading.value = false }
 }

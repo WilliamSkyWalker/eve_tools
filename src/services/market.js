@@ -109,7 +109,9 @@ export async function marketCompare(text, datasource = 'serenity') {
   const resolved = resolveItemNames(names)
 
   const typeIds = resolved.filter(r => r.matched).map(r => r.type_id)
-  const orderPrices = typeIds.length ? await getOrderPricesForTypes(typeIds, datasource) : {}
+  const { prices: orderPrices, esiUnavailable } = typeIds.length
+    ? await getOrderPricesForTypes(typeIds, datasource)
+    : { prices: {}, esiUnavailable: false }
 
   const items = resolved.map((res, i) => {
     const op = res.type_id ? (orderPrices[res.type_id] || {}) : {}
@@ -125,5 +127,5 @@ export async function marketCompare(text, datasource = 'serenity') {
     }
   })
 
-  return { items }
+  return { items, esiUnavailable }
 }

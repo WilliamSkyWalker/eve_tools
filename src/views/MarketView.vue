@@ -25,6 +25,7 @@
       </div>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
+      <div v-if="esiDown" class="esi-down-msg">{{ t('market.esiDown') }}</div>
 
       <div v-if="items.length" class="result-section">
         <!-- Price Summary -->
@@ -233,6 +234,7 @@ const inputText = ref('')
 const items = ref([])
 const loading = ref(false)
 const error = ref('')
+const esiDown = ref(false)
 
 // ── Sorting ──
 const sortField = ref('')
@@ -294,11 +296,13 @@ async function queryPrices() {
   if (!inputText.value.trim()) return
   loading.value = true
   error.value = ''
+  esiDown.value = false
   items.value = []
 
   try {
     const { data } = await marketCompare(inputText.value, settings.datasource)
     items.value = data.items
+    esiDown.value = !!data.esiUnavailable
   } catch (e) {
     error.value = t('market.error')
   } finally {
@@ -390,7 +394,8 @@ async function calcReprocess() {
     let orderPrices = {}
     if (matTypeIds.length) {
       try {
-        orderPrices = await getOrderPricesForTypes(matTypeIds, settings.datasource)
+        const { prices } = await getOrderPricesForTypes(matTypeIds, settings.datasource)
+        orderPrices = prices
       } catch { /* prices optional */ }
     }
 
@@ -500,7 +505,8 @@ async function loadOreValues() {
     let orderPrices = {}
     if (mineralIds.size) {
       try {
-        orderPrices = await getOrderPricesForTypes([...mineralIds], settings.datasource)
+        const { prices } = await getOrderPricesForTypes([...mineralIds], settings.datasource)
+        orderPrices = prices
       } catch { /* prices optional */ }
     }
 
@@ -717,6 +723,17 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   text-align: center;
   color: #ef5350;
   margin-bottom: 16px;
+}
+
+.esi-down-msg {
+  text-align: center;
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.08);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.95em;
 }
 
 .reprocess-total {
