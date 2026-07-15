@@ -457,12 +457,12 @@ async function calcReprocess() {
           group_name: (gid != null && indData.groups?.[gid]?.n) || '',
         }
       })
-      // Group by item category (group), then by total value descending within each group
+      // Group by item category (group), then by total value ascending within each group
       .sort((a, b) => {
         if (a.group_name !== b.group_name) return a.group_name.localeCompare(b.group_name)
         const aVal = (a.buy_price || 0) * a.quantity
         const bVal = (b.buy_price || 0) * b.quantity
-        return bVal - aVal
+        return aVal - bVal
       })
   } catch (e) {
     reprocessError.value = t('market.error')
