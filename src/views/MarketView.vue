@@ -185,19 +185,24 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="mat in reprocessResults" :key="mat.type_id">
-              <td class="col-name">
-                <div class="name-cell">
-                  <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
-                  <span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
-                </div>
-              </td>
-              <td class="col-qty">{{ formatNumber(mat.quantity) }}</td>
-              <td class="col-volume">{{ formatVolume(mat.volume, 1) }}</td>
-              <td class="col-volume">{{ formatVolume(mat.volume, mat.quantity) }}</td>
-              <td class="col-price">{{ formatPrice(mat.buy_price) }}</td>
-              <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
-            </tr>
+            <template v-for="(mat, idx) in reprocessResults" :key="mat.type_id">
+              <tr v-if="mat.group_name && (idx === 0 || mat.group_name !== reprocessResults[idx - 1].group_name)" class="group-row">
+                <td colspan="6" class="group-label">{{ mat.group_name }}</td>
+              </tr>
+              <tr>
+                <td class="col-name">
+                  <div class="name-cell">
+                    <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
+                    <span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
+                  </div>
+                </td>
+                <td class="col-qty">{{ formatNumber(mat.quantity) }}</td>
+                <td class="col-volume">{{ formatVolume(mat.volume, 1) }}</td>
+                <td class="col-volume">{{ formatVolume(mat.volume, mat.quantity) }}</td>
+                <td class="col-price">{{ formatPrice(mat.buy_price) }}</td>
+                <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -441,15 +446,20 @@ async function calcReprocess() {
     reprocessResults.value = matTypeIds
       .map(tid => {
         const t = indData.types[tid]
+        const gid = t?.g
         return {
           type_id: tid,
           type_name: t ? locName(t) : String(tid),
           quantity: outputMap[tid],
           volume: t?.v ?? null,
           buy_price: orderPrices[tid]?.buy_price ?? null,
+          group_id: gid ?? 0,
+          group_name: (gid != null && indData.groups?.[gid]?.n) || '',
         }
       })
+      // Group by item category (group), then by total value descending within each group
       .sort((a, b) => {
+        if (a.group_name !== b.group_name) return a.group_name.localeCompare(b.group_name)
         const aVal = (a.buy_price || 0) * a.quantity
         const bVal = (b.buy_price || 0) * b.quantity
         return bVal - aVal
@@ -939,5 +949,18 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 
 .total-val {
   color: #c8aa6e;
+}
+
+.group-row td {
+  padding: 6px 12px 4px;
+  border-bottom: none;
+}
+
+.group-label {
+  color: #8a8a8a;
+  font-size: 0.8em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 </style>
