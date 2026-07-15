@@ -67,6 +67,16 @@
               </th>
               <th class="col-price">{{ t('market.colSellTotal') }}</th>
             </tr>
+            <tr class="total-row">
+              <td>{{ t('market.total') }}</td>
+              <td></td>
+              <td></td>
+              <td class="col-volume total-val">{{ volumeTotal ? `${volumeTotal.toLocaleString()} m³` : '-' }}</td>
+              <td class="col-price total-val">{{ formatPrice(buyTotal) }}</td>
+              <td></td>
+              <td class="col-price total-val">{{ formatPrice(sellTotal) }}</td>
+              <td></td>
+            </tr>
           </thead>
           <tbody>
             <tr v-for="item in sortedItems" :key="item.name" :class="{ unmatched: !item.matched }">
@@ -88,18 +98,6 @@
               <td class="col-price">{{ formatSubtotal(item.sell_price, item.quantity) }}</td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td>{{ t('market.total') }}</td>
-              <td></td>
-              <td></td>
-              <td class="col-volume total-val">{{ volumeTotal ? `${volumeTotal.toLocaleString()} m³` : '-' }}</td>
-              <td class="col-price total-val">{{ formatPrice(buyTotal) }}</td>
-              <td></td>
-              <td class="col-price total-val">{{ formatPrice(sellTotal) }}</td>
-              <td></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </template>
@@ -140,6 +138,12 @@
               <th class="col-volume">{{ t('market.colVolume') }}</th>
               <th class="col-volume">{{ t('market.colTotalVolume') }}</th>
             </tr>
+            <tr class="total-row">
+              <td>{{ t('market.total') }}</td>
+              <td></td>
+              <td></td>
+              <td class="col-volume total-val">{{ reprocessInputVolume ? `${reprocessInputVolume.toLocaleString()} m³` : '-' }}</td>
+            </tr>
           </thead>
           <tbody>
             <tr v-for="item in reprocessInputItems" :key="item.type_id || item.name" :class="{ unmatched: !item.matched }">
@@ -155,21 +159,12 @@
               <td class="col-volume">{{ item.matched ? formatVolume(item.volume, item.quantity) : '-' }}</td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td>{{ t('market.total') }}</td>
-              <td></td>
-              <td></td>
-              <td class="col-volume total-val">{{ reprocessInputVolume ? `${reprocessInputVolume.toLocaleString()} m³` : '-' }}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
       <!-- Reprocessing output -->
       <div v-if="reprocessResults.length" class="result-section">
         <h3 class="section-title">{{ t('market.reprocessOutput') }}</h3>
-        <div class="reprocess-total">{{ t('market.total') }}：<span class="total-val">{{ formatPrice(reprocessTotal) }}</span> ISK</div>
         <table class="result-table">
           <thead>
             <tr>
@@ -179,6 +174,14 @@
               <th class="col-volume">{{ t('market.colTotalVolume') }}</th>
               <th class="col-price">{{ t('market.colBuy') }}</th>
               <th class="col-price">{{ t('market.colBuyTotal') }}</th>
+            </tr>
+            <tr class="total-row">
+              <td>{{ t('market.total') }}</td>
+              <td></td>
+              <td></td>
+              <td class="col-volume total-val">{{ reprocessOutputVolume ? `${reprocessOutputVolume.toLocaleString()} m³` : '-' }}</td>
+              <td></td>
+              <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
             </tr>
           </thead>
           <tbody>
@@ -196,16 +199,6 @@
               <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td>{{ t('market.total') }}</td>
-              <td></td>
-              <td></td>
-              <td class="col-volume total-val">{{ reprocessOutputVolume ? `${reprocessOutputVolume.toLocaleString()} m³` : '-' }}</td>
-              <td></td>
-              <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </template>
@@ -797,19 +790,6 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   font-size: 0.95em;
 }
 
-.reprocess-total {
-  text-align: center;
-  font-size: 1.2em;
-  font-weight: 600;
-  color: #d0d0d0;
-  margin-bottom: 12px;
-}
-
-.reprocess-total .total-val {
-  color: #c8aa6e;
-  font-size: 1.1em;
-}
-
 .loading-msg {
   text-align: center;
   color: #8a8a8a;
@@ -950,10 +930,11 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 }
 
 .total-row td {
-  border-top: 2px solid #2a2a2a;
-  border-bottom: none;
+  border-top: none;
+  border-bottom: 2px solid #2a2a2a;
   padding: 10px 12px;
   color: #c8aa6e;
+  background: rgba(200, 170, 110, 0.05);
 }
 
 .total-val {

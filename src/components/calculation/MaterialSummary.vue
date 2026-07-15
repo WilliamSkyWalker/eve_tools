@@ -24,6 +24,10 @@
         <th class="num">{{ t('summary.estPrice') }}</th>
         <th class="num">{{ t('summary.subtotal') }}</th>
       </tr>
+      <tr class="total-row">
+        <td :colspan="hasInventory ? 5 : 3" class="total-label">{{ t('summary.totalCost') }}</td>
+        <td class="num total-value">{{ formatPrice(totalCost) }}</td>
+      </tr>
     </thead>
     <tbody>
       <tr v-for="mat in materials" :key="mat.type_id">
@@ -35,12 +39,6 @@
         <td class="num highlight">{{ formatPrice(getSubtotal(mat)) }}</td>
       </tr>
     </tbody>
-    <tfoot>
-      <tr>
-        <td :colspan="hasInventory ? 5 : 3" class="total-label">{{ t('summary.totalCost') }}</td>
-        <td class="num total-value">{{ formatPrice(totalCost) }}</td>
-      </tr>
-    </tfoot>
   </table>
 </template>
 
@@ -245,6 +243,11 @@ function formatPrice(n) {
 
 .highlight {
   color: #c8aa6e;
+}
+
+.total-row td {
+  border-bottom: 2px solid #2a2a2a;
+  background: rgba(200, 170, 110, 0.05);
 }
 
 .total-label {
