@@ -52,6 +52,10 @@
                 {{ t('market.colVolume') }}
                 <span class="sort-indicator" :class="getSortClass('volume')"></span>
               </th>
+              <th class="col-volume sortable" @click="sortBy('totalVolume')">
+                {{ t('market.colTotalVolume') }}
+                <span class="sort-indicator" :class="getSortClass('totalVolume')"></span>
+              </th>
               <th class="col-price sortable" @click="sortBy('buy_price')">
                 {{ t('market.colBuy') }}
                 <span class="sort-indicator" :class="getSortClass('buy_price')"></span>
@@ -76,6 +80,7 @@
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(item.quantity) }}</td>
+              <td class="col-volume">{{ item.matched ? formatVolume(item.volume, 1) : '-' }}</td>
               <td class="col-volume">{{ item.matched ? formatVolume(item.volume, item.quantity) : '-' }}</td>
               <td class="col-price">{{ formatPrice(item.buy_price) }}</td>
               <td class="col-price">{{ formatSubtotal(item.buy_price, item.quantity) }}</td>
@@ -88,9 +93,11 @@
               <td>{{ t('market.total') }}</td>
               <td></td>
               <td></td>
+              <td class="col-volume total-val">{{ volumeTotal ? `${volumeTotal.toLocaleString()} m³` : '-' }}</td>
               <td class="col-price total-val">{{ formatPrice(buyTotal) }}</td>
               <td></td>
               <td class="col-price total-val">{{ formatPrice(sellTotal) }}</td>
+              <td></td>
             </tr>
           </tfoot>
         </table>
@@ -130,6 +137,8 @@
             <tr>
               <th class="col-name">{{ t('market.colName') }}</th>
               <th class="col-qty">{{ t('market.colQty') }}</th>
+              <th class="col-volume">{{ t('market.colVolume') }}</th>
+              <th class="col-volume">{{ t('market.colTotalVolume') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -142,8 +151,18 @@
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(item.quantity) }}</td>
+              <td class="col-volume">{{ item.matched ? formatVolume(item.volume, 1) : '-' }}</td>
+              <td class="col-volume">{{ item.matched ? formatVolume(item.volume, item.quantity) : '-' }}</td>
             </tr>
           </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td>{{ t('market.total') }}</td>
+              <td></td>
+              <td></td>
+              <td class="col-volume total-val">{{ reprocessInputVolume ? `${reprocessInputVolume.toLocaleString()} m³` : '-' }}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -156,6 +175,8 @@
             <tr>
               <th class="col-name">{{ t('market.colName') }}</th>
               <th class="col-qty">{{ t('market.colQty') }}</th>
+              <th class="col-volume">{{ t('market.colVolume') }}</th>
+              <th class="col-volume">{{ t('market.colTotalVolume') }}</th>
               <th class="col-price">{{ t('market.colBuy') }}</th>
               <th class="col-price">{{ t('market.colBuyTotal') }}</th>
             </tr>
@@ -169,10 +190,22 @@
                 </div>
               </td>
               <td class="col-qty">{{ formatNumber(mat.quantity) }}</td>
+              <td class="col-volume">{{ formatVolume(mat.volume, 1) }}</td>
+              <td class="col-volume">{{ formatVolume(mat.volume, mat.quantity) }}</td>
               <td class="col-price">{{ formatPrice(mat.buy_price) }}</td>
               <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
             </tr>
           </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td>{{ t('market.total') }}</td>
+              <td></td>
+              <td></td>
+              <td class="col-volume total-val">{{ reprocessOutputVolume ? `${reprocessOutputVolume.toLocaleString()} m³` : '-' }}</td>
+              <td></td>
+              <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </template>
@@ -255,6 +288,10 @@ const sortedItems = computed(() => {
         valueA = a.matched ? (a.volume || 0) : 0
         valueB = b.matched ? (b.volume || 0) : 0
         break
+      case 'totalVolume':
+        valueA = a.matched ? (a.volume || 0) * (a.quantity || 0) : 0
+        valueB = b.matched ? (b.volume || 0) * (b.quantity || 0) : 0
+        break
       case 'buy_price':
         valueA = a.buy_price || 0
         valueB = b.buy_price || 0
@@ -323,6 +360,15 @@ const sellTotal = computed(() => {
   return items.value.reduce((sum, item) => {
     if (item.matched && item.sell_price && item.quantity) {
       return sum + item.sell_price * item.quantity
+    }
+    return sum
+  }, 0)
+})
+
+const volumeTotal = computed(() => {
+  return items.value.reduce((sum, item) => {
+    if (item.matched && item.volume && item.quantity) {
+      return sum + item.volume * item.quantity
     }
     return sum
   }, 0)
@@ -406,6 +452,7 @@ async function calcReprocess() {
           type_id: tid,
           type_name: t ? locName(t) : String(tid),
           quantity: outputMap[tid],
+          volume: t?.v ?? null,
           buy_price: orderPrices[tid]?.buy_price ?? null,
         }
       })
@@ -424,6 +471,20 @@ async function calcReprocess() {
 const reprocessTotal = computed(() => {
   return reprocessResults.value.reduce((sum, mat) => {
     if (mat.buy_price && mat.quantity) return sum + mat.buy_price * mat.quantity
+    return sum
+  }, 0)
+})
+
+const reprocessInputVolume = computed(() => {
+  return reprocessInputItems.value.reduce((sum, item) => {
+    if (item.matched && item.volume && item.quantity) return sum + item.volume * item.quantity
+    return sum
+  }, 0)
+})
+
+const reprocessOutputVolume = computed(() => {
+  return reprocessResults.value.reduce((sum, mat) => {
+    if (mat.volume && mat.quantity) return sum + mat.volume * mat.quantity
     return sum
   }, 0)
 })

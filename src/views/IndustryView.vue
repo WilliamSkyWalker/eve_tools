@@ -23,9 +23,10 @@
             <div class="tier-title-row">
               <span class="tier-name">{{ t('industry.finalProduct') }}</span>
             </div>
-            <div v-if="productSellPrice != null || totalTime.max" class="tier-stats">
+            <div v-if="productSellPrice != null || productVolume != null || totalTime.max" class="tier-stats">
               <span v-if="productSellPrice != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(productSellPrice) }}</span>
               <span v-if="productBuyPrice != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(productBuyPrice) }}</span>
+              <span v-if="productVolume != null" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(productVolume) }}</span>
               <span v-if="totalTime.max" class="stat-item time">{{ formatTime(totalTime.min) }} ~ {{ formatTime(totalTime.max) }}</span>
             </div>
           </header>
@@ -56,6 +57,7 @@
             <div v-if="levelStats[lvl.level]" class="tier-stats">
               <span v-if="levelStats[lvl.level].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
               <span v-if="levelStats[lvl.level].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.level].buyTotal) }}</span>
+              <span v-if="levelStats[lvl.level].volume" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(levelStats[lvl.level].volume) }}</span>
               <span v-if="levelStats[lvl.level].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.level].minTime) }} ~ {{ formatTime(levelStats[lvl.level].maxTime) }}</span>
             </div>
             <div v-else-if="priceLoading" class="tier-stats"><span class="stat-item loading-stat">...</span></div>
@@ -114,9 +116,10 @@
               <span class="tier-name">{{ t('industry.rawSummary') }}</span>
               <button class="tier-inv-btn" @click="openInventory('summary')">{{ t('industry.inventoryBtn') }}</button>
             </div>
-            <div v-if="levelStats['summary']?.sellTotal" class="tier-stats">
-              <span class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
-              <span class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats['summary'].buyTotal) }}</span>
+            <div v-if="levelStats['summary']?.sellTotal || levelStats['summary']?.volume" class="tier-stats">
+              <span v-if="levelStats['summary'].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats['summary'].sellTotal) }}</span>
+              <span v-if="levelStats['summary'].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats['summary'].buyTotal) }}</span>
+              <span v-if="levelStats['summary'].volume" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(levelStats['summary'].volume) }}</span>
             </div>
           </header>
           <table class="tier-table" @copy="onSummaryCopy($event)">
@@ -231,6 +234,7 @@ const skippedItems = reactive(new Set())
 
 const productSellPrice = ref(null)
 const productBuyPrice = ref(null)
+const productVolume = ref(null)
 
 const totalTime = computed(() => {
   let totalBase = 0, totalBest = 0
@@ -343,6 +347,7 @@ function computeTimeStats() {
     levelStats[lvl.level] = {
       sellTotal: existing?.sellTotal ?? null,
       buyTotal: existing?.buyTotal ?? null,
+      volume: existing?.volume ?? null,
       minTime: parentTime ? Math.round(parentTime.totalBest) : null,
       maxTime: parentTime ? parentTime.totalBase : null,
     }
@@ -352,6 +357,9 @@ function computeTimeStats() {
 async function fetchLevelPrices() {
   priceLoading.value = true
   try {
+    const indData = getIndustryData()
+    const volOf = tid => indData?.types?.[tid]?.v || 0
+
     // Collect all type IDs
     const allTypeIds = new Set()
     for (const item of currentItems.value) allTypeIds.add(item.product_type_id)
@@ -364,38 +372,45 @@ async function fetchLevelPrices() {
     const { prices } = await getOrderPricesForTypes([...allTypeIds], settings.datasource)
 
     // Product prices
-    let prodSell = 0, prodBuy = 0
+    let prodSell = 0, prodBuy = 0, prodVolume = 0
     for (const item of currentItems.value) {
       const p = prices[item.product_type_id]
       const qty = item.runs * (item.product_quantity || 1)
       if (p?.sell_price) prodSell += p.sell_price * qty
       if (p?.buy_price) prodBuy += p.buy_price * qty
+      prodVolume += volOf(item.product_type_id) * qty
     }
     productSellPrice.value = prodSell || null
     productBuyPrice.value = prodBuy || null
+    productVolume.value = prodVolume || null
 
-    // Summary prices
-    let summSell = 0, summBuy = 0
+    // Summary prices (skip owned materials — they don't participate in valuation)
+    let summSell = 0, summBuy = 0, summVolume = 0
     for (const mat of summary.value) {
+      if (isOwned('summary', mat.type_id, mat.total_quantity)) continue
       const p = prices[mat.type_id]
       if (p?.sell_price) summSell += p.sell_price * mat.total_quantity
       if (p?.buy_price) summBuy += p.buy_price * mat.total_quantity
+      summVolume += volOf(mat.type_id) * mat.total_quantity
     }
-    levelStats['summary'] = { sellTotal: summSell || null, buyTotal: summBuy || null, minTime: null, maxTime: null }
+    levelStats['summary'] = { sellTotal: summSell || null, buyTotal: summBuy || null, volume: summVolume || null, minTime: null, maxTime: null }
 
-    // Per-level prices
+    // Per-level prices (skip owned materials)
     for (const lvl of levels.value) {
-      let sellTotal = 0, buyTotal = 0
+      let sellTotal = 0, buyTotal = 0, volume = 0
       for (const mat of lvl.materials) {
+        if (isOwned(lvl.level, mat.type_id, mat.quantity)) continue
         const p = prices[mat.type_id]
         if (p?.sell_price) sellTotal += p.sell_price * mat.quantity
         if (p?.buy_price) buyTotal += p.buy_price * mat.quantity
+        volume += volOf(mat.type_id) * mat.quantity
       }
       if (levelStats[lvl.level]) {
         levelStats[lvl.level].sellTotal = sellTotal
         levelStats[lvl.level].buyTotal = buyTotal
+        levelStats[lvl.level].volume = volume
       } else {
-        levelStats[lvl.level] = { sellTotal, buyTotal, minTime: null, maxTime: null }
+        levelStats[lvl.level] = { sellTotal, buyTotal, volume, minTime: null, maxTime: null }
       }
     }
   } catch { /* prices optional */ }
@@ -408,6 +423,14 @@ function formatPrice(n) {
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
   if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
   return n.toFixed(0)
+}
+
+function formatVolume(v) {
+  if (v == null) return '—'
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B m³'
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M m³'
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K m³'
+  return v.toFixed(1) + ' m³'
 }
 
 function formatTime(seconds) {
@@ -442,6 +465,7 @@ async function onCalculate(items) {
   for (const key of Object.keys(levelStats)) delete levelStats[key]
   productSellPrice.value = null
   productBuyPrice.value = null
+  productVolume.value = null
 
   const finalProductIds = new Set(items.map(i => i.product_type_id))
   const indData = getIndustryData()
@@ -518,7 +542,10 @@ function toggleOwned(level, typeId, quantity) {
       bomChanged = true
     }
   }
+  // A BOM change re-runs fetchLevelPrices via fetchBom; otherwise recompute
+  // stats directly so owned materials drop out of the sell/buy/volume totals.
   if (bomChanged) fetchBom()
+  else fetchLevelPrices()
 }
 
 function hasManufacturable(lvl) {
@@ -893,6 +920,7 @@ function formatNumber(n) {
 
 .stat-item.sell { color: #ef5350; }
 .stat-item.buy { color: #4caf50; }
+.stat-item.volume { color: #c8aa6e; }
 .stat-item.time { color: #8a8a8a; }
 .stat-item.loading-stat { color: #555; }
 

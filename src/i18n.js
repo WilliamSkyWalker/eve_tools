@@ -69,6 +69,7 @@ const messages = {
     'industry.copied': '已复制!',
     'industry.sell': '卖单',
     'industry.buy': '收单',
+    'industry.volume': '总体积',
     'industry.share': '分享计划',
     'industry.haveQty': '已有',
     'industry.needQty': '还需',
@@ -111,6 +112,7 @@ const messages = {
     'market.colName': '材料',
     'market.colQty': '数量',
     'market.colVolume': '体积',
+    'market.colTotalVolume': '总体积',
     'market.colBuy': '收单',
     'market.colBuyTotal': '收单小计',
     'market.colSell': '卖单',
@@ -697,6 +699,7 @@ const messages = {
     'industry.otherMaterials': 'Other Materials',
     'industry.sell': 'Sell',
     'industry.buy': 'Buy',
+    'industry.volume': 'Vol',
     'industry.share': 'Share Plan',
 
     // ManufacturingQueue
@@ -735,6 +738,7 @@ const messages = {
     'market.colName': 'Material',
     'market.colQty': 'Quantity',
     'market.colVolume': 'Volume',
+    'market.colTotalVolume': 'Total Volume',
     'market.colBuy': 'Buy',
     'market.colBuyTotal': 'Buy Subtotal',
     'market.colSell': 'Sell',
