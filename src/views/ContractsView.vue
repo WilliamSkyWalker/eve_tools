@@ -205,6 +205,11 @@
                   <div v-if="c.type !== 'courier'">
                     <div v-if="itemsLoading" class="items-loading">{{ t('contracts.loadingItems') }}</div>
                     <template v-else-if="expandedItems.length > 0">
+                      <div class="jita-total-row">
+                        <span v-if="expandedJitaBuy">{{ t('contracts.totalJitaBuy') }}: {{ formatIsk(expandedJitaBuy) }}</span>
+                        <span v-if="expandedJitaBuy && expandedJitaTotal" class="jita-total-sep">|</span>
+                        <span v-if="expandedJitaTotal">{{ t('contracts.totalJitaValue') }}: {{ formatIsk(expandedJitaTotal) }}</span>
+                      </div>
                       <table class="items-table">
                         <thead>
                           <tr>
@@ -231,11 +236,6 @@
                           </tr>
                         </tbody>
                       </table>
-                      <div class="jita-total-row">
-                        <span v-if="expandedJitaBuy">{{ t('contracts.totalJitaBuy') }}: {{ formatIsk(expandedJitaBuy) }}</span>
-                        <span v-if="expandedJitaBuy && expandedJitaTotal" class="jita-total-sep">|</span>
-                        <span v-if="expandedJitaTotal">{{ t('contracts.totalJitaValue') }}: {{ formatIsk(expandedJitaTotal) }}</span>
-                      </div>
                     </template>
                   </div>
                 </div>
@@ -916,7 +916,7 @@ function formatDateTime(dateStr) {
   padding: 8px 10px;
   color: #c8aa6e;
   font-weight: 600;
-  border-top: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
 }
 
 .jita-total-sep {
