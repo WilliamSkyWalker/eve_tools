@@ -1,5 +1,6 @@
 <template>
   <div class="industry">
+    <button class="t2rank-btn" @click="openT2Rank">{{ t('industry.t2RankBtn') }}</button>
     <h1 class="title">{{ t('industry.title') }} ({{ serverLabel }})<PageHelp topic="industry" /></h1>
 
     <ManufacturingQueue @calculate="onCalculate" />
@@ -194,6 +195,52 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- T2 Profit Ranking Modal -->
+    <Teleport to="body">
+      <div v-if="t2RankModal" class="modal-overlay" @click.self="t2RankModal = false">
+        <div class="modal-content t2rank-modal">
+          <button class="modal-close" @click="t2RankModal = false">&times;</button>
+          <h2 class="modal-title">{{ t('industry.t2RankTitle') }} ({{ serverLabel }})</h2>
+          <p class="t2rank-hint">{{ t('industry.t2RankHint') }}</p>
+
+          <div v-if="t2Loading" class="t2rank-msg">{{ t('industry.t2RankLoading') }}</div>
+          <div v-if="t2Error" class="t2rank-msg t2rank-err">{{ t2Error }}</div>
+          <div v-if="t2EsiDown" class="t2rank-msg t2rank-err">{{ t('market.esiDown') }}</div>
+
+          <div v-if="!t2Loading && t2Rows.length" class="t2rank-table-wrap">
+            <table class="t2rank-table">
+              <thead>
+                <tr>
+                  <th class="num">#</th>
+                  <th>{{ t('industry.t2ColShip') }}</th>
+                  <th>{{ t('industry.t2ColGroup') }}</th>
+                  <th class="num">{{ t('industry.t2ColRevenue') }}</th>
+                  <th class="num">{{ t('industry.t2ColCost') }}</th>
+                  <th class="num">{{ t('industry.t2ColProfit') }}</th>
+                  <th class="num">{{ t('industry.t2ColMargin') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, i) in t2Rows" :key="r.type_id">
+                  <td class="num t2-rank-idx">{{ i + 1 }}</td>
+                  <td class="t2-name-cell">
+                    <img class="type-icon" :src="`https://images.evetech.net/types/${r.type_id}/icon?size=32`" alt="" loading="lazy">
+                    <span class="copyable" @click="copyName(r.name, $event)">{{ r.name }}</span>
+                    <small v-if="r.missing" class="t2-missing" :title="t('industry.t2Missing')">*</small>
+                  </td>
+                  <td class="t2-group-cell">{{ r.group }}</td>
+                  <td class="num">{{ formatPrice(r.revenue) }}</td>
+                  <td class="num">{{ formatPrice(r.cost) }}</td>
+                  <td class="num" :class="r.profit >= 0 ? 't2-pos' : 't2-neg'">{{ formatPrice(r.profit) }}</td>
+                  <td class="num" :class="r.margin >= 0 ? 't2-pos' : 't2-neg'">{{ r.margin.toFixed(1) }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -209,6 +256,7 @@ import { loadIndustryData, getIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
 import { getTypeName } from '../services/calculator'
+import { computeT2Margins } from '../services/t2margin'
 
 const settings = useSettingsStore()
 
@@ -235,6 +283,32 @@ const skippedItems = reactive(new Set())
 const productSellPrice = ref(null)
 const productBuyPrice = ref(null)
 const productVolume = ref(null)
+
+// ── T2 profit ranking ──
+const t2RankModal = ref(false)
+const t2Rows = ref([])
+const t2Loading = ref(false)
+const t2Error = ref('')
+const t2EsiDown = ref(false)
+
+async function openT2Rank() {
+  t2RankModal.value = true
+  if (t2Rows.value.length) return  // cached until server/locale change
+  t2Loading.value = true
+  t2Error.value = ''
+  t2EsiDown.value = false
+  try {
+    await loadIndustryData()
+    const { rows, esiUnavailable } = await computeT2Margins(settings.datasource)
+    t2Rows.value = rows
+    t2EsiDown.value = esiUnavailable
+    if (!rows.length && !esiUnavailable) t2Error.value = t('industry.t2RankError')
+  } catch (e) {
+    t2Error.value = t('industry.t2RankError')
+  } finally {
+    t2Loading.value = false
+  }
+}
 
 const totalTime = computed(() => {
   let totalBase = 0, totalBest = 0
@@ -283,6 +357,7 @@ onMounted(async () => {
 watch(() => settings.locale, () => {
   shareLabel.value = t('industry.share')
   copyLabel.value = t('industry.copyNeed')
+  t2Rows.value = []  // ship names are baked via locName — recompute on next open
   if (!dataReady.value) return
   for (const item of currentItems.value) {
     item.product_name = getTypeName(item.product_type_id)
@@ -419,10 +494,12 @@ async function fetchLevelPrices() {
 
 function formatPrice(n) {
   if (n == null) return '—'
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B'
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
-  return n.toFixed(0)
+  const sign = n < 0 ? '-' : ''
+  const a = Math.abs(n)
+  if (a >= 1e9) return sign + (a / 1e9).toFixed(2) + 'B'
+  if (a >= 1e6) return sign + (a / 1e6).toFixed(2) + 'M'
+  if (a >= 1e3) return sign + (a / 1e3).toFixed(1) + 'K'
+  return sign + a.toFixed(0)
 }
 
 function formatVolume(v) {
@@ -758,6 +835,7 @@ function formatNumber(n) {
 <style scoped>
 .industry {
   padding-top: 20px;
+  position: relative;
 }
 
 .title {
@@ -765,6 +843,27 @@ function formatNumber(n) {
   font-size: 1.8em;
   margin-bottom: 4px;
   text-align: center;
+}
+
+.t2rank-btn {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #c8aa6e;
+  border-radius: 6px;
+  color: #c8aa6e;
+  padding: 7px 16px;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  z-index: 5;
+}
+
+.t2rank-btn:hover {
+  background: #c8aa6e;
+  color: #0d0d0d;
 }
 
 .subtitle {
@@ -1120,6 +1219,88 @@ function formatNumber(n) {
   max-width: 900px;
   width: 95%;
 }
+
+.t2rank-modal {
+  max-width: 860px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.t2rank-hint {
+  color: #777;
+  font-size: 0.78em;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.t2rank-msg {
+  text-align: center;
+  color: #8a8a8a;
+  padding: 24px;
+}
+
+.t2rank-err {
+  color: #ff9800;
+}
+
+.t2rank-table-wrap {
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.t2rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.t2rank-table th {
+  position: sticky;
+  top: 0;
+  background: #1f1c17;
+  color: #c8aa6e;
+  padding: 8px 10px;
+  font-weight: 500;
+  text-align: left;
+  border-bottom: 1px solid #2a2a2a;
+  white-space: nowrap;
+}
+
+.t2rank-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+}
+
+.t2rank-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.t2-rank-idx {
+  color: #777;
+}
+
+.t2-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.t2-group-cell {
+  color: #8a8a8a;
+  white-space: nowrap;
+}
+
+.t2-missing {
+  color: #ff9800;
+  cursor: help;
+}
+
+.t2-pos { color: #4caf50; }
+.t2-neg { color: #ef5350; }
 
 .modal-close {
   position: absolute;

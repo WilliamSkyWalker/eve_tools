@@ -21,7 +21,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 三个 JSON 文件，由 `scripts/convert-sde.mjs` 从 Fuzzwork CSV 转换生成：
 
-- **`industry-serenity.json`** / **`industry-tranquility.json`** (~3MB 每份) — 按服务器拆分。物品类型（含中文名、体积）、分组、蓝图、制造活动、材料、产品、化矿数据。使用短 key（n=name, nz=name_zh, g=groupId, v=volume, ps=portionSize）压缩体积。**Serenity 用 NetEase 中文翻译，Tranquility 用 CCP 中文翻译**——这避免了 SDE 翻译重名（如 17918 Rattlesnake / 85062 Sidewinder 在 TQ 都是"响尾蛇级"，但 NetEase 给 Sidewinder 翻译为"侧进蛇级"）。Serenity 文件含国服独有物品（约 2500 个，由 `--fetch-serenity-extras` 拉取），不含 TQ-only 物品。`loader.js` 按 `settings.datasource` 加载对应文件。
+- **`industry-serenity.json`** / **`industry-tranquility.json`** (~3MB 每份) — 按服务器拆分。物品类型（含中文名、体积）、分组、蓝图、制造活动、材料、产品、化矿数据。使用短 key（n=name, nz=name_zh, g=groupId, v=volume, ps=portionSize）压缩体积。另含 `t2ships`（构建时预计算）：所有 T2 舰船（category=6 且 techLevel=2）的**完全展开原材料 BOM**，格式 `[[shipTypeId, [[rawTypeId, qty], ...]], ...]`，递归展开制造(1)+反应(11)链到原材料叶子（矿石/月矿/PI/打捞件/燃料），ME0 基础用量。供工业页"T2 利润榜"功能用（BOM 静态，只在运行时拉取吉他价格）。**Serenity 用 NetEase 中文翻译，Tranquility 用 CCP 中文翻译**——这避免了 SDE 翻译重名（如 17918 Rattlesnake / 85062 Sidewinder 在 TQ 都是"响尾蛇级"，但 NetEase 给 Sidewinder 翻译为"侧进蛇级"）。Serenity 文件含国服独有物品（约 2500 个，由 `--fetch-serenity-extras` 拉取），不含 TQ-only 物品。`loader.js` 按 `settings.datasource` 加载对应文件。
 - **`navigation.json`** (~1.4MB) — 星系（含 3D 光年坐标、安全等级）、区域、星门跳跃连接。坐标已在构建时从米转换为光年。
 - **`wormhole.json`** (~125KB) — 虫洞星系（等级、效应、静态洞口）、虫洞类型属性。
 - **`lpstore.json`** (~2MB) — LP商店数据：NPC军团、兑换报价（物品、LP/ISK花费、所需材料）、相关物品类型名。由 `--fetch-lp` 从 ESI 获取。
@@ -41,6 +41,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
 - **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场页含三个标签：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索
+- **`t2margin.js`** — T2 舰船制造利润排行。读取 `industry.t2ships` 预计算原材料 BOM，拉取吉他订单价后计算：收入=成品吉他收单，成本=原料吉他卖单×数量，利润率=(收入−成本)/成本，按利润率降序。过滤 AT 特别版舰（复用 `blueprintLookup.isSpecialEdition`）和收单>卖单的异常挂单
 - **`dogmaEngine.js`** — 配船模拟 Dogma 属性计算引擎。收集基础属性、效果和修改器（modifierInfo），按 6 种 operation 类型顺序应用（PreMul→ModAdd→PostMul→PostPercent→PostAssign），PostPercent 非 stackable 修改器应用堆叠惩罚公式 `0.5^((i/2.22292081)^2)`。假设 All Skills Level V（技能等级属性 280 固定返回 5）
 - **`fittingStats.js`** — 从 Dogma 计算结果提取人类可读统计：CPU/PG/校准值使用量、盾/甲/壳 HP+抗性+EHP、速度/起跳时间/跃迁速度、电容容量/回充、锁定距离/分辨率/最大锁定数
 
@@ -61,6 +62,8 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 最终产品 / 每级材料 / 原材料汇总并排为窄列布局（`.tier-grid` flex-wrap）—— 没有 tab 切换，所有层级同时可见，一行放不下自动换行。每列顶部带 sell / buy / time 统计 + 已有按钮，列宽通过 `<colgroup>` 显式指定（qty 96px、me 52px），名字列吃剩余宽度。`tier-col-product` 把最终产品列收窄到 160/200/240，`tier-col-me` 把含 ME 输入的 tier-0 列加宽到 360/400/580。
 
 物料和产品名字（`mat.type_name` / `item.product_name`）在 BOM 计算时通过 `getTypeName(typeId)` 烘焙到结果里。`settings.locale` 切换时，`IndustryView` 和 `ManufacturingQueue` 都注册了 `watch` 重写这些字段并重跑 `fetchBom()`，保证语言切换后立刻刷新（不必重新算）。
+
+页面右上角有"T2 利润榜"按钮（`.t2rank-btn`），点击弹出 modal 展示所有 T2 舰船按制造利润率排序（`computeT2Margins` from `t2margin.js`）：收入=成品吉他收单、成本=全展开原材料吉他卖单。首次打开拉取吉他价并缓存到 `t2Rows`，locale 切换时清空（船名经 `locName` 烘焙）以便重算。表格支持点击船名复制（复用 `copyName`）。
 
 ## UI Design
 

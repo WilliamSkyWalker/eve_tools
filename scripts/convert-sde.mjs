@@ -260,6 +260,7 @@ async function main() {
       mass: toFloat(row.mass),
       cap: toFloat(row.capacity),
       rid: toInt(row.raceID),
+      tl: toInt(row.techLevel),
     }
   })
 
@@ -336,6 +337,39 @@ async function main() {
       reprocess[tid].push([matTid, qty])
     }
   })
+
+  // ── Step 4c: Precompute fully-expanded raw-material BOM for every T2 ship ──
+  // Powers the industry page's "T2 profit ranking" feature: the raw-material list
+  // is static, so only Jita prices are fetched live at runtime. Recursively expands
+  // manufacturing (activity 1) + reaction (activity 11) chains down to raw leaves
+  // (minerals, moon goo, PI commodities, salvage, fuel) at ME0 base quantities.
+  console.log('Computing T2 ship raw-material BOMs...')
+  const prodSrc = (tid) => products['1']?.[tid] || products['11']?.[tid]
+  function expandRaw(tid, qty, out, depth) {
+    const src = prodSrc(tid)
+    if (!src || depth > 25) { out[tid] = (out[tid] || 0) + qty; return }
+    const aid = products['1']?.[tid] ? '1' : '11'
+    const [bpTid, per] = src
+    const mats = materials[bpTid]?.[aid]
+    if (!mats) { out[tid] = (out[tid] || 0) + qty; return }
+    const runs = Math.ceil(qty / (per || 1))
+    for (const [m, q] of mats) expandRaw(m, q * runs, out, depth + 1)
+  }
+  const t2ships = []
+  for (const [tidStr, t] of Object.entries(allTypes)) {
+    const tid = parseInt(tidStr)
+    if (t.tl !== 2 || !t.pub) continue
+    if (groups[t.g]?.c !== 6) continue        // category 6 = Ship
+    if (!products['1']?.[tid]) continue        // must be manufacturable
+    const out = {}
+    expandRaw(tid, 1, out, 0)
+    delete out[tid]                            // circular guard
+    const raw = Object.entries(out)
+      .map(([m, q]) => [parseInt(m), q])
+      .sort((a, b) => b[1] - a[1])
+    if (raw.length) t2ships.push([tid, raw])
+  }
+  console.log(`  ${t2ships.length} T2 ships`)
 
   // ── Step 5: Filter types to only those referenced in industry ──
   console.log('Filtering types for industry...')
@@ -425,6 +459,7 @@ async function main() {
       reprocess,
       products,
       productsByBp,
+      t2ships,
     }
     const p = path.join(OUT_DIR, `industry-${server}.json`)
     fs.writeFileSync(p, JSON.stringify(json))

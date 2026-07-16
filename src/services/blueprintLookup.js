@@ -17,7 +17,7 @@ const AT_PRIZE_SHIPS = new Set([
   'Gold Magnate','Silver Magnate','Sarum Magnate',
 ])
 
-function isSpecialEdition(name) {
+export function isSpecialEdition(name) {
   return SPECIAL_EDITION_RE.test(name) || AT_PRIZE_SHIPS.has(name)
 }
 
