@@ -342,12 +342,22 @@ async function main() {
   // Powers the industry page's "T2 profit ranking" feature: the raw-material list
   // is static, so only Jita prices are fetched live at runtime. Recursively expands
   // manufacturing (activity 1) + reaction (activity 11) chains down to raw leaves
-  // (minerals, moon goo, PI commodities, salvage, fuel) at ME0 base quantities.
+  // (minerals, moon goo, salvage) at ME0 base quantities. Mirrors IndustryView's
+  // SKIP_EXPAND_GROUPS: fuel blocks + PI commodities are treated as leaves (bought,
+  // not built — expanding them into their PI inputs at retail overstates cost, since
+  // a finished fuel block trades below the sum of its raw components).
   console.log('Computing T2 ship raw-material BOMs...')
+  const SKIP_EXPAND_GROUPS = new Set([
+    1136,               // Fuel Block
+    1042, 1034, 1040, 1041,  // PI commodities Tier 1-4
+  ])
   const prodSrc = (tid) => products['1']?.[tid] || products['11']?.[tid]
   function expandRaw(tid, qty, out, depth) {
     const src = prodSrc(tid)
-    if (!src || depth > 25) { out[tid] = (out[tid] || 0) + qty; return }
+    if (!src || depth > 25 || SKIP_EXPAND_GROUPS.has(allTypes[tid]?.g)) {
+      out[tid] = (out[tid] || 0) + qty
+      return
+    }
     const aid = products['1']?.[tid] ? '1' : '11'
     const [bpTid, per] = src
     const mats = materials[bpTid]?.[aid]
