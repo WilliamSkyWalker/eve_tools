@@ -119,6 +119,9 @@
           <label class="reprocess-label reprocess-label-gap">{{ t('market.reprocessRateScrap') }}</label>
           <input type="number" v-model.number="reprocessRateScrap" min="0" max="100" step="0.1" class="reprocess-rate-input" />
           <span class="reprocess-pct">%</span>
+          <label class="reprocess-label reprocess-label-gap">{{ t('market.reprocessDiscount') }}</label>
+          <input type="number" v-model.number="reprocessDiscount" min="0" step="0.1" class="reprocess-rate-input" />
+          <span class="reprocess-pct">%</span>
           <button class="query-btn" :disabled="reprocessLoading || !reprocessText.trim()" @click="calcReprocess">
             {{ reprocessLoading ? t('market.querying') : t('market.reprocessCalc') }}
           </button>
@@ -173,6 +176,7 @@
               <th class="col-volume">{{ t('market.colVolume') }}</th>
               <th class="col-volume">{{ t('market.colTotalVolume') }}</th>
               <th class="col-price">{{ t('market.colBuy') }}</th>
+              <th class="col-discount">{{ t('market.colDiscount') }}</th>
               <th class="col-price">{{ t('market.colBuyTotal') }}</th>
             </tr>
             <tr class="total-row">
@@ -181,13 +185,14 @@
               <td></td>
               <td class="col-volume total-val">{{ reprocessOutputVolume ? `${reprocessOutputVolume.toLocaleString()} m³` : '-' }}</td>
               <td></td>
+              <td></td>
               <td class="col-price total-val">{{ formatPrice(reprocessTotal) }}</td>
             </tr>
           </thead>
           <tbody>
             <template v-for="(mat, idx) in reprocessResults" :key="mat.type_id">
               <tr v-if="mat.group_name && (idx === 0 || mat.group_name !== reprocessResults[idx - 1].group_name)" class="group-row">
-                <td colspan="6" class="group-label">{{ mat.group_name }}</td>
+                <td colspan="7" class="group-label">{{ mat.group_name }}</td>
               </tr>
               <tr>
                 <td class="col-name">
@@ -200,7 +205,11 @@
                 <td class="col-volume">{{ formatVolume(mat.volume, 1) }}</td>
                 <td class="col-volume">{{ formatVolume(mat.volume, mat.quantity) }}</td>
                 <td class="col-price">{{ formatPrice(mat.buy_price) }}</td>
-                <td class="col-price">{{ formatSubtotal(mat.buy_price, mat.quantity) }}</td>
+                <td class="col-discount">
+                  <input type="number" v-model.number="mat.discount" min="0" step="0.1" class="discount-input" />
+                  <span class="reprocess-pct">%</span>
+                </td>
+                <td class="col-price">{{ formatSubtotal(discountedPrice(mat), mat.quantity) }}</td>
               </tr>
             </template>
           </tbody>
@@ -385,6 +394,7 @@ const ORE_GROUPS = new Set([
 const reprocessText = ref('')
 const reprocessRateOre = ref(80)
 const reprocessRateScrap = ref(50)
+const reprocessDiscount = ref(100)
 const reprocessInputItems = ref([])
 const reprocessResults = ref([])
 const reprocessLoading = ref(false)
@@ -407,6 +417,7 @@ async function calcReprocess() {
     const resolved = resolveItemNames(parsed.map(p => p.name))
     const oreRate = reprocessRateOre.value / 100
     const scrapRate = reprocessRateScrap.value / 100
+    const discount = reprocessDiscount.value
 
     // Build input items list
     reprocessInputItems.value = resolved.map((r, i) => ({
@@ -453,6 +464,7 @@ async function calcReprocess() {
           quantity: outputMap[tid],
           volume: t?.v ?? null,
           buy_price: orderPrices[tid]?.buy_price ?? null,
+          discount,
           group_id: gid ?? 0,
           group_name: (gid != null && indData.groups?.[gid]?.n) || '',
         }
@@ -471,9 +483,16 @@ async function calcReprocess() {
   }
 }
 
+function discountedPrice(mat) {
+  if (mat.buy_price == null) return null
+  const d = mat.discount != null ? mat.discount : 100
+  return mat.buy_price * d / 100
+}
+
 const reprocessTotal = computed(() => {
   return reprocessResults.value.reduce((sum, mat) => {
-    if (mat.buy_price && mat.quantity) return sum + mat.buy_price * mat.quantity
+    const p = discountedPrice(mat)
+    if (p && mat.quantity) return sum + p * mat.quantity
     return sum
   }, 0)
 })
@@ -921,6 +940,29 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 .col-price {
   text-align: right;
   white-space: nowrap;
+}
+
+.col-discount {
+  text-align: right;
+  white-space: nowrap;
+  width: 110px;
+}
+
+.discount-input {
+  width: 56px;
+  padding: 3px 6px;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  color: #d0d0d0;
+  text-align: right;
+  font-size: 0.9em;
+  font-family: inherit;
+  outline: none;
+}
+
+.discount-input:focus {
+  border-color: #c8aa6e;
 }
 
 .unmatched td {
