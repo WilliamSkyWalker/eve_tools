@@ -39,7 +39,7 @@
             <tbody>
               <tr v-for="item in currentItems" :key="item.blueprint_type_id">
                 <td class="name-cell">
-                  <img class="type-icon" :src="`https://images.evetech.net/types/${item.product_type_id}/icon?size=32`" alt="" loading="lazy">
+                  <img class="type-icon" :src="typeIcon(item.product_type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span class="product-name-text">{{ item.product_name }}</span>
                 </td>
                 <td class="qty-cell">{{ formatNumber(item.runs) }}</td>
@@ -79,7 +79,7 @@
                 </tr>
                 <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.level, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.level, mat.type_id, mat.quantity)">
                   <td class="name-cell">
-                    <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
+                    <img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                     <span
                       class="copyable"
                       :class="{
@@ -131,7 +131,7 @@
             <tbody>
               <tr v-for="mat in summary" :key="mat.type_id" :class="{ 'owned-row': isOwned('summary', mat.type_id, mat.total_quantity) }" @contextmenu.prevent="toggleOwned('summary', mat.type_id, mat.total_quantity)">
                 <td class="name-cell">
-                  <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span class="copyable" :data-tid="mat.type_id" :title="mat.type_name" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                 </td>
                 <td class="qty-cell">{{ formatNumber(mat.total_quantity) }}</td>
@@ -225,7 +225,7 @@
                 <tr v-for="(r, i) in t2Rows" :key="r.type_id">
                   <td class="num t2-rank-idx">{{ i + 1 }}</td>
                   <td class="t2-name-cell">
-                    <img class="type-icon" :src="`https://images.evetech.net/types/${r.type_id}/icon?size=32`" alt="" loading="lazy">
+                    <img class="type-icon" :src="typeIcon(r.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                     <span class="copyable" @click="copyName(r.name, $event)">{{ r.name }}</span>
                     <small v-if="r.missing" class="t2-missing" :title="t('industry.t2Missing')">*</small>
                   </td>
@@ -257,6 +257,7 @@ import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
 import { getTypeName } from '../services/calculator'
 import { computeT2Margins } from '../services/t2margin'
+import { typeIcon, onTypeIconError } from '../services/typeIcon'
 
 const settings = useSettingsStore()
 

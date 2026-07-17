@@ -18,7 +18,7 @@
         @drop.prevent="onDrop($event, i)"
       >
         <template v-if="typeId && typeData(typeId)">
-          <img class="mod-icon" :src="`https://images.evetech.net/types/${typeId}/icon?size=32`" alt="" loading="lazy">
+          <img class="mod-icon" :src="typeIcon(typeId)" alt="" loading="lazy" @error="onTypeIconError">
           <span class="mod-name">{{ displayName(typeId) }}</span>
           <!-- Charge indicator for weapons -->
           <span v-if="getCharge(i)" class="charge-name" @click.stop="$emit('slotChargeClick', { slotType, index: i })">{{ chargeName(getCharge(i)) }}</span>
@@ -35,6 +35,7 @@ import { ref, computed } from 'vue'
 import { getDogmaData } from '../../data/loader'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 import { useFittingStore } from '../../stores/fitting'
 
 const props = defineProps({

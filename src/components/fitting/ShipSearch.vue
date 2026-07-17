@@ -13,7 +13,7 @@
     >
     <ul v-if="showDropdown && results.length" class="dropdown" @mousedown.prevent>
       <li v-for="ship in results" :key="ship.tid" class="dropdown-item" @click="select(ship)">
-        <img class="type-icon" :src="`https://images.evetech.net/types/${ship.tid}/icon?size=32`" alt="" loading="lazy">
+        <img class="type-icon" :src="typeIcon(ship.tid)" alt="" loading="lazy" @error="onTypeIconError">
         <span class="ship-name">{{ ship.display }}</span>
         <span class="ship-group">{{ ship.groupName }}</span>
       </li>
@@ -26,6 +26,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { getDogmaData } from '../../data/loader'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const emit = defineEmits(['select'])
 const { t, locale } = useI18n()

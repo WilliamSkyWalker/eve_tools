@@ -16,7 +16,7 @@
       </div>
       <div v-if="store.drones.length" class="drone-list">
         <div v-for="drone in store.drones" :key="drone.typeId" class="drone-item">
-          <img class="type-icon" :src="`https://images.evetech.net/types/${drone.typeId}/icon?size=32`" alt="" loading="lazy">
+          <img class="type-icon" :src="typeIcon(drone.typeId)" alt="" loading="lazy" @error="onTypeIconError">
           <span class="drone-name">{{ displayName(drone.typeId) }}</span>
           <div class="drone-controls">
             <button class="count-btn" @click="decrement(drone)">-</button>
@@ -38,7 +38,7 @@
       </div>
       <div v-if="store.fighters.length" class="drone-list">
         <div v-for="fighter in store.fighters" :key="fighter.typeId" class="drone-item">
-          <img class="type-icon" :src="`https://images.evetech.net/types/${fighter.typeId}/icon?size=32`" alt="" loading="lazy">
+          <img class="type-icon" :src="typeIcon(fighter.typeId)" alt="" loading="lazy" @error="onTypeIconError">
           <span class="drone-name">{{ displayName(fighter.typeId) }}</span>
           <div class="drone-controls">
             <button class="count-btn" @click="decrementFighter(fighter)">-</button>
@@ -77,6 +77,7 @@ import { useFittingStore } from '../../stores/fitting'
 import { getDogmaData } from '../../data/loader'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 import ModuleSearch from './ModuleSearch.vue'
 
 const store = useFittingStore()

@@ -19,7 +19,7 @@
       <div class="center-col">
         <!-- Ship Header -->
         <div class="ship-card">
-          <img class="ship-icon" :src="`https://images.evetech.net/types/${store.shipTypeId}/render?size=128`" alt="" loading="lazy">
+          <img class="ship-icon" :src="typeIcon(store.shipTypeId, 128, 'render')" alt="" loading="lazy" @error="onTypeIconError">
           <div class="ship-info">
             <div class="ship-name">{{ shipDisplayName }}</div>
             <input v-model="store.fitName" class="fit-name-input" :placeholder="t('fit.fitName')">
@@ -63,6 +63,7 @@ import { useFittingStore } from '../stores/fitting'
 import { useI18n } from '../i18n'
 import { loadDogmaData, getDogmaData } from '../data/loader'
 import { locName } from '../services/locale'
+import { typeIcon, onTypeIconError } from '../services/typeIcon'
 import { calculateFit } from '../services/dogmaEngine'
 import { computeStats } from '../services/fittingStats'
 import PageHelp from '../components/layout/PageHelp.vue'

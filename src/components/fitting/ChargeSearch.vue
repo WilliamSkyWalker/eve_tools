@@ -15,7 +15,7 @@
       >
       <ul class="results">
         <li v-for="ch in filtered" :key="ch.typeId" class="result-item" @click="$emit('select', ch.typeId)">
-          <img class="type-icon" :src="`https://images.evetech.net/types/${ch.typeId}/icon?size=32`" alt="" loading="lazy">
+          <img class="type-icon" :src="typeIcon(ch.typeId)" alt="" loading="lazy" @error="onTypeIconError">
           <div class="ch-info">
             <span class="ch-name">{{ ch.display }}</span>
             <span class="ch-dmg">{{ ch.dmgText }}</span>
@@ -33,6 +33,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useFittingStore } from '../../stores/fitting'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const props = defineProps({
   weaponTypeId: { type: Number, required: true },

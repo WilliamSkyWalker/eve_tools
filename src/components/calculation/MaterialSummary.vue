@@ -31,7 +31,7 @@
     </thead>
     <tbody>
       <tr v-for="mat in materials" :key="mat.type_id">
-        <td class="name-cell"><img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy"><span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span></td>
+        <td class="name-cell"><img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError"><span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span></td>
         <td class="num">{{ formatNumber(mat.total_quantity) }}</td>
         <td v-if="hasInventory" class="num have-qty">{{ formatNumber(getHave(mat.type_name)) }}</td>
         <td v-if="hasInventory" class="num" :class="getNeedClass(mat)">{{ formatNumber(getNeed(mat)) }}</td>
@@ -46,6 +46,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from '../../i18n'
 import { useTabInput } from '../../composables/useTabInput'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const { t } = useI18n()
 const { handleTabKeydown } = useTabInput()

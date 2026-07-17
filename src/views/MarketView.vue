@@ -82,7 +82,7 @@
             <tr v-for="item in sortedItems" :key="item.name" :class="{ unmatched: !item.matched }">
               <td class="col-name">
                 <div class="name-cell">
-                  <img v-if="item.matched" class="type-icon" :src="`https://images.evetech.net/types/${item.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <img v-if="item.matched" class="type-icon" :src="typeIcon(item.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span v-if="item.matched" class="copyable" @click="copyName(item.type_name, $event)">
                     {{ item.type_name }}
                   </span>
@@ -152,7 +152,7 @@
             <tr v-for="item in reprocessInputItems" :key="item.type_id || item.name" :class="{ unmatched: !item.matched }">
               <td class="col-name">
                 <div class="name-cell">
-                  <img v-if="item.matched" class="type-icon" :src="`https://images.evetech.net/types/${item.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <img v-if="item.matched" class="type-icon" :src="typeIcon(item.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span v-if="item.matched">{{ item.type_name }}</span>
                   <span v-else class="unmatched-name">{{ item.name }} <small>({{ t('market.unmatched') }})</small></span>
                 </div>
@@ -197,7 +197,7 @@
               <tr>
                 <td class="col-name">
                   <div class="name-cell">
-                    <img class="type-icon" :src="`https://images.evetech.net/types/${mat.type_id}/icon?size=32`" alt="" loading="lazy">
+                    <img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                     <span class="copyable" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                   </div>
                 </td>
@@ -236,7 +236,7 @@
             <tr v-for="ore in oreValues" :key="ore.type_id">
               <td class="col-name">
                 <div class="name-cell">
-                  <img class="type-icon" :src="`https://images.evetech.net/types/${ore.type_id}/icon?size=32`" alt="" loading="lazy">
+                  <img class="type-icon" :src="typeIcon(ore.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span>{{ ore.type_name }}</span>
                 </div>
               </td>
@@ -260,6 +260,7 @@ import { loadIndustryData, getIndustryData } from '../data/loader'
 import { parseMaterialText, resolveItemNames } from '../services/market'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { locName } from '../services/locale'
+import { typeIcon, onTypeIconError } from '../services/typeIcon'
 import { useTabInput } from '../composables/useTabInput'
 import PageHelp from '../components/layout/PageHelp.vue'
 

@@ -23,7 +23,7 @@
                 :class="{ active: p.tid === selectedTid }"
                 @click="selectProduct(p.tid)"
               >
-                <img class="type-icon" :src="`https://images.evetech.net/types/${p.tid}/icon?size=32`" alt="" loading="lazy">
+                <img class="type-icon" :src="typeIcon(p.tid)" alt="" loading="lazy" @error="onTypeIconError">
                 <span>{{ p.name }}</span>
                 <span class="tier-badge" :class="'tier-' + p.tier">P{{ p.tier }}</span>
               </div>
@@ -51,7 +51,7 @@
               <tbody>
                 <tr v-for="m in lvl.materials" :key="m.tid">
                   <td class="name-cell">
-                    <img class="type-icon" :src="`https://images.evetech.net/types/${m.tid}/icon?size=32`" alt="" loading="lazy">
+                    <img class="type-icon" :src="typeIcon(m.tid)" alt="" loading="lazy" @error="onTypeIconError">
                     <span class="copyable" @click="copyName(piName(m.tid), $event)">{{ piName(m.tid) }}</span>
                   </td>
                   <td class="num">{{ formatNumber(m.qty) }}</td>
@@ -70,6 +70,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '../i18n'
 import { loadPiData, getPiData } from '../data/loader'
 import PageHelp from '../components/layout/PageHelp.vue'
+import { typeIcon, onTypeIconError } from '../services/typeIcon'
 
 const { t, locale } = useI18n()
 

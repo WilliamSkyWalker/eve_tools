@@ -13,7 +13,7 @@
       >
         <span class="slot-num">{{ idx + 1 }}</span>
         <template v-if="tid">
-          <img class="type-icon" :src="`https://images.evetech.net/types/${tid}/icon?size=32`" alt="" loading="lazy">
+          <img class="type-icon" :src="typeIcon(tid)" alt="" loading="lazy" @error="onTypeIconError">
           <span class="implant-name">{{ displayName(tid) }}</span>
           <button class="remove-btn" @click.stop="store.removeImplant(idx)">&times;</button>
         </template>
@@ -44,7 +44,7 @@
             class="result-item"
             @click="selectImplant(item.typeId)"
           >
-            <img class="type-icon" :src="`https://images.evetech.net/types/${item.typeId}/icon?size=32`" alt="" loading="lazy">
+            <img class="type-icon" :src="typeIcon(item.typeId)" alt="" loading="lazy" @error="onTypeIconError">
             <span class="result-name">{{ item.display }}</span>
           </div>
           <div v-if="query && !filteredResults.length" class="no-results">{{ t('fit.noResults') }}</div>
@@ -60,6 +60,7 @@ import { useFittingStore } from '../../stores/fitting'
 import { getDogmaData } from '../../data/loader'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const store = useFittingStore()
 const { t } = useI18n()

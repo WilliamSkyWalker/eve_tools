@@ -23,7 +23,7 @@
             class="dropdown-item"
           >
             <span class="dropdown-left">
-              <img class="type-icon" :src="`https://images.evetech.net/types/${bp.product_type_id}/icon?size=32`" alt="" loading="lazy">
+              <img class="type-icon" :src="typeIcon(bp.product_type_id)" alt="" loading="lazy" @error="onTypeIconError">
               <span class="product-name">{{ bp.product_name }}</span>
             </span>
             <span class="bp-name">{{ bp.blueprint_name }}</span>
@@ -75,7 +75,7 @@
       </thead>
       <tbody>
         <tr v-for="(item, idx) in items" :key="idx">
-          <td class="name-cell"><img class="type-icon" :src="`https://images.evetech.net/types/${item.product_type_id}/icon?size=32`" alt="" loading="lazy">{{ item.product_name }}</td>
+          <td class="name-cell"><img class="type-icon" :src="typeIcon(item.product_type_id)" alt="" loading="lazy" @error="onTypeIconError">{{ item.product_name }}</td>
           <td class="num">
             <input
               type="number"
@@ -116,6 +116,7 @@ import { useSettingsStore } from '../../stores/settings'
 import { resolveItemNames, parseMaterialText } from '../../services/market'
 import { getSourceForProduct, getTypeName } from '../../services/calculator'
 import { useTabInput } from '../../composables/useTabInput'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const { t } = useI18n()
 const settings = useSettingsStore()

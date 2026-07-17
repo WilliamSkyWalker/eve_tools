@@ -40,7 +40,7 @@
               @dragend="onDragEnd"
               @dblclick="onDoubleClick(mod)"
             >
-              <img class="type-icon" :src="`https://images.evetech.net/types/${mod.tid}/icon?size=32`" alt="" loading="lazy">
+              <img class="type-icon" :src="typeIcon(mod.tid)" alt="" loading="lazy" @error="onTypeIconError">
               <div class="mod-info">
                 <span class="mod-name">{{ mod.display }}</span>
                 <span class="mod-meta">{{ mod.meta }}</span>
@@ -61,6 +61,7 @@ import { getDogmaData } from '../../data/loader'
 import { useFittingStore } from '../../stores/fitting'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const { t } = useI18n()
 const store = useFittingStore()

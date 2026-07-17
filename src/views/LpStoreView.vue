@@ -59,7 +59,7 @@
                 <div class="name-cell">
                   <img 
                     class="type-icon" 
-                    :src="`https://images.evetech.net/types/${o.t}/icon?size=32`" 
+                    :src="typeIcon(o.t)"
                     alt="" 
                     loading="lazy"
                     @error="handleImageError($event)"
@@ -98,6 +98,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadLpStoreData, getLpStoreData, loadIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
+import { typeIcon } from '../services/typeIcon'
 import PageHelp from '../components/layout/PageHelp.vue'
 
 const settings = useSettingsStore()
@@ -304,7 +305,7 @@ function clearCopied() {
 
 function handleImageError(event) {
   // Use a generic blueprint icon when type-specific icon fails to load
-  event.target.src = 'https://images.evetech.net/types/9/icon?size=32'
+  event.target.src = typeIcon(9)
 }
 
 function copyName(name, e) {

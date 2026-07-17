@@ -17,7 +17,7 @@
       >
       <ul v-if="results.length" class="results">
         <li v-for="mod in results" :key="mod.tid" class="result-item" @click="select(mod)">
-          <img class="type-icon" :src="`https://images.evetech.net/types/${mod.tid}/icon?size=32`" alt="" loading="lazy">
+          <img class="type-icon" :src="typeIcon(mod.tid)" alt="" loading="lazy" @error="onTypeIconError">
           <div class="mod-info">
             <span class="mod-name">{{ mod.display }}</span>
             <span class="mod-meta">{{ mod.meta }}</span>
@@ -34,6 +34,7 @@ import { ref, onMounted, computed } from 'vue'
 import { getDogmaData } from '../../data/loader'
 import { useI18n } from '../../i18n'
 import { locName } from '../../services/locale'
+import { typeIcon, onTypeIconError } from '../../services/typeIcon'
 
 const props = defineProps({
   slotType: { type: String, default: null },  // hi, med, lo, rig, sub, or null for drone
