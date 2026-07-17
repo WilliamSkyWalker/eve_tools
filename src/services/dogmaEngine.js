@@ -233,6 +233,7 @@ export function calculateFit(store, data) {
       isTurret: modItem.isTurret,
       isLauncher: modItem.isLauncher,
       slotType: modItem.slotType,
+      slotIndex: modItem.slotIndex,
     }
   })
 

@@ -23,6 +23,7 @@
           <!-- Charge indicator for weapons -->
           <span v-if="getCharge(i)" class="charge-name" @click.stop="$emit('slotChargeClick', { slotType, index: i })">{{ chargeName(getCharge(i)) }}</span>
           <button v-else-if="isWeapon(typeId)" class="charge-btn" @click.stop="$emit('slotChargeClick', { slotType, index: i })">+{{ t('fit.charge') }}</button>
+          <button class="info-btn" :title="t('fit.viewAttrs')" @click.stop="$emit('slotInfo', { slotType, index: i })">ⓘ</button>
         </template>
         <span v-else-if="!typeId" class="empty-label">{{ emptyLabel }}</span>
       </div>
@@ -45,7 +46,7 @@ const props = defineProps({
   color: { type: String, default: '#c8aa6e' },
   isOfflineFn: { type: Function, default: () => false },
 })
-const emit = defineEmits(['slotClick', 'slotRemove', 'slotDrop', 'slotToggleOffline', 'slotChargeClick'])
+const emit = defineEmits(['slotClick', 'slotRemove', 'slotDrop', 'slotToggleOffline', 'slotChargeClick', 'slotInfo'])
 
 const { t } = useI18n()
 const store = useFittingStore()
@@ -227,6 +228,21 @@ function onDrop(event, index) {
 .charge-btn:hover {
   color: #c8aa6e;
   background: rgba(200, 170, 110, 0.2);
+}
+
+.info-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.95em;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.info-btn:hover {
+  color: #c8aa6e;
 }
 
 .empty-label {

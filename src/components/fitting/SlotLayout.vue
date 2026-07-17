@@ -13,6 +13,7 @@
       @slot-drop="onSlotDrop"
       @slot-toggle-offline="onToggleOffline"
       @slot-charge-click="onChargeClick"
+      @slot-info="onSlotInfo"
     />
   </div>
 
@@ -33,6 +34,15 @@
       @close="chargeOpen = false"
     />
   </Teleport>
+
+  <Teleport to="body">
+    <ModuleDetail
+      v-if="detailOpen"
+      :slot-type="detailSlotType"
+      :slot-index="detailSlotIndex"
+      @close="detailOpen = false"
+    />
+  </Teleport>
 </template>
 
 <script setup>
@@ -42,6 +52,7 @@ import { useI18n } from '../../i18n'
 import SlotRow from './SlotRow.vue'
 import ModuleSearch from './ModuleSearch.vue'
 import ChargeSearch from './ChargeSearch.vue'
+import ModuleDetail from './ModuleDetail.vue'
 
 const store = useFittingStore()
 const { t } = useI18n()
@@ -54,6 +65,10 @@ const chargeOpen = ref(false)
 const chargeSlotType = ref(null)
 const chargeSlotIndex = ref(null)
 const chargeWeaponTypeId = ref(null)
+
+const detailOpen = ref(false)
+const detailSlotType = ref(null)
+const detailSlotIndex = ref(null)
 
 const slotRows = computed(() => [
   { type: 'hi', label: t('fit.highSlots'), arr: store.highSlots, color: '#c8aa6e' },
@@ -98,6 +113,12 @@ function onChargeClick({ slotType, index }) {
 function onChargeSelect(chargeTypeId) {
   store.setCharge(chargeSlotType.value, chargeSlotIndex.value, chargeTypeId)
   chargeOpen.value = false
+}
+
+function onSlotInfo({ slotType, index }) {
+  detailSlotType.value = slotType
+  detailSlotIndex.value = index
+  detailOpen.value = true
 }
 </script>
 

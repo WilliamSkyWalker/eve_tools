@@ -725,6 +725,7 @@ async function main() {
       hi: row.highIsGood === '1' ? 1 : 0,
       st: row.stackable === '1' ? 1 : 0,
     }
+    if (row.displayName) dgmAttrs[aid].dn = row.displayName
     const uid = toInt(row.unitID)
     if (uid != null) dgmAttrs[aid].uid = uid
   })
