@@ -247,14 +247,21 @@ async function main() {
   // ── Step 3: Read invTypes ──
   console.log('Reading invTypes...')
   const allTypes = {}  // typeID -> { n, nz, g, pub, mg }
+  // Published types that carry a marketGroupID — i.e. anything actually tradeable
+  // on the in-game market (PLEX/伊甸币, injectors, SKINs, implants, …), not just
+  // industry-referenced items. Used to widen the market name lookup (see Step 5).
+  const marketTypeIds = new Set()
   await readCsv('invTypes', (row) => {
     const tid = toInt(row.typeID)
     if (tid == null) return
+    const mg = toInt(row.marketGroupID)
+    const published = row.published === '1'
+    if (published && mg != null) marketTypeIds.add(tid)
     allTypes[tid] = {
       n: row.typeName || '',
       nz: zhTypeNames[tid] || '',
       g: toInt(row.groupID),
-      pub: row.published === '1',
+      pub: published,
       v: toFloat(row.volume),
       ps: toInt(row.portionSize) || 1,
       mass: toFloat(row.mass),
@@ -411,6 +418,11 @@ async function main() {
   }
   // Always include Serenity-only types (no industry refs but needed for market lookup)
   for (const tid of serenityOnlyIds) industryTypeIds.add(tid)
+  // Include every market-tradeable published type so the market page can resolve
+  // non-industrial goods too (PLEX/伊甸币, injectors, SKINs, implants, …). The
+  // market isn't just industry products. Serenity build later re-restricts to the
+  // Serenity type list, so TQ-only market items won't leak into 国服.
+  for (const tid of marketTypeIds) industryTypeIds.add(tid)
 
   // ── Step 5b: Fetch Serenity Chinese names for all relevant types ──
   // NetEase translations differ from CCP's TQ Chinese (e.g. type 85062 is
