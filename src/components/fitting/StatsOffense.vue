@@ -87,32 +87,32 @@ function fmtKm(n) { return n != null && n > 0 ? (n / 1000).toFixed(1) + ' km' : 
 
 .stat-row.sub .stat-label {
   font-size: 0.78em;
-  color: #666;
+  color: var(--text-dim);
 }
 
 .stat-row.sub .stat-value {
   font-size: 0.8em;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .stat-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.85em;
 }
 
 .stat-value {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.9em;
 }
 
 .stat-value.dps {
-  color: #ef5350;
+  color: var(--red);
   font-size: 1.1em;
   font-weight: 600;
 }
 
 .divider {
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border-default);
   margin: 4px 0;
 }
 </style>

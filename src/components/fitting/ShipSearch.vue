@@ -107,10 +107,10 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
 .search-input {
   width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   padding: 10px 14px;
   font-size: 0.95em;
   box-sizing: border-box;
@@ -118,7 +118,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
 .search-input:focus {
   outline: none;
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .dropdown {
@@ -128,8 +128,8 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
   right: 0;
   max-height: 320px;
   overflow-y: auto;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-top: none;
   border-radius: 0 0 6px 6px;
   list-style: none;
@@ -148,7 +148,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 }
 
 .dropdown-item:hover {
-  background: rgba(200, 170, 110, 0.08);
+  background: var(--gold-bg);
 }
 
 .type-icon {
@@ -159,12 +159,12 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 }
 
 .ship-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   flex: 1;
 }
 
 .ship-group {
-  color: #666;
+  color: var(--text-dim);
   font-size: 0.8em;
   white-space: nowrap;
 }

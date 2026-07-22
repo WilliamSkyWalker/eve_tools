@@ -80,10 +80,10 @@ function doExport() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #c8aa6e;
+  color: var(--gold);
   padding: 9px 14px;
   font-size: 0.95em;
   cursor: pointer;
@@ -94,8 +94,8 @@ function doExport() {
 
 .toggle-btn:hover,
 .toggle-btn.active {
-  border-color: #c8aa6e;
-  background: #161616;
+  border-color: var(--gold);
+  background: var(--bg-panel-2);
 }
 
 .eft-icon {
@@ -117,8 +117,8 @@ function doExport() {
   right: 0;
   width: 480px;
   max-width: 90vw;
-  background: #0d0d0d;
-  border: 1px solid #c8aa6e;
+  background: var(--bg-input);
+  border: 1px solid var(--gold);
   border-radius: 6px;
   padding: 12px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
@@ -126,17 +126,17 @@ function doExport() {
 }
 
 .eft-hint {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.78em;
   margin-bottom: 8px;
 }
 
 .eft-input {
   width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   padding: 10px 14px;
   font-size: 0.85em;
   font-family: 'Courier New', monospace;
@@ -145,12 +145,12 @@ function doExport() {
 }
 
 .eft-input::placeholder {
-  color: #555;
+  color: var(--text-dim);
 }
 
 .eft-input:focus {
   outline: none;
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .eft-actions {
@@ -170,20 +170,20 @@ function doExport() {
 }
 
 .btn-primary {
-  background: #c8aa6e;
-  color: #0d0d0d;
+  background: var(--gold);
+  color: var(--bg-input);
 }
 
 .btn-primary:hover {
-  background: #e0c882;
+  background: var(--gold-hover);
 }
 
 .btn-secondary {
-  background: #2a2a2a;
-  color: #d0d0d0;
+  background: var(--border-default);
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background: #3a3a3a;
+  background: var(--border-strong);
 }
 </style>

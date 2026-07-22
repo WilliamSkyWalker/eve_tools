@@ -1,6 +1,10 @@
 <template>
   <div class="dscan">
-    <h1 class="title">{{ t('dscan.title') }}<PageHelp topic="dscan" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('dscan.title') }} <span class="srv-chip gf beta-chip">{{ t('nav.beta') }}</span><PageHelp topic="dscan" /></h1>
+      </div>
+    </div>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -157,175 +161,51 @@ function parseLocal() {
 </script>
 
 <style scoped>
-.dscan {
-  padding-top: 20px;
-}
+.beta-chip { font-weight: 600; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-  text-align: center;
-}
-
-.tabs {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border-default); }
 .tab {
-  padding: 8px 24px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px 6px 0 0;
-  color: #8a8a8a;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text-muted); padding: 9px 14px; font-size: var(--text-md); font-weight: 500;
+  margin-bottom: -1px; transition: color .15s;
 }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.tab:hover {
-  color: #c8aa6e;
-}
-
-.tab.active {
-  color: #c8aa6e;
-  border-color: #c8aa6e;
-  border-bottom-color: #0d0d0d;
-  background: #0d0d0d;
-  font-weight: 600;
-}
-
-.input-section {
-  max-width: 700px;
-  margin: 0 auto 20px;
-}
-
+.input-section { margin-bottom: 16px; }
 .scan-input {
-  width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  padding: 10px 14px;
-  font-size: 0.95em;
-  font-family: inherit;
-  resize: vertical;
-  box-sizing: border-box;
+  width: 100%; min-height: 160px; resize: vertical;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.7; padding: 11px 13px;
 }
+.scan-input:focus { outline: none; border-color: var(--gold-line); }
 
-.scan-input::placeholder {
-  color: #555;
-}
+.no-data { text-align: center; color: var(--text-dim); padding: 30px; }
 
-.scan-input:focus {
-  outline: none;
-  border-color: #c8aa6e;
-}
-
-.stat-bar {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 12px;
-  padding: 8px 14px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-}
-
-.stat {
-  color: #8a8a8a;
-  font-size: 0.9em;
-}
-
-.stat strong {
-  color: #c8aa6e;
-  font-size: 1.1em;
-}
-
-.result-section {
-  overflow-x: auto;
-}
+.stat-bar { display: flex; gap: 20px; margin-bottom: 12px; }
+.stat { font-size: var(--text-base); color: var(--text-muted); }
+.stat strong { color: var(--gold); font-family: var(--font-mono); }
 
 .scan-table {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: collapse;
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden;
 }
-
 .scan-table th {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-  padding: 10px 12px;
-  font-size: 0.85em;
-  font-weight: 500;
-  border-bottom: 1px solid #2a2a2a;
+  text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
+  background: var(--bg-panel-2); padding: 9px 14px; border-bottom: 1px solid var(--border-default); font-weight: 600; text-align: left;
 }
+.scan-table td { padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.col-num, th.col-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+th.col-num { font-family: var(--font-sans); }
+.col-rank { color: var(--text-dim); width: 40px; font-family: var(--font-mono); }
+.sortable { cursor: pointer; user-select: none; }
+.sorted { color: var(--gold); }
 
-.scan-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
-  font-size: 0.9em;
-}
-
-.col-type {
-  text-align: left;
-}
-
-.col-num {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.col-rank {
-  color: #555;
-  width: 40px;
-  text-align: center;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.group-row {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.group-row:hover {
-  background: rgba(200, 170, 110, 0.05);
-}
-
-.expand-icon {
-  color: #555;
-  font-size: 0.75em;
-  margin-right: 4px;
-}
-
-.detail-row td {
-  background: rgba(0, 0, 0, 0.2);
-  font-size: 0.85em;
-}
-
-.detail-name {
-  padding-left: 28px !important;
-  color: #8a8a8a;
-}
-
-.detail-dist {
-  color: #555;
-}
-
-.no-data {
-  text-align: center;
-  color: #555;
-  padding: 40px;
-}
+.group-row { cursor: pointer; }
+.group-row:hover { background: rgba(255, 255, 255, 0.03); }
+.expand-icon { color: var(--text-dim); font-size: 9px; margin-right: 7px; }
+.detail-row td { background: var(--bg-base); font-size: var(--text-sm); }
+.detail-name { color: var(--text-muted); padding-left: 32px !important; }
+.detail-dist { color: var(--text-dim); }
 </style>

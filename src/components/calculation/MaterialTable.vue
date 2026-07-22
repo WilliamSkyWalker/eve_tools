@@ -53,7 +53,7 @@ function copyName(name, e) {
 
 <style scoped>
 .material-table {
-  background: #1a1a1a;
+  background: var(--bg-panel);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -63,7 +63,7 @@ function copyName(name, e) {
 }
 
 .highlight {
-  color: #c8aa6e;
+  color: var(--gold);
   font-weight: 600;
 }
 
@@ -75,19 +75,19 @@ function copyName(name, e) {
 }
 
 .tag-mfg {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-bg);
 }
 
 .tag-reaction {
-  background: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange-bg);
 }
 
 .tag-buy {
-  background: rgba(239, 83, 80, 0.1);
-  color: #8a8a8a;
+  background: var(--red-bg);
+  color: var(--text-muted);
 }
 </style>

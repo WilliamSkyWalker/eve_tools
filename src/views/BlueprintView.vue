@@ -168,49 +168,18 @@ function onExpandAllChange() {
 </script>
 
 <style scoped>
-.blueprint-view {
-  padding-top: 20px;
-}
+.bp-header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border-default); }
+.bp-header h2 { color: var(--text-primary); font-size: var(--text-xl); font-weight: 650; margin-bottom: 4px; }
+.product-info { color: var(--text-muted); font-size: var(--text-base); }
+.product-info strong { color: var(--gold); }
 
-.bp-header h2 {
-  color: #c8aa6e;
-  margin-bottom: 4px;
-}
+.results { margin-top: 24px; }
+.results h3 { color: var(--text-primary); margin-bottom: 12px; font-size: var(--text-lg); font-weight: 600; }
 
-.product-info {
-  color: #8a8a8a;
-  font-size: 0.9em;
-  margin-bottom: 20px;
-}
+.bom-controls { margin-bottom: 12px; color: var(--text-muted); font-size: var(--text-base); }
+.bom-controls input { margin-right: 6px; vertical-align: middle; }
 
-.results {
-  margin-top: 24px;
-}
+.summary-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-default); }
 
-.results h3 {
-  color: #c8aa6e;
-  margin-bottom: 12px;
-  font-size: 1.1em;
-}
-
-.bom-controls {
-  margin-bottom: 12px;
-  color: #8a8a8a;
-}
-
-.bom-controls input {
-  margin-right: 6px;
-}
-
-.summary-section {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.loading {
-  text-align: center;
-  padding: 60px;
-  color: #8a8a8a;
-}
+.loading { text-align: center; padding: 60px; color: var(--text-dim); }
 </style>

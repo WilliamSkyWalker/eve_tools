@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、D-Scan/Local解析器、旗舰跳跃路线规划、公开合同查询（隐藏功能，连点logo 5次解锁）、友情链接（EVE常用工具网站）和00主权势力地图。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
+eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、行星工业 PI、配船模拟器、旗舰跳跃路线规划、虫洞星系查询、D-Scan/Local解析器、00主权势力地图、公开合同查询（隐藏功能，连点logo 5次解锁）和友情链接（EVE常用工具网站）。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
 
 ## Tech Stack
 
@@ -39,7 +39,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表、效应信标加成数据（硬编码C1-C6各效应乘数）
 - **`sovereignty.js`** — 00主权数据（ESI sovereignty/map）、按区域聚合、凸包计算、联盟颜色生成
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
-- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场页含三个标签：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）。化矿计算含"价格折扣"：全局折扣（矿石/废铁效率旁，改后需点"计算化矿"重算，作为每行折扣的初始值）+ 每行折扣列（改后立刻影响该行收单小计和合计）
+- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场三个工具拆成三条独立路由（`/market` 价格查询、`/market/reprocess` 化矿计算、`/market/ore` 矿石价值，均由 `MarketView.vue` 渲染，`route.meta.mtab` 决定激活的 tab；页内 tab 栏点击时 `router.push` 到对应路由）：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）。化矿计算含"价格折扣"：全局折扣（矿石/废铁效率旁，改后需点"计算化矿"重算，作为每行折扣的初始值）+ 每行折扣列（改后立刻影响该行收单小计和合计）
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索
 - **`t2margin.js`** — T2 舰船制造利润排行。读取 `industry.t2ships` 预计算原材料 BOM，拉取吉他订单价后计算：收入=成品吉他收单，成本=原料吉他卖单×数量，利润率=(收入−成本)/成本，按利润率降序。过滤 AT 特别版舰（复用 `blueprintLookup.isSpecialEdition`）和收单>卖单的异常挂单
 - **`dogmaEngine.js`** — 配船模拟 Dogma 属性计算引擎。收集基础属性、效果和修改器（modifierInfo），按 6 种 operation 类型顺序应用（PreMul→ModAdd→PostMul→PostPercent→PostAssign），PostPercent 非 stackable 修改器应用堆叠惩罚公式 `0.5^((i/2.22292081)^2)`。假设 All Skills Level V（技能等级属性 280 固定返回 5）
@@ -63,9 +63,27 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 
 物料和产品名字（`mat.type_name` / `item.product_name`）在 BOM 计算时通过 `getTypeName(typeId)` 烘焙到结果里。`settings.locale` 切换时，`IndustryView` 和 `ManufacturingQueue` 都注册了 `watch` 重写这些字段并重跑 `fetchBom()`，保证语言切换后立刻刷新（不必重新算）。
 
-页面右上角有"T2 利润榜"按钮（`.t2rank-btn`），点击弹出 modal 展示所有 T2 舰船按制造利润率排序（`computeT2Margins` from `t2margin.js`）：收入=成品吉他收单、成本=全展开原材料吉他卖单。首次打开拉取吉他价并缓存到 `t2Rows`，locale 切换时清空（船名经 `locName` 烘焙）以便重算。表格支持点击船名复制（复用 `copyName`）。
+T2 利润榜已从 Industry 弹窗**拆成独立页面** `T2RankView.vue`（路由 `/:server/t2rank`，导航「工业」组下），展示所有 T2 舰船按制造利润率排序（`computeT2Margins` from `t2margin.js`）：收入=成品吉他收单、成本=全展开原材料吉他卖单。`onMounted` 拉取吉他价，`watch(locale)` 重算（船名经 `locName` 烘焙）。Industry 页右上角的"📈 T2 利润榜"按钮现在是指向该页的 `<router-link>`。
 
 ## UI Design
+
+### 设计系统（2026 改版，进行中）
+
+整体改版为**现代数据工具风**（中性偏暖深灰底 + 单一克制金色强调 + 语义色分离 + 数字等宽），committed single-world 深色。**所有设计令牌和共享组件类集中在 `src/assets/main.css`**（全局，非 scoped），各视图直接复用，不要在视图内重复造轮子：
+
+- **令牌**：`--bg-base #0b0c0e` / `--bg-panel #141518` / `--bg-elevated #1f2228` / `--border-default #26292f`；强调色 `--gold #d8b978`（只用于主操作/激活/焦点，`--gold-ink` 是金底上的字色）；语义色（与强调色分开）`--green`(买/高安/制造) `--orange`(低安/反应) `--red`(卖/零安/错误) `--blue`(信息) `--purple`；字体 `--font-sans`（含 CJK 的系统栈）+ `--font-mono`（所有数字列用，配 `.num`/`.mono` 类 → tabular-nums）。
+- **共享组件类**（main.css 里，全局可用）：`.page-head`（标题+副标题+右侧 `.toolbar`）、`.srv-chip.gf/.of`、`.btn`(`.primary`/`.ghost`/`.sm`)、`.card` + `.panel-head`、`.field`/`.inp`/`.sel`/`textarea.ta`、`.seg`（分段控件）、`.tabs`/`.tab`（下划线标签）、`.data-table`（密集表，`th.r/.c/.sortable`、`td.r/.c`、`.rank`）、`.name-cell`、语义文字色 `.t-green/.t-red/.t-orange/.t-blue/.t-muted/.t-dim/.t-gf/.t-of`、`.copyable`、`.state-msg`/`.error-text`、`.modal-overlay`/`.modal-content`、`.eve-toast`。全局 `table/th/td` 也已改为新中性外观，未逐页改版的旧页面会自动获得过渡观感。
+- **新增视图时**：优先用上面的共享类，避免每页重复定义按钮/表格/卡片样式。数字务必套 `.num`。
+
+**改版进度**：全部视图已迁移到新设计系统——设计系统（main.css）、应用壳（AppHeader + NavIcon）、Home、Wormhole、Industry（含 ManufacturingQueue）、Market（拆为 价格/化矿/矿石 三路由）、T2RankView、PI、LP Store、Links、D-Scan、Blueprint、Credits、JumpPlanner（含 SystemSearch）、SovMap、Contracts、Fitting（含 `components/fitting/*`）、`components/calculation/*`。其中 Home/Wormhole/Industry/Market/PI/LP/Links/D-Scan/Credits/JumpPlanner/SovMap/T2Rank 为**逐页 bespoke 重构**（模板+样式按共享类重写）；Contracts、Fitting、calculation 组件为**调色板 token-swap**（旧 `#c8aa6e/#1a1a1a/...` → `var(--*)` 令牌，布局不变，快速统一到新配色）——如需进一步 bespoke 化再逐个重写。DonateView 未接路由（捐赠是 AppHeader 弹窗），未处理。
+
+**图标**：导航项图标统一为 `NavIcon.vue`（lucide 风格线性 SVG，`currentColor`，1.8px 描边）；Fitting 的槽位类型色（JS 字面量）已改为新调色板 hex（`#d8b978/#5aa0e0/#62c689/#efa557/#c58fe0/#abb1bb`，非 `var()`，因为要在 canvas/inline 之外安全使用）。
+
+### 应用壳（AppHeader.vue）
+
+顶部 `.appbar`（sticky + backdrop-blur）：品牌（点 logo 5 次解锁合同、单击弹致谢）+ **分组下拉导航**（工业/市场/导航/战斗装配 四组，hover 或点击展开，菜单项含图标+名称+说明+`测试中`badge；`.menu::before` 透明桥接触发器与菜单间隙，防止鼠标下移时 `mouseleave` 收起）+ **全局命令面板**（点中间搜索框或 `⌘K`/`Ctrl+K`，↑↓ 选、回车跳转，`nav.item.*`/`nav.desc.*` 驱动，未来可扩展搜物品/星系/蓝图）+ 右侧控件（国服⇄世界服分段 `.seg`、语言、反馈、捐赠）。**移动端**（≤960px）：隐藏横向导航和搜索框，改为汉堡按钮打开右侧抽屉 + 搜索图标；≤520px 进一步收窄。导航模型（`navGroups` computed）按 `settings.server` 生成带前缀的 router 链接，合同项仅在 `contractsUnlocked` 时出现。分组归属：**工业**=工业制造计算 / T2 利润榜 / 行星工业；**市场**=价格查询 / 化矿计算 / 矿石价值 / LP 商店 / 公开合同；**导航**=旗舰跳跃路线 / 虫洞查询 / 主权势力地图；**战斗装配**=配船模拟器 / D-Scan。
+
+### 视觉配色（旧页面参考）
 
 EVE Online 官网风格配色：深黑背景 (#0d0d0d)、深灰面板 (#1a1a1a)、金色强调色 (#c8aa6e)、金色hover (#e0c882)。功能性颜色：绿色 (#4caf50) 高安/制造，橙色 (#ff9800) 低安/反应，红色 (#ef5350) 零安/错误。物品图标统一通过 `src/services/typeIcon.js` 的 `typeIcon(typeId, size, variant)` 生成（**不要**再硬编码 `images.evetech.net` URL）：国服（gf）走网易图床 `https://image.evepc.163.com/Type/{id}_{32|64}.png`（render 用 `/Render/{id}_{32..512}.png`），世界服（of）走 `https://images.evetech.net/types/{id}/{icon|render}?size=N`。国服独有物品（如 ★胜利者级 84004）只在网易图床有图，evetech 会 404，故按服务器切图床。`<img>` 加 `@error="onTypeIconError"` 做一次回退（网易 icon→render，evetech icon→render）。
 

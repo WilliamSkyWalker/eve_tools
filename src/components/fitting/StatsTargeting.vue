@@ -37,6 +37,6 @@ function fmtKm(n) {
   justify-content: space-between;
   padding: 5px 0;
 }
-.stat-label { color: #8a8a8a; font-size: 0.85em; }
-.stat-value { color: #d0d0d0; font-size: 0.9em; }
+.stat-label { color: var(--text-muted); font-size: 0.85em; }
+.stat-value { color: var(--text-primary); font-size: 0.9em; }
 </style>

@@ -77,17 +77,17 @@ let _groupIndex = null
 let _groupIndexFilter = null
 
 const filterTabs = computed(() => [
-  { key: 'all', label: t('fit.item'), color: '#8a8a8a' },
-  { key: 'hi', label: t('fit.highSlots'), color: '#c8aa6e' },
-  { key: 'med', label: t('fit.midSlots'), color: '#42a5f5' },
-  { key: 'lo', label: t('fit.lowSlots'), color: '#4caf50' },
-  { key: 'rig', label: t('fit.rigSlots'), color: '#ff9800' },
-  { key: 'drone', label: t('fit.drone'), color: '#ab47bc' },
+  { key: 'all', label: t('fit.item'), color: '#abb1bb' },
+  { key: 'hi', label: t('fit.highSlots'), color: '#d8b978' },
+  { key: 'med', label: t('fit.midSlots'), color: '#5aa0e0' },
+  { key: 'lo', label: t('fit.lowSlots'), color: '#62c689' },
+  { key: 'rig', label: t('fit.rigSlots'), color: '#efa557' },
+  { key: 'drone', label: t('fit.drone'), color: '#c58fe0' },
 ])
 
 function slotColor(sl) {
-  const colors = { hi: '#c8aa6e', med: '#42a5f5', lo: '#4caf50', rig: '#ff9800', sub: '#ab47bc' }
-  return colors[sl] || '#8a8a8a'
+  const colors = { hi: '#d8b978', med: '#5aa0e0', lo: '#62c689', rig: '#efa557', sub: '#c58fe0' }
+  return colors[sl] || '#abb1bb'
 }
 
 function slotShort(sl) {
@@ -242,23 +242,23 @@ function onDoubleClick(mod) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #141414;
-  border: 1px solid #222;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--bg-elevated);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .browser-header {
   padding: 10px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--bg-elevated);
 }
 
 .search-input {
   width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   padding: 8px 10px;
   font-size: 0.85em;
   box-sizing: border-box;
@@ -266,21 +266,21 @@ function onDoubleClick(mod) {
 
 .search-input:focus {
   outline: none;
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .filter-tabs {
   display: flex;
   padding: 4px 6px;
   gap: 2px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--bg-elevated);
   overflow-x: auto;
 }
 
 .filter-tab {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-dim);
   padding: 4px 8px;
   font-size: 0.7em;
   cursor: pointer;
@@ -290,12 +290,12 @@ function onDoubleClick(mod) {
 }
 
 .filter-tab:hover {
-  color: var(--accent, #8a8a8a);
+  color: var(--accent, var(--text-muted));
   background: rgba(255, 255, 255, 0.03);
 }
 
 .filter-tab.active {
-  color: var(--accent, #c8aa6e);
+  color: var(--accent, var(--gold));
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -306,7 +306,7 @@ function onDoubleClick(mod) {
 
 /* ── Group ── */
 .group-section {
-  border-bottom: 1px solid rgba(42, 42, 42, 0.4);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .group-header {
@@ -320,18 +320,18 @@ function onDoubleClick(mod) {
 }
 
 .group-header:hover {
-  background: rgba(200, 170, 110, 0.04);
+  background: var(--gold-bg-light);
 }
 
 .group-arrow {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.7em;
   width: 10px;
   flex-shrink: 0;
 }
 
 .group-name {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.76em;
   flex: 1;
   white-space: nowrap;
@@ -340,7 +340,7 @@ function onDoubleClick(mod) {
 }
 
 .group-count {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.65em;
   flex-shrink: 0;
 }
@@ -361,7 +361,7 @@ function onDoubleClick(mod) {
 }
 
 .module-item:hover {
-  background: rgba(200, 170, 110, 0.06);
+  background: var(--gold-bg-light);
 }
 
 .module-item:active {
@@ -386,7 +386,7 @@ function onDoubleClick(mod) {
 }
 
 .mod-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.78em;
   white-space: nowrap;
   overflow: hidden;
@@ -394,13 +394,13 @@ function onDoubleClick(mod) {
 }
 
 .mod-meta {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.65em;
 }
 
 .slot-badge {
   flex-shrink: 0;
-  color: #0d0d0d;
+  color: var(--bg-input);
   font-size: 0.6em;
   font-weight: 700;
   width: 14px;
@@ -413,7 +413,7 @@ function onDoubleClick(mod) {
 }
 
 .no-results {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.8em;
   text-align: center;
   padding: 20px 10px;

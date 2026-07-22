@@ -139,8 +139,8 @@ function selectFirst() {
 }
 
 .module-search-panel {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   width: 480px;
   max-height: 70vh;
@@ -153,11 +153,11 @@ function selectFirst() {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .panel-header h3 {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 1em;
   margin: 0;
 }
@@ -165,29 +165,29 @@ function selectFirst() {
 .close-btn {
   background: none;
   border: none;
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 1.4em;
   cursor: pointer;
   padding: 0 4px;
 }
 
 .close-btn:hover {
-  color: #d0d0d0;
+  color: var(--text-primary);
 }
 
 .search-input {
   margin: 12px 16px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   padding: 8px 12px;
   font-size: 0.9em;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .results {
@@ -208,7 +208,7 @@ function selectFirst() {
 }
 
 .result-item:hover {
-  background: rgba(200, 170, 110, 0.08);
+  background: var(--gold-bg);
 }
 
 .type-icon {
@@ -226,7 +226,7 @@ function selectFirst() {
 }
 
 .mod-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.9em;
   white-space: nowrap;
   overflow: hidden;
@@ -234,12 +234,12 @@ function selectFirst() {
 }
 
 .mod-meta {
-  color: #666;
+  color: var(--text-dim);
   font-size: 0.75em;
 }
 
 .no-results {
-  color: #555;
+  color: var(--text-dim);
   text-align: center;
   padding: 20px;
 }

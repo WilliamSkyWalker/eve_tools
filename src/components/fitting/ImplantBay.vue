@@ -125,8 +125,8 @@ watch(searchSlot, (v) => {
 
 <style scoped>
 .implant-bay {
-  background: #141414;
-  border: 1px solid #222;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--bg-elevated);
   border-radius: 6px;
   padding: 8px;
 }
@@ -139,7 +139,7 @@ watch(searchSlot, (v) => {
 }
 
 .bay-label {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 0.75em;
   font-weight: 600;
   text-transform: uppercase;
@@ -149,12 +149,12 @@ watch(searchSlot, (v) => {
 .clear-all {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.7em;
   cursor: pointer;
 }
 
-.clear-all:hover { color: #ef5350; }
+.clear-all:hover { color: var(--red); }
 
 .implant-slots {
   display: flex;
@@ -172,10 +172,10 @@ watch(searchSlot, (v) => {
   min-height: 28px;
 }
 
-.implant-slot:hover { background: rgba(200, 170, 110, 0.04); }
+.implant-slot:hover { background: var(--gold-bg-light); }
 
 .slot-num {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.7em;
   width: 14px;
   text-align: center;
@@ -185,7 +185,7 @@ watch(searchSlot, (v) => {
 .type-icon { width: 22px; height: 22px; border-radius: 3px; flex-shrink: 0; }
 
 .implant-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.78em;
   flex: 1;
   white-space: nowrap;
@@ -194,7 +194,7 @@ watch(searchSlot, (v) => {
 }
 
 .empty-label {
-  color: #333;
+  color: var(--border-default);
   font-size: 0.78em;
   font-style: italic;
 }
@@ -202,14 +202,14 @@ watch(searchSlot, (v) => {
 .remove-btn {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-dim);
   cursor: pointer;
   font-size: 1em;
   padding: 0 2px;
   flex-shrink: 0;
 }
 
-.remove-btn:hover { color: #ef5350; }
+.remove-btn:hover { color: var(--red); }
 
 /* Search Modal */
 .modal-overlay {
@@ -223,8 +223,8 @@ watch(searchSlot, (v) => {
 }
 
 .search-modal {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   width: 420px;
   max-height: 500px;
@@ -240,7 +240,7 @@ watch(searchSlot, (v) => {
 }
 
 .search-title {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 0.9em;
   font-weight: 600;
 }
@@ -248,26 +248,26 @@ watch(searchSlot, (v) => {
 .modal-close {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-dim);
   font-size: 1.4em;
   cursor: pointer;
   line-height: 1;
 }
 
-.modal-close:hover { color: #c8aa6e; }
+.modal-close:hover { color: var(--gold); }
 
 .search-input {
   margin: 0 12px 8px;
   padding: 8px 12px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.9em;
   outline: none;
 }
 
-.search-input:focus { border-color: #c8aa6e; }
+.search-input:focus { border-color: var(--gold); }
 
 .result-list {
   flex: 1;
@@ -284,10 +284,10 @@ watch(searchSlot, (v) => {
   cursor: pointer;
 }
 
-.result-item:hover { background: rgba(200, 170, 110, 0.08); }
+.result-item:hover { background: var(--gold-bg); }
 
 .result-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.82em;
   white-space: nowrap;
   overflow: hidden;
@@ -295,7 +295,7 @@ watch(searchSlot, (v) => {
 }
 
 .no-results {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.82em;
   text-align: center;
   padding: 16px;

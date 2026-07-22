@@ -1,25 +1,28 @@
 <template>
   <div class="industry">
-    <button class="t2rank-btn" @click="openT2Rank">{{ t('industry.t2RankBtn') }}</button>
-    <h1 class="title">{{ t('industry.title') }} ({{ serverLabel }})<PageHelp topic="industry" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('industry.title') }} <span class="srv-chip" :class="settings.server">{{ serverLabel }}</span><PageHelp topic="industry" /></h1>
+      </div>
+    </div>
 
     <ManufacturingQueue @calculate="onCalculate" />
 
-    <div v-if="calculating" class="loading">{{ t('industry.calculating') }}</div>
+    <div v-if="calculating" class="state-msg">{{ t('industry.calculating') }}</div>
 
     <template v-if="levels.length">
-      <div class="global-me-bar">
+      <div class="card global-me-bar">
         <label class="global-me-label">{{ t('industry.subComponentMe') }}</label>
-        <input type="number" v-model.number="globalMe" min="0" max="10" class="global-me-input" />
-        <button class="global-me-btn" @click="applyGlobalMe">{{ t('industry.applyMe') }}</button>
+        <input type="number" v-model.number="globalMe" min="0" max="10" class="inp mini num" />
+        <button class="btn sm" @click="applyGlobalMe">{{ t('industry.applyMe') }}</button>
         <span class="bar-spacer"></span>
-        <button class="global-me-btn" @click="sharePlan">{{ shareLabel }}</button>
+        <button class="btn sm ghost" @click="sharePlan">{{ shareLabel }}</button>
       </div>
 
       <!-- Tier columns grid -->
       <div class="tier-grid">
         <!-- Final product -->
-        <section class="tier-col tier-col-product">
+        <section class="card tier-col tier-col-product">
           <header class="tier-head">
             <div class="tier-title-row">
               <span class="tier-name">{{ t('industry.finalProduct') }}</span>
@@ -42,14 +45,14 @@
                   <img class="type-icon" :src="typeIcon(item.product_type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span class="product-name-text">{{ item.product_name }}</span>
                 </td>
-                <td class="qty-cell">{{ formatNumber(item.runs) }}</td>
+                <td class="qty-cell num">{{ formatNumber(item.runs) }}</td>
               </tr>
             </tbody>
           </table>
         </section>
 
         <!-- Level columns -->
-        <section v-for="lvl in levels" :key="lvl.level" class="tier-col" :class="{ 'tier-col-me': lvl.level === 0 && hasManufacturable(lvl) }">
+        <section v-for="lvl in levels" :key="lvl.level" class="card tier-col" :class="{ 'tier-col-me': lvl.level === 0 && hasManufacturable(lvl) }">
           <header class="tier-head">
             <div class="tier-title-row">
               <span class="tier-name">{{ levelLabel(lvl.level) }}</span>
@@ -92,7 +95,7 @@
                       @click="copyName(mat.type_name, $event)"
                     >{{ mat.type_name }}</span>
                   </td>
-                  <td class="qty-cell">{{ formatNumber(mat.quantity) }}</td>
+                  <td class="qty-cell num">{{ formatNumber(mat.quantity) }}</td>
                   <td class="me-cell" v-if="lvl.level === 0 && hasManufacturable(lvl)">
                     <input
                       v-if="mat.build && !mat.is_reaction"
@@ -111,7 +114,7 @@
         </section>
 
         <!-- Summary column -->
-        <section v-if="summary.length" class="tier-col">
+        <section v-if="summary.length" class="card tier-col">
           <header class="tier-head">
             <div class="tier-title-row">
               <span class="tier-name">{{ t('industry.rawSummary') }}</span>
@@ -134,7 +137,7 @@
                   <img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                   <span class="copyable" :data-tid="mat.type_id" :title="mat.type_name" @click="copyName(mat.type_name, $event)">{{ mat.type_name }}</span>
                 </td>
-                <td class="qty-cell">{{ formatNumber(mat.total_quantity) }}</td>
+                <td class="qty-cell num">{{ formatNumber(mat.total_quantity) }}</td>
               </tr>
             </tbody>
           </table>
@@ -196,51 +199,6 @@
       </div>
     </Teleport>
 
-    <!-- T2 Profit Ranking Modal -->
-    <Teleport to="body">
-      <div v-if="t2RankModal" class="modal-overlay" @click.self="t2RankModal = false">
-        <div class="modal-content t2rank-modal">
-          <button class="modal-close" @click="t2RankModal = false">&times;</button>
-          <h2 class="modal-title">{{ t('industry.t2RankTitle') }} ({{ serverLabel }})</h2>
-          <p class="t2rank-hint">{{ t('industry.t2RankHint') }}</p>
-
-          <div v-if="t2Loading" class="t2rank-msg">{{ t('industry.t2RankLoading') }}</div>
-          <div v-if="t2Error" class="t2rank-msg t2rank-err">{{ t2Error }}</div>
-          <div v-if="t2EsiDown" class="t2rank-msg t2rank-err">{{ t('market.esiDown') }}</div>
-
-          <div v-if="!t2Loading && t2Rows.length" class="t2rank-table-wrap">
-            <table class="t2rank-table">
-              <thead>
-                <tr>
-                  <th class="num">#</th>
-                  <th>{{ t('industry.t2ColShip') }}</th>
-                  <th>{{ t('industry.t2ColGroup') }}</th>
-                  <th class="num">{{ t('industry.t2ColRevenue') }}</th>
-                  <th class="num">{{ t('industry.t2ColCost') }}</th>
-                  <th class="num">{{ t('industry.t2ColProfit') }}</th>
-                  <th class="num">{{ t('industry.t2ColMargin') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(r, i) in t2Rows" :key="r.type_id">
-                  <td class="num t2-rank-idx">{{ i + 1 }}</td>
-                  <td class="t2-name-cell">
-                    <img class="type-icon" :src="typeIcon(r.type_id)" alt="" loading="lazy" @error="onTypeIconError">
-                    <span class="copyable" @click="copyName(r.name, $event)">{{ r.name }}</span>
-                    <small v-if="r.missing" class="t2-missing" :title="t('industry.t2Missing')">*</small>
-                  </td>
-                  <td class="t2-group-cell">{{ r.group }}</td>
-                  <td class="num">{{ formatPrice(r.revenue) }}</td>
-                  <td class="num">{{ formatPrice(r.cost) }}</td>
-                  <td class="num" :class="r.profit >= 0 ? 't2-pos' : 't2-neg'">{{ formatPrice(r.profit) }}</td>
-                  <td class="num" :class="r.margin >= 0 ? 't2-pos' : 't2-neg'">{{ r.margin.toFixed(1) }}%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -256,7 +214,6 @@ import { loadIndustryData, getIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { resolveItemNames, parseMaterialText } from '../services/market'
 import { getTypeName } from '../services/calculator'
-import { computeT2Margins } from '../services/t2margin'
 import { typeIcon, onTypeIconError } from '../services/typeIcon'
 
 const settings = useSettingsStore()
@@ -284,32 +241,6 @@ const skippedItems = reactive(new Set())
 const productSellPrice = ref(null)
 const productBuyPrice = ref(null)
 const productVolume = ref(null)
-
-// ── T2 profit ranking ──
-const t2RankModal = ref(false)
-const t2Rows = ref([])
-const t2Loading = ref(false)
-const t2Error = ref('')
-const t2EsiDown = ref(false)
-
-async function openT2Rank() {
-  t2RankModal.value = true
-  if (t2Rows.value.length) return  // cached until server/locale change
-  t2Loading.value = true
-  t2Error.value = ''
-  t2EsiDown.value = false
-  try {
-    await loadIndustryData()
-    const { rows, esiUnavailable } = await computeT2Margins(settings.datasource)
-    t2Rows.value = rows
-    t2EsiDown.value = esiUnavailable
-    if (!rows.length && !esiUnavailable) t2Error.value = t('industry.t2RankError')
-  } catch (e) {
-    t2Error.value = t('industry.t2RankError')
-  } finally {
-    t2Loading.value = false
-  }
-}
 
 const totalTime = computed(() => {
   let totalBase = 0, totalBest = 0
@@ -358,7 +289,6 @@ onMounted(async () => {
 watch(() => settings.locale, () => {
   shareLabel.value = t('industry.share')
   copyLabel.value = t('industry.copyNeed')
-  t2Rows.value = []  // ship names are baked via locName — recompute on next open
   if (!dataReady.value) return
   for (const item of currentItems.value) {
     item.product_name = getTypeName(item.product_type_id)
@@ -834,628 +764,114 @@ function formatNumber(n) {
 </script>
 
 <style scoped>
-.industry {
-  padding-top: 20px;
-  position: relative;
-}
+/* ── Global ME bar + share ── */
+.global-me-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.global-me-label { font-size: var(--text-sm); color: var(--text-muted); }
+.bar-spacer { flex: 1; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-  text-align: center;
-}
+/* ── Tier columns ── */
+.tier-grid { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.tier-col { flex: 0 0 auto; width: 300px; overflow: hidden; }
+.tier-col-product { width: 220px; }
+.tier-col-me { width: 384px; }
 
-.t2rank-btn {
-  position: absolute;
-  top: 20px;
-  right: 0;
-  background: #1a1a1a;
-  border: 1px solid #c8aa6e;
-  border-radius: 6px;
-  color: #c8aa6e;
-  padding: 7px 16px;
-  font-size: 0.85em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  z-index: 5;
-}
-
-.t2rank-btn:hover {
-  background: #c8aa6e;
-  color: #0d0d0d;
-}
-
-.subtitle {
-  color: #8a8a8a;
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.loading {
-  text-align: center;
-  padding: 30px;
-  color: #8a8a8a;
-}
-
-/* ---- global ME bar ---- */
-.global-me-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #1a1a1a;
-  border-radius: 6px;
-  border: 1px solid #2a2a2a;
-}
-
-.global-me-label {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  white-space: nowrap;
-}
-
-.global-me-input {
-  width: 55px;
-  padding: 4px 6px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  color: #d0d0d0;
-  text-align: center;
-  font-size: 0.9em;
-  outline: none;
-}
-
-.global-me-input:focus {
-  border-color: #c8aa6e;
-}
-
-.global-me-btn {
-  padding: 4px 14px;
-  background: #2a2a2a;
-  color: #c8aa6e;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  font-size: 0.85em;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.global-me-btn:hover {
-  background: #3a3a3a;
-}
-
-.bar-spacer {
-  flex: 1;
-}
-
-/* ---- Tier columns grid ---- */
-.tier-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.tier-col {
-  flex: 1 1 340px;
-  min-width: 300px;
-  max-width: 520px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Final-product column carries only the product name + run count, so cap it
-   narrow and let the freed space flow to the material columns. */
-.tier-col-product {
-  flex: 0 1 200px;
-  min-width: 160px;
-  max-width: 240px;
-}
-
-/* Tier-0 column adds a per-row ME input on the right, so reserve extra width
-   for the material name to avoid clipping (e.g. 旗舰级核心温度调节器). */
-.tier-col-me {
-  flex: 1 1 400px;
-  min-width: 360px;
-  max-width: 580px;
-}
-
-.tier-head {
-  padding: 8px 10px 6px;
-  border-bottom: 1px solid #2a2a2a;
-  background: #141414;
-}
-
-.tier-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.tier-name {
-  font-weight: 600;
-  font-size: 0.9em;
-  color: #c8aa6e;
-  white-space: nowrap;
-}
-
+.tier-head { padding: 11px 14px; border-bottom: 1px solid var(--border-default); }
+.tier-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.tier-name { font-size: var(--text-base); font-weight: 650; }
 .tier-inv-btn {
-  padding: 2px 8px;
-  font-size: 0.7em;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  color: #8a8a8a;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  font-size: var(--text-xs); color: var(--text-dim);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+  padding: 2px 8px; background: none; transition: color .15s, border-color .15s;
 }
+.tier-inv-btn:hover { color: var(--gold); border-color: var(--gold-line); }
+.tier-stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.stat-item.sell { color: var(--green); }
+.stat-item.buy { color: var(--red); }
+.stat-item.volume { color: var(--blue); }
+.stat-item.time { color: var(--text-muted); }
+.stat-item.loading-stat { color: var(--text-dim); }
 
-.tier-inv-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #c8aa6e;
-}
+.tier-table { width: 100%; border-collapse: collapse; }
+.tier-table td { padding: 6px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; vertical-align: middle; }
+.tier-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+.col-qty { width: 86px; }
+.col-me { width: 66px; }
 
-.tier-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 8px;
-  margin-top: 4px;
-}
-
-.stat-item {
-  font-size: 0.7em;
-  font-weight: 400;
-  opacity: 0.85;
-  white-space: nowrap;
-}
-
-.stat-item.sell { color: #ef5350; }
-.stat-item.buy { color: #4caf50; }
-.stat-item.volume { color: #c8aa6e; }
-.stat-item.time { color: #8a8a8a; }
-.stat-item.loading-stat { color: #555; }
-
-.tier-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: transparent;
-  table-layout: fixed;
-}
-
-.tier-table tbody td {
-  padding: 3px 6px;
-  font-size: 0.82em;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.4);
-  vertical-align: middle;
-}
-
-/* Explicit column widths so a leading group-header row (colspan=N) doesn't
-   make `table-layout: fixed` divide the table into equal parts. The qty
-   column is sized for ~12-digit formatted quantities (e.g. 999,999,999,999);
-   the ME column fits the 38px input + side padding. */
-.tier-table .col-qty {
-  width: 96px;
-}
-
-.tier-table .col-me {
-  width: 52px;
-}
-
-.tier-table .qty-cell {
-  text-align: right;
-  color: #aaa;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.tier-table .name-cell {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow: hidden;
-}
-
-.tier-table .me-cell {
-  text-align: right;
-}
-
-.product-name-text {
-  color: #c8aa6e;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.group-row td {
-  border-bottom: none !important;
-  padding: 6px 6px 1px !important;
-}
-
-.group-label {
-  font-size: 0.72em;
-  color: #555555;
-  letter-spacing: 0.3px;
-}
-
-.super-group-row td {
-  border-bottom: none !important;
-  padding: 8px 6px 2px !important;
-}
-
-.super-group-label {
-  font-size: 0.8em;
-  color: #c8aa6e;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  border-top: 1px solid rgba(200, 170, 110, 0.15);
-  padding-top: 6px !important;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.type-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  border-radius: 2px;
-}
-
-/* Keep material names on a single row; the title attribute exposes the full
-   text on hover when a column is too narrow for the longest names. */
-.tier-table .copyable {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-
+.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tier-table .type-icon { width: 22px; height: 22px; flex: none; border-radius: 4px; }
+.product-name-text, .copyable { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name-reaction { color: var(--orange); }
+.name-mfg { color: var(--green); }
+.name-skipped { color: var(--text-dim); text-decoration: line-through; }
+.qty-cell { text-align: right; color: var(--text-primary); }
+.me-cell { text-align: center; }
 .me-input {
-  width: 38px;
-  padding: 2px 4px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  color: #d0d0d0;
-  text-align: center;
-  font-size: 0.85em;
-  outline: none;
-  user-select: none;
+  width: 54px; height: 26px; text-align: center;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-family: var(--font-mono);
 }
+.me-input:focus { outline: none; border-color: var(--gold-line); }
+.me-na { color: var(--text-dim); }
 
-.me-input:focus {
-  border-color: #c8aa6e;
-}
+.super-group-row td { padding: 9px 14px 3px; }
+.super-group-label { font-size: 11px; font-weight: 700; color: var(--gold); }
+.group-row td { padding: 7px 14px 3px; }
+.group-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+.skipped-row td { opacity: .55; }
+.owned-row td { opacity: .4; text-decoration: line-through; }
 
-.me-na {
-  color: #555;
-  font-size: 0.85em;
-  user-select: none;
-}
-
-.num {
-  text-align: right;
-}
-
-.have-val {
-  color: #4caf50;
-}
-
-.need-val {
-  color: #ef5350;
-}
-
-.need-zero {
-  color: #4caf50;
-}
-
-.name-reaction {
-  color: #ff9800;
-}
-
-.name-reaction:hover {
-  color: #ffb74d;
-}
-
-.name-mfg {
-  color: #4caf50;
-}
-
-.name-mfg:hover {
-  color: #81c784;
-}
-
-.owned-row {
-  opacity: 0.45;
-}
-
-.owned-row .num {
-  color: #4caf50;
-}
-
-.skipped-row {
-  opacity: 0.4;
-}
-
-.name-skipped {
-  color: #555 !important;
-  text-decoration: line-through;
-}
-
-/* ---- Inventory Modal ---- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  padding: 24px 28px;
-  position: relative;
-}
-
-.inv-modal {
-  max-width: 900px;
-  width: 95%;
-}
-
-.t2rank-modal {
-  max-width: 860px;
-  width: 95%;
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.t2rank-hint {
-  color: #777;
-  font-size: 0.78em;
-  margin-bottom: 10px;
-  line-height: 1.5;
-}
-
-.t2rank-msg {
-  text-align: center;
-  color: #8a8a8a;
-  padding: 24px;
-}
-
-.t2rank-err {
-  color: #ff9800;
-}
-
-.t2rank-table-wrap {
-  overflow-y: auto;
-  overflow-x: auto;
-}
-
-.t2rank-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85em;
-}
-
-.t2rank-table th {
-  position: sticky;
-  top: 0;
-  background: #1f1c17;
-  color: #c8aa6e;
-  padding: 8px 10px;
-  font-weight: 500;
-  text-align: left;
-  border-bottom: 1px solid #2a2a2a;
-  white-space: nowrap;
-}
-
-.t2rank-table td {
-  padding: 6px 10px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
-}
-
-.t2rank-table .num {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.t2-rank-idx {
-  color: #777;
-}
-
-.t2-name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.t2-group-cell {
-  color: #8a8a8a;
-  white-space: nowrap;
-}
-
-.t2-missing {
-  color: #ff9800;
-  cursor: help;
-}
-
-.t2-pos { color: #4caf50; }
-.t2-neg { color: #ef5350; }
-
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 1.5em;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.modal-close:hover {
-  color: #c8aa6e;
-}
-
-.modal-title {
-  color: #c8aa6e;
-  font-size: 1.1em;
-  margin-bottom: 12px;
-}
-
-.inv-body {
-  display: flex;
-  gap: 20px;
-}
-
-.inv-left {
-  flex: 0 0 280px;
-  display: flex;
-  flex-direction: column;
-}
-
-.inv-hint {
-  color: #555;
-  font-size: 0.8em;
-  margin-bottom: 6px;
-}
-
+/* ── Inventory modal ── */
+.inv-modal { max-width: 880px; }
+.inv-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+.inv-left, .inv-right { display: flex; flex-direction: column; min-width: 0; }
+.inv-hint { font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 8px; }
 .inventory-textarea {
-  width: 100%;
-  flex: 1;
-  padding: 10px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  font-size: 0.85em;
-  resize: none;
-  outline: none;
-  box-sizing: border-box;
+  flex: 1; min-height: 260px; resize: vertical;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.7; padding: 11px 13px;
 }
-
-.inventory-textarea:focus {
-  border-color: #c8aa6e;
-}
-
-.inv-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.inv-table-wrap {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-}
-
-.inv-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85em;
-}
-
-.inv-table thead {
-  position: sticky;
-  top: 0;
-  background: #1a1a1a;
-  z-index: 1;
-}
-
-.inv-table th {
-  color: #8a8a8a;
-  font-weight: 600;
-  font-size: 0.85em;
-  padding: 6px 10px;
-  border-bottom: 1px solid #2a2a2a;
-  text-align: left;
-}
-
-.inv-table th.num {
-  text-align: right;
-}
-
-.inv-table td {
-  padding: 5px 10px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.4);
-}
-
-.inv-name {
-  color: #d0d0d0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-
-.inv-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
-}
-
+.inventory-textarea:focus { outline: none; border-color: var(--gold-line); }
+.inv-table-wrap { flex: 1; overflow-y: auto; max-height: 340px; border: 1px solid var(--border-default); border-radius: var(--radius-md); }
+.inv-table { width: 100%; border-collapse: collapse; }
+.inv-table th { position: sticky; top: 0; }
+.inv-table th.num, .inv-table td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.inv-name { color: var(--text-primary); }
+.have-val { color: var(--blue); }
+.need-val { color: var(--orange); }
+.need-zero { color: var(--text-dim); }
+.inv-actions { display: flex; gap: 8px; justify-content: flex-end; grid-column: 1 / -1; margin-top: 4px; }
 .modal-btn {
-  padding: 6px 16px;
-  border-radius: 4px;
-  font-size: 0.85em;
-  cursor: pointer;
-  transition: background 0.2s;
+  height: 34px; padding: 0 16px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-default); background: var(--bg-panel-2);
+  color: var(--text-primary); font-size: var(--text-base); transition: border-color .15s, background .15s;
 }
+.modal-btn:hover { border-color: var(--border-strong); background: var(--bg-elevated); }
+.apply-btn { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); font-weight: 650; }
+.apply-btn:hover { background: var(--gold-hover); border-color: var(--gold-hover); }
 
-.copy-btn {
-  background: none;
-  border: 1px solid #c8aa6e;
-  color: #c8aa6e;
-}
+/* ── T2 rank modal ── */
+.t2rank-modal { max-width: 940px; }
+.t2rank-hint { color: var(--text-muted); font-size: var(--text-sm); text-align: center; margin-bottom: 16px; }
+.t2rank-msg { text-align: center; color: var(--text-dim); padding: 26px; }
+.t2rank-err { color: var(--red); }
+.t2rank-table-wrap { max-height: 62vh; overflow-y: auto; border: 1px solid var(--border-default); border-radius: var(--radius-md); }
+.t2rank-table { width: 100%; border-collapse: collapse; }
+.t2rank-table th { position: sticky; top: 0; }
+.t2rank-table th.num { text-align: right; }
+.t2rank-table td { padding: 7px 12px; font-size: var(--text-base); border-bottom: 1px solid rgba(255, 255, 255, 0.035); }
+.t2rank-table tbody tr:hover, .t2rank-table tr:hover td { background: rgba(255, 255, 255, 0.025); }
+.t2rank-table .num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.t2-rank-idx { color: var(--text-dim); }
+.t2-name-cell { display: flex; align-items: center; gap: 8px; }
+.t2-name-cell .type-icon { width: 22px; height: 22px; border-radius: 4px; flex: none; }
+.t2-group-cell { color: var(--text-muted); font-size: 0.9em; }
+.t2-missing { color: var(--orange); }
+.t2-pos { color: var(--green); }
+.t2-neg { color: var(--red); }
 
-.copy-btn:hover {
-  background: rgba(200, 170, 110, 0.1);
-}
-
-.clear-btn {
-  background: none;
-  border: 1px solid #2a2a2a;
-  color: #8a8a8a;
-}
-
-.clear-btn:hover {
-  background: #2a2a2a;
-}
-
-.apply-btn {
-  background: #c8aa6e;
-  border: none;
-  color: #0d0d0d;
-  font-weight: 600;
-}
-
-.apply-btn:hover {
-  background: #e0c882;
+@media (max-width: 640px) {
+  .inv-body { grid-template-columns: 1fr; }
 }
 </style>

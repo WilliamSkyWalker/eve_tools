@@ -82,15 +82,15 @@ function toggleBuild(mat) {
 }
 
 .level-title {
-  color: #c8aa6e;
+  color: var(--gold);
   margin-bottom: 8px;
   font-size: 1em;
   padding-left: 4px;
-  border-left: 3px solid #c8aa6e;
+  border-left: 3px solid var(--gold);
 }
 
 .level-table {
-  background: #1a1a1a;
+  background: var(--bg-panel);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -100,15 +100,15 @@ function toggleBuild(mat) {
 }
 
 .row-build {
-  background: rgba(200, 170, 110, 0.05);
+  background: var(--gold-bg-light);
 }
 
 .name-reaction {
-  color: #ff9800;
+  color: var(--orange);
 }
 
 .name-reaction:hover {
-  color: #ffb74d;
+  color: var(--orange);
 }
 
 .tag {
@@ -119,40 +119,40 @@ function toggleBuild(mat) {
 }
 
 .tag-mfg {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-bg);
 }
 
 .tag-reaction {
-  background: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange-bg);
 }
 
 .tag-buy {
-  background: rgba(138, 138, 138, 0.1);
-  color: #8a8a8a;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
 }
 
 .toggle-btn {
   padding: 2px 12px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-default);
   border-radius: 3px;
   background: transparent;
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.8em;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .toggle-btn:hover {
-  border-color: #c8aa6e;
-  color: #c8aa6e;
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .toggle-btn.active {
-  border-color: #4caf50;
-  color: #4caf50;
+  border-color: var(--green);
+  color: var(--green);
 }
 </style>

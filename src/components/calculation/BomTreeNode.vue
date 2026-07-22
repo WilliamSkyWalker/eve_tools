@@ -56,23 +56,23 @@ function toggleBuild() {
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .node-icon {
-  color: #555555;
+  color: var(--text-dim);
   font-size: 0.7em;
   width: 14px;
   text-align: center;
 }
 
 .node-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   flex: 1;
 }
 
 .node-name.reaction-name {
-  color: #ff9800;
+  color: var(--orange);
 }
 
 .source-badge {
@@ -83,26 +83,26 @@ function toggleBuild() {
 }
 
 .source-badge.reaction {
-  background: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  background: var(--orange-bg);
+  color: var(--orange);
+  border: 1px solid var(--orange-bg);
 }
 
 .source-badge.manufacturing {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-bg);
 }
 
 .node-qty {
-  color: #c8aa6e;
+  color: var(--gold);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .me-badge, .runs-badge {
-  background: #2a2a2a;
-  color: #8a8a8a;
+  background: var(--border-default);
+  color: var(--text-muted);
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.75em;
@@ -110,22 +110,22 @@ function toggleBuild() {
 
 .toggle-btn {
   padding: 2px 10px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-default);
   border-radius: 3px;
   background: transparent;
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.8em;
   transition: all 0.2s;
 }
 
 .toggle-btn:hover {
-  border-color: #c8aa6e;
-  color: #c8aa6e;
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .toggle-btn.active {
-  border-color: #4caf50;
-  color: #4caf50;
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .tree-children {

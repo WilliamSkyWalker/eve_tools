@@ -48,8 +48,8 @@ function fmtTime(ms) {
 <style scoped>
 .stat-row { display: flex; justify-content: space-between; padding: 5px 0; }
 .stat-row.main { padding: 6px 0; }
-.stat-label { color: #8a8a8a; font-size: 0.85em; }
-.stat-value { color: #d0d0d0; font-size: 0.9em; }
-.stat-value.stable { color: #4caf50; font-weight: 600; }
-.stat-value.unstable { color: #ef5350; }
+.stat-label { color: var(--text-muted); font-size: 0.85em; }
+.stat-value { color: var(--text-primary); font-size: 0.9em; }
+.stat-value.stable { color: var(--green); font-weight: 600; }
+.stat-value.unstable { color: var(--red); }
 </style>

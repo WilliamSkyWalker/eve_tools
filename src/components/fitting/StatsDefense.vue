@@ -97,7 +97,7 @@ function resistClass(val) {
 }
 
 .hp-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.72em;
 }
 
@@ -106,10 +106,10 @@ function resistClass(val) {
   font-weight: 600;
 }
 
-.hp-value.shield { color: #42a5f5; }
-.hp-value.armor { color: #ff9800; }
-.hp-value.hull { color: #8a8a8a; }
-.hp-value.ehp { color: #4caf50; }
+.hp-value.shield { color: var(--blue); }
+.hp-value.armor { color: var(--orange); }
+.hp-value.hull { color: var(--text-muted); }
+.hp-value.ehp { color: var(--green); }
 
 .resist-grid {
   font-size: 0.8em;
@@ -132,13 +132,13 @@ function resistClass(val) {
   font-size: 0.85em;
 }
 
-.resist-type.em { color: #42a5f5; }
-.resist-type.th { color: #ef5350; }
-.resist-type.ki { color: #aaa; }
-.resist-type.ex { color: #ff9800; }
+.resist-type.em { color: var(--blue); }
+.resist-type.th { color: var(--red); }
+.resist-type.ki { color: var(--text-muted); }
+.resist-type.ex { color: var(--orange); }
 
 .layer-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.85em;
 }
 
@@ -151,22 +151,22 @@ function resistClass(val) {
   padding: 3px 4px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.03);
-  color: #d0d0d0;
+  color: var(--text-primary);
 }
 
-.resist-high { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
-.resist-mid { background: rgba(200, 170, 110, 0.1); color: #c8aa6e; }
-.resist-low { background: rgba(255, 152, 0, 0.1); color: #ff9800; }
-.resist-none { background: rgba(239, 83, 80, 0.08); color: #ef5350; }
+.resist-high { background: var(--green-bg); color: var(--green); }
+.resist-mid { background: var(--gold-bg-medium); color: var(--gold); }
+.resist-low { background: var(--orange-bg); color: var(--orange); }
+.resist-none { background: var(--red-bg); color: var(--red); }
 
 .active-tank {
   margin-top: 14px;
   padding-top: 10px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border-default);
 }
 
 .section-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.72em;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -181,7 +181,7 @@ function resistClass(val) {
 }
 
 .tank-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.82em;
 }
 
@@ -190,6 +190,6 @@ function resistClass(val) {
   font-weight: 600;
 }
 
-.tank-value.shield { color: #42a5f5; }
-.tank-value.armor { color: #ff9800; }
+.tank-value.shield { color: var(--blue); }
+.tank-value.armor { color: var(--orange); }
 </style>

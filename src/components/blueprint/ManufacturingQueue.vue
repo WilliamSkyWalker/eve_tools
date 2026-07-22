@@ -1,20 +1,18 @@
 <template>
-  <div class="queue-container">
+  <div class="queue-card card">
     <!-- Add item row -->
     <div class="add-row">
       <div class="search-field">
-        <div class="search-box">
-          <input
-            v-model="query"
-            type="text"
-            :placeholder="t('queue.searchPlaceholder')"
-            @input="onInput"
-            @focus="showDropdown = results.length > 0"
-            @keydown.escape="showDropdown = false"
-            class="search-input"
-          />
-          <span v-if="loading" class="spinner"></span>
-        </div>
+        <input
+          v-model="query"
+          type="text"
+          :placeholder="t('queue.searchPlaceholder')"
+          @input="onInput"
+          @focus="showDropdown = results.length > 0"
+          @keydown.escape="showDropdown = false"
+          class="inp search-input"
+        />
+        <span v-if="loading" class="spinner"></span>
         <ul v-if="showDropdown && results.length" class="dropdown">
           <li
             v-for="bp in results"
@@ -32,78 +30,68 @@
       </div>
       <div class="field">
         <label>{{ t('queue.me') }}</label>
-        <input type="number" v-model.number="meLevel" min="0" max="10" class="small-input" />
+        <input type="number" v-model.number="meLevel" min="0" max="10" class="inp mini num" />
       </div>
       <div class="field">
         <label>{{ t('queue.runs') }}</label>
-        <input type="number" v-model.number="runs" min="1" class="small-input" />
+        <input type="number" v-model.number="runs" min="1" class="inp mini num" />
       </div>
-      <button @click="addItem" class="btn btn-add" :disabled="!selectedBp">{{ t('queue.add') }}</button>
-      <button @click="showImport = true" class="btn btn-import">{{ t('queue.import') }}</button>
+      <button @click="addItem" class="btn primary" :disabled="!selectedBp">{{ t('queue.add') }}</button>
+      <button @click="showImport = true" class="btn ghost">{{ t('queue.import') }}</button>
     </div>
 
     <!-- Import Modal -->
     <Teleport to="body">
       <div v-if="showImport" class="modal-overlay" @click.self="showImport = false">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:500px">
           <button class="modal-close" @click="showImport = false">&times;</button>
           <h2 class="modal-title">{{ t('queue.importTitle') }}</h2>
           <textarea
             v-model="importText"
-            class="import-textarea"
+            class="ta"
+            style="width:100%"
             :placeholder="t('queue.importPlaceholder')"
             rows="10"
             @keydown="handleTabKeydown"
           ></textarea>
           <p v-if="importError" class="import-error">{{ importError }}</p>
           <div class="modal-actions">
-            <button class="btn btn-primary" @click="doImport">{{ t('queue.import') }}</button>
+            <button class="btn primary" @click="doImport">{{ t('queue.import') }}</button>
           </div>
         </div>
       </div>
     </Teleport>
 
     <!-- Queue table -->
-    <table v-if="items.length" class="queue-table">
-      <thead>
-        <tr>
-          <th>{{ t('queue.product') }}</th>
-          <th class="num">{{ t('queue.me') }}</th>
-          <th class="num">{{ t('queue.runs') }}</th>
-          <th>{{ t('queue.action') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(item, idx) in items" :key="idx">
-          <td class="name-cell"><img class="type-icon" :src="typeIcon(item.product_type_id)" alt="" loading="lazy" @error="onTypeIconError">{{ item.product_name }}</td>
-          <td class="num">
-            <input
-              type="number"
-              :value="item.me_level"
-              @change="updateMe(idx, $event)"
-              min="0"
-              max="10"
-              class="inline-input"
-            />
-          </td>
-          <td class="num">
-            <input
-              type="number"
-              :value="item.runs"
-              @change="updateRuns(idx, $event)"
-              min="1"
-              class="inline-input"
-            />
-          </td>
-          <td>
-            <button @click="removeItem(idx)" class="btn-remove">✕</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-if="items.length" class="table-scroll queue-table-wrap">
+      <table class="data-table queue-table">
+        <thead>
+          <tr>
+            <th>{{ t('queue.product') }}</th>
+            <th class="r">{{ t('queue.me') }}</th>
+            <th class="r">{{ t('queue.runs') }}</th>
+            <th class="r">{{ t('queue.action') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, idx) in items" :key="idx">
+            <td class="name-cell"><img class="type-icon" :src="typeIcon(item.product_type_id)" alt="" loading="lazy" @error="onTypeIconError"><span class="txt">{{ item.product_name }}</span></td>
+            <td class="r">
+              <input type="number" :value="item.me_level" @change="updateMe(idx, $event)" min="0" max="10" class="inp mini num inline-input" />
+            </td>
+            <td class="r">
+              <input type="number" :value="item.runs" @change="updateRuns(idx, $event)" min="1" class="inp mini num inline-input" />
+            </td>
+            <td class="r">
+              <button @click="removeItem(idx)" class="btn-remove" :aria-label="t('queue.action')">✕</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div v-if="items.length" class="queue-actions">
-      <button @click="emitCalculate" class="btn btn-primary">{{ t('queue.calculate') }}</button>
+      <button @click="emitCalculate" class="btn primary">{{ t('queue.calculate') }}</button>
     </div>
   </div>
 </template>
@@ -294,326 +282,57 @@ function emitCalculate() {
 </script>
 
 <style scoped>
-.queue-container {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
+.queue-card { padding: 16px; margin-bottom: 20px; }
 
-.add-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
+.add-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.add-row .btn { align-self: flex-end; }
 
-.search-field {
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-box {
-  position: relative;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px 12px;
-  font-size: 0.9em;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: #c8aa6e;
-}
-
-.search-input::placeholder {
-  color: #555555;
-}
+.search-field { position: relative; flex: 1; min-width: 220px; align-self: flex-end; }
+.search-input { width: 100%; }
 
 .spinner {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  border: 2px solid #2a2a2a;
-  border-top-color: #c8aa6e;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px;
+  border: 2px solid var(--border-default); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
 }
-
-@keyframes spin {
-  to { transform: translateY(-50%) rotate(360deg); }
-}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
 
 .dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  list-style: none;
-  max-height: 250px;
-  overflow-y: auto;
-  z-index: 100;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  list-style: none; max-height: 280px; overflow-y: auto; z-index: 100;
+  padding: 4px;
 }
-
 .dropdown-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 8px 10px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  border-radius: var(--radius-sm);
 }
+.dropdown-item:hover { background: var(--bg-elevated); }
+.dropdown-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.type-icon { width: 24px; height: 24px; flex-shrink: 0; border-radius: 4px; }
+.product-name { color: var(--text-primary); font-weight: 500; }
+.bp-name { color: var(--text-dim); font-size: 0.8em; white-space: nowrap; }
 
-.dropdown-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.type-icon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 3px;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dropdown-item:hover {
-  background: #222222;
-}
-
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
-.product-name {
-  color: #d0d0d0;
-  font-weight: 500;
-}
-
-.bp-name {
-  color: #555555;
-  font-size: 0.8em;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.field label {
-  font-size: 0.8em;
-  color: #8a8a8a;
-}
-
-.small-input {
-  width: 70px;
-  padding: 8px 8px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  outline: none;
-  text-align: center;
-}
-
-.small-input:focus {
-  border-color: #c8aa6e;
-}
-
-.btn-add {
-  padding: 8px 20px;
-  background: #2a2a2a;
-  color: #d0d0d0;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add:hover:not(:disabled) {
-  background: #3a3a3a;
-}
-
-.btn-add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.queue-table {
-  background: #0d0d0d;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.queue-table th {
-  background: rgba(200, 170, 110, 0.08);
-}
-
-.num {
-  text-align: right;
-}
-
-.inline-input {
-  width: 70px;
-  padding: 3px 6px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  color: #d0d0d0;
-  text-align: right;
-  outline: none;
-}
-
-.inline-input:focus {
-  border-color: #c8aa6e;
-}
+.queue-table-wrap { margin-top: 16px; margin-bottom: 12px; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; }
+.queue-table .type-icon { width: 22px; height: 22px; }
+.inline-input { width: 68px; height: 28px; }
 
 .btn-remove {
   background: transparent;
-  border: 1px solid rgba(239, 83, 80, 0.3);
-  border-radius: 3px;
-  color: #ef5350;
-  cursor: pointer;
-  padding: 2px 8px;
-  font-size: 0.85em;
-  transition: all 0.2s;
+  border: 1px solid var(--red-bg);
+  border-radius: var(--radius-sm);
+  color: var(--red);
+  padding: 3px 9px; font-size: 0.85em;
+  transition: background .15s, border-color .15s;
 }
+.btn-remove:hover { background: var(--red-bg); border-color: var(--red); }
 
-.btn-remove:hover {
-  background: rgba(255, 82, 82, 0.1);
-  border-color: #ef5350;
-}
-
-.queue-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-primary {
-  padding: 10px 24px;
-  background: #c8aa6e;
-  color: #0d0d0d;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-primary:hover {
-  background: #e0c882;
-}
-
-.btn-import {
-  padding: 8px 16px;
-  background: none;
-  color: #8a8a8a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  font-size: 0.85em;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-import:hover {
-  border-color: #c8aa6e;
-  color: #c8aa6e;
-}
-
-/* ── Import Modal ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  padding: 24px 28px;
-  max-width: 500px;
-  width: 90%;
-  position: relative;
-}
-
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 1.5em;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.modal-close:hover {
-  color: #c8aa6e;
-}
-
-.modal-title {
-  color: #c8aa6e;
-  font-size: 1.1em;
-  margin-bottom: 12px;
-}
-
-.import-textarea {
-  width: 100%;
-  padding: 10px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  font-size: 0.85em;
-  resize: vertical;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.import-textarea:focus {
-  border-color: #c8aa6e;
-}
-
-.import-error {
-  color: #ef5350;
-  font-size: 0.8em;
-  margin-top: 8px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
+.queue-actions { display: flex; gap: 8px; }
+.import-error { color: var(--red); font-size: 0.8em; margin-top: 8px; }
+.modal-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 </style>

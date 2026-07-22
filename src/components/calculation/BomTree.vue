@@ -35,8 +35,8 @@ function formatNumber(n) {
 
 <style scoped>
 .bom-tree {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 16px;
 }
@@ -44,12 +44,12 @@ function formatNumber(n) {
 .root-label {
   font-size: 1.1em;
   margin-bottom: 8px;
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .me-badge {
-  background: #2a2a2a;
-  color: #8a8a8a;
+  background: var(--border-default);
+  color: var(--text-muted);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.75em;

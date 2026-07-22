@@ -1,7 +1,11 @@
 <template>
   <div class="contracts-page">
-    <h1 class="title">{{ t('contracts.title') }} ({{ serverLabel }})<PageHelp topic="contracts" /></h1>
-    <p class="subtitle">{{ t('contracts.subtitle') }}</p>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('contracts.title') }} <span class="srv-chip" :class="settings.server">{{ serverLabel }}</span><PageHelp topic="contracts" /></h1>
+        <p class="sub">{{ t('contracts.subtitle') }}</p>
+      </div>
+    </div>
 
     <!-- Filters -->
     <div class="form-section">
@@ -498,21 +502,21 @@ function formatDateTime(dateStr) {
 }
 
 .title {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 1.8em;
   margin-bottom: 4px;
   text-align: center;
 }
 
 .subtitle {
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin-bottom: 24px;
   text-align: center;
 }
 
 .form-section {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
@@ -543,7 +547,7 @@ function formatDateTime(dateStr) {
 .field-label {
   display: block;
   font-size: 0.85em;
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
@@ -552,17 +556,17 @@ function formatDateTime(dateStr) {
   width: 100%;
   padding: 10px 14px;
   font-size: 0.95em;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
 }
 
 .search-input:focus,
 .select-input:focus {
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .select-input {
@@ -579,8 +583,8 @@ function formatDateTime(dateStr) {
   top: 100%;
   left: 0;
   right: 0;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 0 0 6px 6px;
   z-index: 100;
   max-height: 200px;
@@ -591,16 +595,16 @@ function formatDateTime(dateStr) {
   padding: 8px 14px;
   cursor: pointer;
   font-size: 0.9em;
-  color: #d0d0d0;
+  color: var(--text-primary);
   transition: background 0.15s;
 }
 
 .dropdown-item:hover {
-  background: rgba(200, 170, 110, 0.1);
+  background: var(--gold-bg-medium);
 }
 
 .dropdown-sub {
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin-left: 8px;
   font-size: 0.85em;
 }
@@ -608,8 +612,8 @@ function formatDateTime(dateStr) {
 .btn-search {
   width: 100%;
   padding: 10px 24px;
-  background: #c8aa6e;
-  color: #0d0d0d;
+  background: var(--gold);
+  color: var(--bg-input);
   border: none;
   border-radius: 6px;
   font-weight: 600;
@@ -619,7 +623,7 @@ function formatDateTime(dateStr) {
 }
 
 .btn-search:hover:not(:disabled) {
-  background: #e0c882;
+  background: var(--gold-hover);
 }
 
 .btn-search:disabled {
@@ -629,13 +633,13 @@ function formatDateTime(dateStr) {
 
 .error-msg {
   text-align: center;
-  color: #ef5350;
+  color: var(--red);
   margin-bottom: 16px;
 }
 
 .empty-msg {
   text-align: center;
-  color: #555;
+  color: var(--text-dim);
   padding: 40px;
 }
 
@@ -652,7 +656,7 @@ function formatDateTime(dateStr) {
 }
 
 .result-count {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.9em;
 }
 
@@ -663,18 +667,18 @@ function formatDateTime(dateStr) {
 
 .page-btn {
   padding: 6px 14px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 0.9em;
   transition: border-color 0.2s, color 0.2s;
 }
 
 .page-btn:hover:not(:disabled) {
-  border-color: #c8aa6e;
-  color: #c8aa6e;
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .page-btn:disabled {
@@ -691,44 +695,44 @@ function formatDateTime(dateStr) {
 }
 
 .page-info {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.9em;
 }
 
 .contracts-table {
   width: 100%;
-  background: #1a1a1a;
+  background: var(--bg-panel);
   border-radius: 8px;
   overflow: hidden;
   border-collapse: collapse;
 }
 
 .contracts-table th {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
+  background: var(--gold-bg);
+  color: var(--gold);
   padding: 10px 12px;
   font-size: 0.9em;
   font-weight: 500;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
   text-align: left;
 }
 
 .contracts-table td {
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .contract-row:hover {
-  background: rgba(200, 170, 110, 0.03);
+  background: var(--gold-bg-light);
 }
 
 .col-type { width: 100px; }
 .col-price { width: 160px; text-align: right; }
 .col-jita { width: 160px; text-align: right; }
-.col-volume { width: 90px; text-align: right; color: #8a8a8a; }
-.col-issued { width: 90px; color: #8a8a8a; font-size: 0.9em; }
+.col-volume { width: 90px; text-align: right; color: var(--text-muted); }
+.col-issued { width: 90px; color: var(--text-muted); font-size: 0.9em; }
 .col-action { width: 80px; text-align: center; }
-.col-title { color: #d0d0d0; }
+.col-title { color: var(--text-primary); }
 
 .contract-title {
   display: block;
@@ -743,8 +747,8 @@ function formatDateTime(dateStr) {
 
 .item-name-tag {
   font-size: 0.8em;
-  color: #8a8a8a;
-  background: rgba(138, 138, 138, 0.1);
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.05);
   padding: 1px 6px;
   border-radius: 3px;
   white-space: nowrap;
@@ -752,14 +756,14 @@ function formatDateTime(dateStr) {
 
 .item-name-more {
   font-size: 0.8em;
-  color: #8a8a8a;
+  color: var(--text-muted);
 }
 
 /* Price-based row coloring */
-.price-green td { color: #4caf50; }
-.price-green .col-title { color: #4caf50; }
-.price-red td { color: #ef5350; }
-.price-red .col-title { color: #ef5350; }
+.price-green td { color: var(--green); }
+.price-green .col-title { color: var(--green); }
+.price-red td { color: var(--red); }
+.price-red .col-title { color: var(--red); }
 
 .discount-badge {
   display: inline-block;
@@ -768,11 +772,11 @@ function formatDateTime(dateStr) {
   padding: 1px 6px;
   border-radius: 3px;
 }
-.discount-normal { color: #d0d0d0; }
-.discount-green { color: #4caf50; background: rgba(76, 175, 80, 0.1); }
-.discount-red { color: #ef5350; background: rgba(239, 83, 80, 0.1); }
+.discount-normal { color: var(--text-primary); }
+.discount-green { color: var(--green); background: var(--green-bg); }
+.discount-red { color: var(--red); background: var(--red-bg); }
 
-.jita-loading { color: #555; }
+.jita-loading { color: var(--text-dim); }
 
 .type-badge {
   font-size: 0.8em;
@@ -781,16 +785,16 @@ function formatDateTime(dateStr) {
   font-weight: 500;
 }
 
-.ct-item_exchange { color: #4caf50; background: rgba(76, 175, 80, 0.1); }
-.ct-auction { color: #ff9800; background: rgba(255, 152, 0, 0.1); }
-.ct-courier { color: #42a5f5; background: rgba(66, 165, 245, 0.1); }
-.ct-unknown { color: #8a8a8a; background: rgba(138, 138, 138, 0.1); }
+.ct-item_exchange { color: var(--green); background: var(--green-bg); }
+.ct-auction { color: var(--orange); background: var(--orange-bg); }
+.ct-courier { color: var(--blue); background: var(--blue-bg); }
+.ct-unknown { color: var(--text-muted); background: rgba(255,255,255,0.05); }
 
-.price-reward { color: #4caf50; }
+.price-reward { color: var(--green); }
 .price-collateral, .price-buyout {
   display: block;
   font-size: 0.8em;
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -798,15 +802,15 @@ function formatDateTime(dateStr) {
   padding: 4px 10px;
   font-size: 0.8em;
   background: transparent;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #c8aa6e;
+  color: var(--gold);
   cursor: pointer;
   transition: border-color 0.2s;
 }
 
 .btn-items:hover {
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 /* Detail panel */
@@ -814,11 +818,11 @@ function formatDateTime(dateStr) {
 
 .detail-row td {
   padding: 0;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .detail-panel {
-  background: rgba(200, 170, 110, 0.03);
+  background: var(--gold-bg-light);
   padding: 16px 20px;
 }
 
@@ -845,21 +849,21 @@ function formatDateTime(dateStr) {
 
 .detail-label {
   font-size: 0.8em;
-  color: #8a8a8a;
+  color: var(--text-muted);
 }
 
 .detail-value {
   font-size: 0.9em;
-  color: #d0d0d0;
+  color: var(--text-primary);
 }
 
 .detail-sub {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.85em;
 }
 
 .detail-price {
-  color: #c8aa6e;
+  color: var(--gold);
   font-weight: 600;
 }
 
@@ -870,9 +874,9 @@ function formatDateTime(dateStr) {
 .btn-copy-link {
   padding: 8px 16px;
   background: transparent;
-  border: 1px solid #c8aa6e;
+  border: 1px solid var(--gold);
   border-radius: 6px;
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 0.85em;
   cursor: pointer;
   white-space: nowrap;
@@ -880,8 +884,8 @@ function formatDateTime(dateStr) {
 }
 
 .btn-copy-link:hover {
-  background: #c8aa6e;
-  color: #0d0d0d;
+  background: var(--gold);
+  color: var(--bg-input);
 }
 
 .items-table {
@@ -890,23 +894,23 @@ function formatDateTime(dateStr) {
 }
 
 .items-table th {
-  color: #8a8a8a;
+  color: var(--text-muted);
   padding: 6px 10px;
   font-size: 0.85em;
   font-weight: 500;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+  border-bottom: 1px solid var(--border-default);
   text-align: left;
 }
 
 .items-table td {
   padding: 6px 10px;
   font-size: 0.9em;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.3);
+  border-bottom: 1px solid var(--bg-panel-2);
 }
 
 .col-qty { text-align: right; width: 100px; }
-.col-jita-item { text-align: right; width: 140px; color: #c8aa6e; }
-.col-jita-buy { color: #4caf50; }
+.col-jita-item { text-align: right; width: 140px; color: var(--gold); }
+.col-jita-buy { color: var(--green); }
 .col-included { text-align: center; width: 80px; }
 
 .jita-total-row {
@@ -914,21 +918,21 @@ function formatDateTime(dateStr) {
   justify-content: flex-end;
   gap: 8px;
   padding: 8px 10px;
-  color: #c8aa6e;
+  color: var(--gold);
   font-weight: 600;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .jita-total-sep {
-  color: #2a2a2a;
+  color: var(--border-default);
 }
 
-.included-yes { color: #4caf50; }
-.included-no { color: #ff9800; }
+.included-yes { color: var(--green); }
+.included-no { color: var(--orange); }
 
 .items-loading {
   text-align: center;
-  color: #8a8a8a;
+  color: var(--text-muted);
   padding: 16px;
 }
 </style>

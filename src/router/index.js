@@ -15,9 +15,27 @@ const router = createRouter({
       component: () => import('../views/IndustryView.vue'),
     },
     {
+      path: '/:server(gf|of)/t2rank',
+      name: 't2rank',
+      component: () => import('../views/T2RankView.vue'),
+    },
+    {
       path: '/:server(gf|of)/market',
       name: 'market',
       component: () => import('../views/MarketView.vue'),
+      meta: { mtab: 'price' },
+    },
+    {
+      path: '/:server(gf|of)/market/reprocess',
+      name: 'market-reprocess',
+      component: () => import('../views/MarketView.vue'),
+      meta: { mtab: 'reprocess' },
+    },
+    {
+      path: '/:server(gf|of)/market/ore',
+      name: 'market-ore',
+      component: () => import('../views/MarketView.vue'),
+      meta: { mtab: 'oreValue' },
     },
     {
       path: '/:server(gf|of)/pi',
@@ -61,6 +79,11 @@ const router = createRouter({
       path: '/:server(gf|of)/sovmap',
       name: 'sovmap',
       component: () => import('../views/SovMapView.vue'),
+    },
+    {
+      path: '/:server(gf|of)/wormhole',
+      name: 'wormhole',
+      component: () => import('../views/WormholeView.vue'),
     },
     {
       path: '/credits',

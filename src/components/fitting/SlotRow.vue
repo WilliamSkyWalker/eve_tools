@@ -43,7 +43,7 @@ const props = defineProps({
   label: String,
   slotType: String,
   slots: Array,
-  color: { type: String, default: '#c8aa6e' },
+  color: { type: String, default: '#d8b978' },
   isOfflineFn: { type: Function, default: () => false },
 })
 const emit = defineEmits(['slotClick', 'slotRemove', 'slotDrop', 'slotToggleOffline', 'slotChargeClick', 'slotInfo'])
@@ -141,7 +141,7 @@ function onDrop(event, index) {
 .hp-info {
   font-weight: 400;
   font-size: 0.9em;
-  color: #666;
+  color: var(--text-dim);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -157,8 +157,8 @@ function onDrop(event, index) {
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
-  background: #141414;
-  border: 1px solid #222;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--bg-elevated);
   border-radius: 4px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -166,12 +166,12 @@ function onDrop(event, index) {
 }
 
 .slot-cell:hover {
-  border-color: var(--accent, #c8aa6e);
-  background: rgba(200, 170, 110, 0.04);
+  border-color: var(--accent, var(--gold));
+  background: var(--gold-bg-light);
 }
 
 .slot-cell.filled {
-  border-left: 2px solid var(--accent, #c8aa6e);
+  border-left: 2px solid var(--accent, var(--gold));
 }
 
 .slot-cell.offline {
@@ -179,9 +179,9 @@ function onDrop(event, index) {
 }
 
 .slot-cell.drop-hover {
-  border-color: var(--accent, #c8aa6e);
-  background: rgba(200, 170, 110, 0.12);
-  box-shadow: inset 0 0 0 1px var(--accent, #c8aa6e);
+  border-color: var(--accent, var(--gold));
+  background: var(--gold-bg-medium);
+  box-shadow: inset 0 0 0 1px var(--accent, var(--gold));
 }
 
 .mod-icon {
@@ -192,7 +192,7 @@ function onDrop(event, index) {
 }
 
 .mod-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.82em;
   white-space: nowrap;
   overflow: hidden;
@@ -202,7 +202,7 @@ function onDrop(event, index) {
 }
 
 .charge-name {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.7em;
   white-space: nowrap;
   cursor: pointer;
@@ -210,13 +210,13 @@ function onDrop(event, index) {
 }
 
 .charge-name:hover {
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .charge-btn {
-  background: rgba(200, 170, 110, 0.1);
+  background: var(--gold-bg-medium);
   border: none;
-  color: #666;
+  color: var(--text-dim);
   font-size: 0.65em;
   padding: 2px 6px;
   border-radius: 3px;
@@ -226,14 +226,14 @@ function onDrop(event, index) {
 }
 
 .charge-btn:hover {
-  color: #c8aa6e;
-  background: rgba(200, 170, 110, 0.2);
+  color: var(--gold);
+  background: var(--gold-line);
 }
 
 .info-btn {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.95em;
   line-height: 1;
   padding: 0 2px;
@@ -242,11 +242,11 @@ function onDrop(event, index) {
 }
 
 .info-btn:hover {
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .empty-label {
-  color: #444;
+  color: var(--border-strong);
   font-size: 0.8em;
   font-style: italic;
 }

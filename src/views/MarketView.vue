@@ -1,12 +1,9 @@
 <template>
   <div class="market">
-    <h1 class="title">{{ serverLabel }} {{ t('market.title') }}<PageHelp topic="market" /></h1>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button :class="['tab', { active: tab === 'price' }]" @click="tab = 'price'">{{ t('market.tabPrice') }}</button>
-      <button :class="['tab', { active: tab === 'reprocess' }]" @click="tab = 'reprocess'">{{ t('market.tabReprocess') }}</button>
-      <button :class="['tab', { active: tab === 'oreValue' }]" @click="tab = 'oreValue'; loadOreValues()">{{ t('market.tabOreValue') }}</button>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ pageTitle }} <span class="srv-chip" :class="settings.server">{{ serverLabel }}</span><PageHelp topic="market" /></h1>
+      </div>
     </div>
 
     <!-- Price Query Tab -->
@@ -253,6 +250,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { marketCompare } from '../api/prices'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
@@ -268,7 +266,13 @@ const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()
 const { handleTabKeydown } = useTabInput()
 
-const tab = ref('price')
+const route = useRoute()
+// Each of the three market tools is its own route (meta.mtab drives which one).
+const tab = ref(route.meta.mtab || 'price')
+const pageTitle = computed(() =>
+  tab.value === 'reprocess' ? t('market.tabReprocess')
+  : tab.value === 'oreValue' ? t('market.tabOreValue')
+  : t('market.title'))
 
 // ── Price Query ──
 const inputText = ref('')
@@ -335,7 +339,10 @@ function getSortClass(field) {
   return sortDirection.value === 'asc' ? 'sort-asc' : 'sort-desc'
 }
 
-onMounted(() => loadIndustryData())
+onMounted(() => {
+  loadIndustryData()
+  if (tab.value === 'oreValue') loadOreValues()
+})
 
 async function queryPrices() {
   if (!inputText.value.trim()) return
@@ -675,335 +682,106 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
 </script>
 
 <style scoped>
-.market {
-  padding-top: 20px;
-}
-
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-  text-align: center;
-}
-
-.tabs {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
+/* ── Tabs ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border-default); flex-wrap: wrap; }
 .tab {
-  padding: 8px 24px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px 6px 0 0;
-  color: #8a8a8a;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text-muted); padding: 9px 14px; font-size: var(--text-md); font-weight: 500;
+  margin-bottom: -1px; transition: color .15s;
 }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
-.tab:hover {
-  color: #c8aa6e;
-}
-
-.tab.active {
-  color: #c8aa6e;
-  border-color: #c8aa6e;
-  border-bottom-color: #0d0d0d;
-  background: #0d0d0d;
-  font-weight: 600;
-}
-
-.input-section {
-  max-width: 700px;
-  margin: 0 auto 24px;
-}
-
+/* ── Input area ── */
+.input-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 .material-input {
-  width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  padding: 10px 14px;
-  font-size: 0.95em;
-  font-family: inherit;
-  resize: vertical;
-  box-sizing: border-box;
+  width: 100%; min-height: 120px; resize: vertical;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.7; padding: 11px 13px;
 }
-
-.material-input::placeholder {
-  color: #555555;
-}
-
-.material-input:focus {
-  outline: none;
-  border-color: #c8aa6e;
-}
-
-.reprocess-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.reprocess-label {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  white-space: nowrap;
-}
-
-.reprocess-rate-input {
-  width: 70px;
-  padding: 6px 8px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  text-align: center;
-  font-size: 0.9em;
-  outline: none;
-}
-
-.reprocess-rate-input:focus {
-  border-color: #c8aa6e;
-}
-
-.reprocess-pct {
-  color: #8a8a8a;
-  font-size: 0.85em;
-}
-
-.reprocess-label-gap {
-  margin-left: 12px;
-}
+.material-input:focus { outline: none; border-color: var(--gold-line); }
 
 .query-btn {
-  background: #c8aa6e;
-  color: #0d0d0d;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 24px;
-  font-size: 0.95em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+  align-self: flex-start; height: 38px; padding: 0 22px;
+  border: none; border-radius: var(--radius-md);
+  background: var(--gold); color: var(--gold-ink); font-weight: 650; font-size: var(--text-base);
+  transition: background .15s;
 }
+.query-btn:hover:not(:disabled) { background: var(--gold-hover); }
+.query-btn:disabled { opacity: .45; cursor: not-allowed; }
 
-.query-btn:hover:not(:disabled) {
-  background: #e0c882;
+.reprocess-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.reprocess-label { font-size: var(--text-sm); color: var(--text-muted); }
+.reprocess-label-gap { margin-left: 12px; }
+.reprocess-rate-input {
+  width: 72px; height: 34px; text-align: center;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-mono);
 }
+.reprocess-rate-input:focus { outline: none; border-color: var(--gold-line); }
+.reprocess-pct { color: var(--text-muted); font-size: var(--text-sm); }
 
-.query-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* ── Messages ── */
+.error-msg { color: var(--red); margin-bottom: 12px; }
+.esi-down-msg { color: var(--orange); margin-bottom: 12px; font-size: var(--text-sm); }
+.loading-msg { text-align: center; color: var(--text-dim); padding: 26px; }
 
-.error-msg {
-  text-align: center;
-  color: #ef5350;
-  margin-bottom: 16px;
-}
+/* ── Price summary tiles ── */
+.price-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.summary-card { background: var(--bg-panel); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 14px 18px; }
+.summary-label { font-size: var(--text-sm); color: var(--text-dim); margin-bottom: 4px; }
+.summary-value { font-size: 22px; font-weight: 700; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.buy-total { color: var(--red); }
+.sell-total { color: var(--green); }
 
-.esi-down-msg {
-  text-align: center;
-  color: #ff9800;
-  background: rgba(255, 152, 0, 0.08);
-  border: 1px solid rgba(255, 152, 0, 0.3);
-  border-radius: 4px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  font-size: 0.95em;
-}
-
-.loading-msg {
-  text-align: center;
-  color: #8a8a8a;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  color: #c8aa6e;
-  margin-bottom: 8px;
-  font-size: 1em;
-}
-
-.result-section {
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.price-summary {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-  justify-content: flex-start;
-}
-
-.summary-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 16px 20px;
-  min-width: 140px;
-  text-align: center;
-}
-
-.summary-label {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-.summary-value {
-  font-size: 1.2em;
-  font-weight: 600;
-}
-
-.buy-total {
-  color: #4caf50;
-}
-
-.sell-total {
-  color: #ff9800;
-}
-
+/* ── Result tables ── */
+.result-section { margin-bottom: 20px; }
+.section-title { font-size: var(--text-base); font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
 .result-table {
-  width: 100%;
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: collapse;
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden;
 }
-
 .result-table th {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-  padding: 10px 12px;
-  font-size: 0.9em;
-  font-weight: 500;
-  border-bottom: 1px solid #2a2a2a;
-  position: relative;
+  text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
+  background: var(--bg-panel-2); padding: 9px 14px; border-bottom: 1px solid var(--border-default); font-weight: 600;
 }
+.result-table td { padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.result-table tbody tr:last-child td { border-bottom: none; }
+.result-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 
-.result-table th.sortable {
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.2s;
+.col-qty, .col-volume, .col-price, th.col-qty, th.col-volume, th.col-price {
+  text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
+th.col-qty, th.col-volume, th.col-price { font-family: var(--font-sans); }
+.col-name, th.col-name { text-align: left; }
+.col-discount, th.col-discount { text-align: center; white-space: nowrap; }
 
-.result-table th.sortable:hover {
-  background: rgba(200, 170, 110, 0.12);
-}
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--text-muted); }
+.sort-indicator { display: inline-block; width: 12px; }
+.sort-indicator.sort-asc::after { content: '▲'; font-size: 8px; color: var(--gold); }
+.sort-indicator.sort-desc::after { content: '▼'; font-size: 8px; color: var(--gold); }
 
-.sort-indicator {
-  margin-left: 4px;
-  opacity: 0.6;
-}
+.total-row td { background: var(--bg-panel-2); font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border-default); }
+.total-val { color: var(--text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-.sort-indicator.sort-asc::after {
-  content: '↑';
-}
+.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.type-icon { width: 24px; height: 24px; border-radius: 4px; flex: none; }
+tr.unmatched td { color: var(--text-dim); }
+.unmatched-name { color: var(--text-dim); font-style: italic; }
 
-.sort-indicator.sort-desc::after {
-  content: '↓';
-}
-
-.result-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
-}
-
-.col-name {
-  text-align: left;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.type-icon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 3px;
-}
-
-.col-qty,
-.col-volume,
-.col-price {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.col-discount {
-  text-align: right;
-  white-space: nowrap;
-  width: 110px;
-}
+.group-row td { padding: 7px 14px 3px; background: transparent; }
+.group-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
 
 .discount-input {
-  width: 56px;
-  padding: 3px 6px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 4px;
-  color: #d0d0d0;
-  text-align: right;
-  font-size: 0.9em;
-  font-family: inherit;
-  outline: none;
+  width: 58px; height: 28px; text-align: right;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono);
 }
+.discount-input:focus { outline: none; border-color: var(--gold-line); }
 
-.discount-input:focus {
-  border-color: #c8aa6e;
-}
-
-.unmatched td {
-  opacity: 0.6;
-}
-
-.unmatched-name {
-  color: #ef5350;
-}
-
-.unmatched-name small {
-  font-size: 0.8em;
-}
-
-.total-row {
-  font-weight: bold;
-}
-
-.total-row td {
-  border-top: none;
-  border-bottom: 2px solid #2a2a2a;
-  padding: 10px 12px;
-  color: #c8aa6e;
-  background: rgba(200, 170, 110, 0.05);
-}
-
-.total-val {
-  color: #c8aa6e;
-}
-
-.group-row td {
-  padding: 6px 12px 4px;
-  border-bottom: none;
-}
-
-.group-label {
-  color: #8a8a8a;
-  font-size: 0.8em;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+@media (max-width: 640px) {
+  .price-summary { grid-template-columns: 1fr; }
 }
 </style>

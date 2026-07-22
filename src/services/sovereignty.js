@@ -77,6 +77,8 @@ export function buildSovData(navData, sovData) {
       z: sys.z,
       regionId,
       allianceId,
+      name: sys.n,
+      nameZh: sys.nz || '',
     })
 
     // Build region aggregation

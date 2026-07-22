@@ -165,9 +165,9 @@ function formatPrice(n) {
 
 .toggle-btn {
   background: none;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   padding: 6px 14px;
   font-size: 0.85em;
   cursor: pointer;
@@ -175,8 +175,8 @@ function formatPrice(n) {
 }
 
 .toggle-btn:hover {
-  color: #c8aa6e;
-  border-color: #c8aa6e;
+  color: var(--gold);
+  border-color: var(--gold);
 }
 
 .inventory-section {
@@ -185,10 +185,10 @@ function formatPrice(n) {
 
 .inventory-input {
   width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #d0d0d0;
+  color: var(--text-primary);
   padding: 10px 14px;
   font-size: 0.9em;
   font-family: inherit;
@@ -197,30 +197,30 @@ function formatPrice(n) {
 }
 
 .inventory-input::placeholder {
-  color: #555555;
+  color: var(--text-dim);
 }
 
 .inventory-input:focus {
   outline: none;
-  border-color: #c8aa6e;
+  border-color: var(--gold);
 }
 
 .have-qty {
-  color: #8a8a8a;
+  color: var(--text-muted);
 }
 
 .need-zero {
-  color: #4caf50;
+  color: var(--green);
   font-weight: 600;
 }
 
 .need-short {
-  color: #ff9800;
+  color: var(--orange);
   font-weight: 600;
 }
 
 .summary-table {
-  background: #1a1a1a;
+  background: var(--bg-panel);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -243,23 +243,23 @@ function formatPrice(n) {
 }
 
 .highlight {
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .total-row td {
-  border-bottom: 2px solid #2a2a2a;
-  background: rgba(200, 170, 110, 0.05);
+  border-bottom: 2px solid var(--border-default);
+  background: var(--gold-bg-light);
 }
 
 .total-label {
   text-align: right;
   font-weight: 700;
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .total-value {
   font-weight: 700;
-  color: #4caf50;
+  color: var(--green);
   font-size: 1.05em;
 }
 </style>

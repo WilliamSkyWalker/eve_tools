@@ -137,8 +137,8 @@ const rows = computed(() => {
 }
 
 .detail-panel {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   width: 420px;
   max-height: 78vh;
@@ -151,17 +151,17 @@ const rows = computed(() => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .mod-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .type-icon { width: 28px; height: 28px; border-radius: 3px; flex-shrink: 0; }
-.mod-name { color: #c8aa6e; font-size: 0.95em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.close-btn { background: none; border: none; color: #8a8a8a; font-size: 1.4em; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
-.close-btn:hover { color: #d0d0d0; }
+.mod-name { color: var(--gold); font-size: 0.95em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.4em; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
+.close-btn:hover { color: var(--text-primary); }
 
 .offline-note {
-  color: #ff9800;
+  color: var(--orange);
   font-size: 0.75em;
   padding: 6px 14px 0;
 }
@@ -172,7 +172,7 @@ const rows = computed(() => {
   flex: 1;
 }
 
-.no-attr { color: #555; text-align: center; padding: 16px; font-size: 0.85em; }
+.no-attr { color: var(--text-dim); text-align: center; padding: 16px; font-size: 0.85em; }
 
 .attr-row {
   display: flex;
@@ -182,19 +182,19 @@ const rows = computed(() => {
   padding: 4px 14px;
   font-size: 0.82em;
 }
-.attr-row:hover { background: rgba(200, 170, 110, 0.05); }
+.attr-row:hover { background: var(--gold-bg-light); }
 
-.attr-name { color: #a0a0a0; }
+.attr-name { color: var(--text-muted); }
 .attr-val { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
-.base-val { color: #666; text-decoration: line-through; font-size: 0.9em; }
-.cur-val { color: #d0d0d0; }
-.cur-val.up { color: #4caf50; }
-.cur-val.down { color: #ef5350; }
+.base-val { color: var(--text-dim); text-decoration: line-through; font-size: 0.9em; }
+.cur-val { color: var(--text-primary); }
+.cur-val.up { color: var(--green); }
+.cur-val.down { color: var(--red); }
 
 .detail-foot {
   padding: 8px 14px;
-  border-top: 1px solid #2a2a2a;
-  color: #666;
+  border-top: 1px solid var(--border-default);
+  color: var(--text-dim);
   font-size: 0.72em;
 }
 </style>

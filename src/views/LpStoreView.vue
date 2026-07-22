@@ -1,6 +1,10 @@
 <template>
   <div class="lpstore">
-    <h1 class="title">{{ serverLabel }} {{ t('lp.title') }}<PageHelp topic="lp" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('lp.title') }} <span class="srv-chip" :class="settings.server">{{ serverLabel }}</span><PageHelp topic="lp" /></h1>
+      </div>
+    </div>
 
     <div v-if="!dataReady" class="loading-text">{{ t('lp.loading') }}</div>
 
@@ -321,220 +325,68 @@ function copyName(name, e) {
 </script>
 
 <style scoped>
-.lpstore {
-  padding-top: 20px;
-}
+.loading-text, .no-data { text-align: center; color: var(--text-dim); padding: 40px; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.loading-text {
-  text-align: center;
-  color: #555;
-  padding: 40px;
-}
-
-.no-data {
-  text-align: center;
-  color: #555;
-  padding: 40px;
-}
-
-/* ── Search ── */
-.search-section {
-  max-width: 500px;
-  margin: 0 auto 12px;
-  position: relative;
-}
-
+/* ── Corp search ── */
+.search-section { position: relative; max-width: 480px; margin-bottom: 12px; }
 .corp-search {
-  width: 100%;
-  padding: 10px 14px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  font-size: 0.95em;
-  outline: none;
-  box-sizing: border-box;
+  width: 100%; height: 36px; padding: 0 12px;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary); font-size: var(--text-base);
 }
-
-.corp-search:focus {
-  border-color: #c8aa6e;
-}
-
+.corp-search:focus { outline: none; border-color: var(--gold-line); }
 .corp-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  z-index: 100;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg-panel); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-pop);
+  max-height: 300px; overflow-y: auto; z-index: 100; padding: 4px;
 }
+.corp-option { padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-base); }
+.corp-option:hover, .corp-option.active { background: var(--bg-elevated); }
 
-.corp-option {
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 0.9em;
-  color: #d0d0d0;
-  transition: background 0.15s;
-}
-
-.corp-option:hover {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-}
-
-.corp-option.active {
-  color: #c8aa6e;
-  background: rgba(200, 170, 110, 0.12);
-}
-
-/* ── Action ── */
-.action-row {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
+.action-row { margin-bottom: 16px; }
 .calc-btn {
-  background: #c8aa6e;
-  color: #0d0d0d;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 24px;
-  font-size: 0.95em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+  height: 38px; padding: 0 22px; border: none; border-radius: var(--radius-md);
+  background: var(--gold); color: var(--gold-ink); font-weight: 650; font-size: var(--text-base);
+  transition: background .15s;
 }
+.calc-btn:hover:not(:disabled) { background: var(--gold-hover); }
+.calc-btn:disabled { opacity: .45; cursor: not-allowed; }
 
-.calc-btn:hover:not(:disabled) {
-  background: #e0c882;
-}
-
-.calc-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Table ── */
-.result-section {
-  overflow-x: auto;
-}
-
+/* ── Offers table ── */
+.result-section { overflow-x: auto; }
 .offer-table {
-  width: 100%;
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: collapse;
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden;
 }
-
 .offer-table th {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-  padding: 10px 12px;
-  font-size: 0.85em;
-  font-weight: 500;
-  border-bottom: 1px solid #2a2a2a;
-  white-space: nowrap;
+  text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
+  background: var(--bg-panel-2); padding: 9px 12px; border-bottom: 1px solid var(--border-default);
+  font-weight: 600; white-space: nowrap; text-align: left;
 }
+.offer-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); vertical-align: top; }
+.offer-table tbody tr:last-child td { border-bottom: none; }
+.offer-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 
-.offer-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
-  font-size: 0.9em;
-}
+.col-name { text-align: left; min-width: 160px; }
+.col-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th.col-num { font-family: var(--font-sans); }
+.col-req { min-width: 180px; }
 
-.col-name {
-  text-align: left;
-}
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--text-muted); }
+.sorted { color: var(--gold); }
 
-.col-num {
-  text-align: right;
-  white-space: nowrap;
-}
+.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.type-icon { width: 24px; height: 24px; border-radius: 4px; flex: none; }
+.lp-val { color: var(--purple); }
 
-.col-req {
-  text-align: left;
-  max-width: 260px;
-}
+.req-list { display: flex; flex-direction: column; gap: 3px; }
+.req-item { font-size: var(--text-sm); color: var(--text-muted); }
+.no-req { color: var(--text-dim); }
 
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  color: #e0c882;
-}
-
-.sorted {
-  color: #fff;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.type-icon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 3px;
-}
-
-.lp-val {
-  color: #c8aa6e;
-  font-weight: 600;
-}
-
-.req-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.req-item {
-  background: rgba(138, 138, 138, 0.1);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.8em;
-  color: #8a8a8a;
-  white-space: nowrap;
-}
-
-.no-req {
-  color: #555;
-}
-
-/* ISK/LP color coding */
-.isk-lp-great {
-  color: #4caf50;
-  font-weight: 700;
-}
-
-.isk-lp-good {
-  color: #8bc34a;
-  font-weight: 600;
-}
-
-.isk-lp-ok {
-  color: #ff9800;
-}
-
-.isk-lp-bad {
-  color: #ef5350;
-}
+.isk-lp-great { color: var(--green); font-weight: 700; }
+.isk-lp-good { color: #8fce9f; }
+.isk-lp-ok { color: var(--text-muted); }
+.isk-lp-bad { color: var(--red); }
 </style>

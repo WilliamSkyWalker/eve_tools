@@ -71,11 +71,11 @@ const detailSlotType = ref(null)
 const detailSlotIndex = ref(null)
 
 const slotRows = computed(() => [
-  { type: 'hi', label: t('fit.highSlots'), arr: store.highSlots, color: '#c8aa6e' },
-  { type: 'med', label: t('fit.midSlots'), arr: store.midSlots, color: '#42a5f5' },
-  { type: 'lo', label: t('fit.lowSlots'), arr: store.lowSlots, color: '#4caf50' },
-  { type: 'rig', label: t('fit.rigSlots'), arr: store.rigSlots, color: '#ff9800' },
-  { type: 'sub', label: t('fit.subSlots'), arr: store.subSlots, color: '#ab47bc' },
+  { type: 'hi', label: t('fit.highSlots'), arr: store.highSlots, color: '#d8b978' },
+  { type: 'med', label: t('fit.midSlots'), arr: store.midSlots, color: '#5aa0e0' },
+  { type: 'lo', label: t('fit.lowSlots'), arr: store.lowSlots, color: '#62c689' },
+  { type: 'rig', label: t('fit.rigSlots'), arr: store.rigSlots, color: '#efa557' },
+  { type: 'sub', label: t('fit.subSlots'), arr: store.subSlots, color: '#c58fe0' },
 ].filter(s => s.arr.length > 0))
 
 function onSlotClick({ slotType, index }) {

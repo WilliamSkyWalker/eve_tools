@@ -1,7 +1,11 @@
 <template>
   <div class="sovmap">
-    <h1 class="title">{{ t('sovmap.title') }}<PageHelp topic="sovmap" /></h1>
-    <p class="subtitle">{{ t('sovmap.subtitle') }}</p>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('sovmap.title') }} <span class="srv-chip gf beta-chip">{{ t('nav.beta') }}</span><PageHelp topic="sovmap" /></h1>
+        <p class="sub">{{ t('sovmap.subtitle') }}</p>
+      </div>
+    </div>
 
     <div v-if="loading" class="loading-text">{{ t('sovmap.loading') }}</div>
     <div v-else-if="error" class="error-text">{{ error }}</div>
@@ -89,6 +93,8 @@ let dragStartX = 0, dragStartY = 0, dragOx = 0, dragOy = 0
 
 // Data
 let sovSystems = []
+let gateEdges = []       // [[x1,z1,x2,z2], ...] gate links between sov systems
+let keySystems = []      // alliance capital systems (biggest alliances first)
 let regions = {}
 let allianceCentroids = {}
 const names = ref({})
@@ -144,7 +150,9 @@ function worldToCanvas(wx, wz) {
   const midZ = (boundsMinZ + boundsMaxZ) / 2
   return [
     cx + (wx - midX) * scale,
-    cy + (wz - midZ) * scale,
+    // Canvas Y grows downward; EVE +Z is galactic north, so negate to put
+    // north at the top (matches the in-game / Dotlan orientation).
+    cy - (wz - midZ) * scale,
   ]
 }
 
@@ -280,6 +288,20 @@ function draw() {
     ctx.drawImage(influenceCanvas, 0, 0)
   }
 
+  // 1b. Draw gate connections (single path for performance)
+  ctx.strokeStyle = 'rgba(150,162,178,0.11)'
+  ctx.lineWidth = Math.max(0.4, 0.5 * DPR)
+  ctx.beginPath()
+  for (const [x1, z1, x2, z2] of gateEdges) {
+    const [ax, ay] = worldToCanvas(x1, z1)
+    const [bx, by] = worldToCanvas(x2, z2)
+    if ((ax < 0 && bx < 0) || (ax > canvasW && bx > canvasW) ||
+        (ay < 0 && by < 0) || (ay > canvasH && by > canvasH)) continue
+    ctx.moveTo(ax, ay)
+    ctx.lineTo(bx, by)
+  }
+  ctx.stroke()
+
   // 2. Draw system dots
   const dotR = Math.max(0.8, 1.2 * DPR * Math.min(view.scale, 2))
   for (const sys of sovSystems) {
@@ -323,6 +345,26 @@ function draw() {
     ctx.fillText(name, cx, cy)
   }
 
+  // 3b. Draw alliance capital system names (biggest alliances first; more as you zoom in)
+  const sysLabelCount = view.scale < 0.7 ? 12 : view.scale < 1.3 ? 30 : 80
+  if (sysLabelCount > 0) {
+    const sf = Math.max(9, Math.round(10 * DPR * Math.min(view.scale, 2.2)))
+    ctx.font = `${sf}px sans-serif`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    const offset = dotR + 3 * DPR
+    for (let i = 0; i < Math.min(sysLabelCount, keySystems.length); i++) {
+      const s = keySystems[i]
+      const [cx, cy] = worldToCanvas(s.x, s.z)
+      if (cx < 0 || cx > canvasW || cy < 0 || cy > canvasH) continue
+      const nm = (locale.value === 'zh' && s.nameZh) ? s.nameZh : s.name
+      ctx.fillStyle = 'rgba(0,0,0,0.65)'
+      ctx.fillText(nm, cx + offset + 1, cy + 1)
+      ctx.fillStyle = 'rgba(228,231,236,0.85)'
+      ctx.fillText(nm, cx + offset, cy)
+    }
+  }
+
   // 4. Draw region labels (smaller, only at higher zoom)
   if (view.scale >= 1.2) {
     const regionFontSize = Math.max(8, Math.round(9 * DPR * Math.min(view.scale, 3)))
@@ -356,6 +398,27 @@ async function loadData() {
     regions = data.regions
     allianceCentroids = data.allianceCentroids
 
+    // Build gate connections between sov systems + gate-degree per system
+    const sysById = new Map(sovSystems.map(s => [s.id, s]))
+    const degree = new Map()
+    gateEdges = []
+    for (const [a, b] of (navData.jumps || [])) {
+      const sa = sysById.get(a), sb = sysById.get(b)
+      if (!sa || !sb) continue
+      gateEdges.push([sa.x, sa.z, sb.x, sb.z])
+      degree.set(a, (degree.get(a) || 0) + 1)
+      degree.set(b, (degree.get(b) || 0) + 1)
+    }
+    // Each alliance's "capital" ≈ its most gate-connected sovereign system
+    // (its territory hub / main staging) — data-driven, so it never goes stale.
+    const capByAlliance = new Map()
+    for (const s of sovSystems) {
+      if (!s.allianceId) continue
+      const d = degree.get(s.id) || 0
+      const cur = capByAlliance.get(s.allianceId)
+      if (!cur || d > (degree.get(cur.id) || 0)) capByAlliance.set(s.allianceId, s)
+    }
+
     // Compute bounds
     boundsMinX = Infinity; boundsMaxX = -Infinity
     boundsMinZ = Infinity; boundsMaxZ = -Infinity
@@ -385,6 +448,10 @@ async function loadData() {
       .slice(0, 20)
       .map(([id, count]) => ({ id: Number(id), count }))
 
+    // Capital systems ordered by owning-alliance size (biggest first)
+    keySystems = [...capByAlliance.values()]
+      .sort((s1, s2) => (allianceTotals[s2.allianceId] || 0) - (allianceTotals[s1.allianceId] || 0))
+
     // Reset view
     view.ox = 0
     view.oy = 0
@@ -406,167 +473,55 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-.sovmap {
-  padding-top: 40px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
+.sovmap { max-width: 1100px; margin: 0 auto; }
+.beta-chip { font-weight: 600; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.6em;
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.subtitle {
-  color: #8a8a8a;
-  font-size: 0.9em;
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.loading-text {
-  color: #555;
-  text-align: center;
-  padding: 60px;
-  font-size: 1.1em;
-}
-
-.error-text {
-  color: #ef5350;
-  text-align: center;
-  padding: 40px;
-}
+.loading-text { color: var(--text-dim); text-align: center; padding: 60px; font-size: 1.1em; }
+.error-text { color: var(--red); text-align: center; padding: 40px; }
 
 .map-wrapper {
   position: relative;
   background: #000;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
-
-canvas {
-  display: block;
-  width: 960px;
-  height: 720px;
-  max-width: 100%;
-  cursor: grab;
-}
-
-canvas:active {
-  cursor: grabbing;
-}
+canvas { display: block; width: 960px; height: 720px; max-width: 100%; cursor: grab; }
+canvas:active { cursor: grabbing; }
 
 /* Tooltip */
 .tooltip {
   position: absolute;
-  background: rgba(10, 10, 10, 0.95);
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
+  background: rgba(12, 13, 16, 0.96);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   pointer-events: none;
-  min-width: 180px;
-  max-width: 280px;
+  min-width: 180px; max-width: 280px;
   z-index: 10;
+  box-shadow: var(--shadow-pop);
 }
-
-.tooltip-name {
-  color: #c8aa6e;
-  font-weight: 700;
-  font-size: 0.95em;
-  margin-bottom: 4px;
-}
-
-.tooltip-systems {
-  color: #8a8a8a;
-  font-size: 0.8em;
-  margin-bottom: 4px;
-}
-
-.tooltip-alliance {
-  color: #e6e6e6;
-  font-size: 0.85em;
-  margin-bottom: 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tooltip-count {
-  color: #8a8a8a;
-  font-size: 0.8em;
-}
-
-.tooltip-unclaimed {
-  color: #555;
-  font-size: 0.85em;
-  font-style: italic;
-}
-
-.tooltip-others {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid #2a2a2a;
-}
-
-.tooltip-other-row {
-  color: #aaa;
-  font-size: 0.78em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
-}
+.tooltip-name { color: var(--gold); font-weight: 700; font-size: 0.95em; margin-bottom: 4px; }
+.tooltip-systems { color: var(--text-muted); font-size: 0.8em; margin-bottom: 4px; font-family: var(--font-mono); }
+.tooltip-alliance { color: var(--text-primary); font-size: 0.85em; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+.tooltip-count { color: var(--text-muted); font-size: 0.8em; font-family: var(--font-mono); }
+.tooltip-unclaimed { color: var(--text-dim); font-size: 0.85em; font-style: italic; }
+.tooltip-others { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-default); }
+.tooltip-other-row { color: var(--text-muted); font-size: 0.78em; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 
 /* Legend */
 .legend {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
   padding: 16px 20px;
   margin-bottom: 40px;
 }
-
-.legend-title {
-  color: #c8aa6e;
-  font-size: 1em;
-  margin-bottom: 12px;
-}
-
-.legend-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.legend-name {
-  color: #e6e6e6;
-  font-size: 0.8em;
-  max-width: 170px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.legend-count {
-  color: #555;
-  font-size: 0.72em;
-}
+.legend-title { color: var(--text-primary); font-size: var(--text-md); font-weight: 600; margin-bottom: 12px; }
+.legend-items { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-name { color: var(--text-secondary); font-size: 0.82em; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-count { color: var(--text-dim); font-size: 0.72em; font-family: var(--font-mono); }
 </style>

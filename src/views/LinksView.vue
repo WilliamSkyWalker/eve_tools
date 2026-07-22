@@ -1,7 +1,11 @@
 <template>
   <div class="links-page">
-    <h1 class="title">{{ t('links.title') }}<PageHelp topic="links" /></h1>
-    <p class="subtitle">{{ t('links.subtitle') }}</p>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('links.title') }}<PageHelp topic="links" /></h1>
+        <p class="sub">{{ t('links.subtitle') }}</p>
+      </div>
+    </div>
 
     <div v-for="cat in categories" :key="cat.key" class="category">
       <h2 class="cat-title">{{ t(`links.cat.${cat.key}`) }}</h2>
@@ -12,11 +16,11 @@
           :href="link.url"
           target="_blank"
           rel="noopener"
-          class="card"
+          class="link-card"
         >
-          <div class="card-name">{{ link.name }}</div>
+          <div class="card-name">{{ link.name }} <span class="ext">↗</span></div>
           <div class="card-desc">{{ t(`links.${link.i18n}`) }}</div>
-          <div class="card-url">{{ link.display }}</div>
+          <div class="card-url num">{{ link.display }}</div>
         </a>
       </div>
     </div>
@@ -84,79 +88,34 @@ const categories = [
 </script>
 
 <style scoped>
-.links-page {
-  padding-top: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
+.links-page { max-width: 1040px; margin: 0 auto; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-  text-align: center;
-}
-
-.subtitle {
-  color: #8a8a8a;
-  margin-bottom: 28px;
-  text-align: center;
-}
-
-.category {
-  margin-bottom: 28px;
-}
-
+.category { margin-bottom: 28px; }
 .cat-title {
-  color: #c8aa6e;
-  font-size: 1.1em;
-  margin-bottom: 12px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.card {
-  display: block;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 16px 18px;
-  text-decoration: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.card:hover {
-  border-color: #c8aa6e;
-  background: rgba(200, 170, 110, 0.05);
-}
-
-.card-name {
-  color: #d0d0d0;
-  font-size: 1em;
+  color: var(--text-primary);
+  font-size: var(--text-lg);
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--border-default);
 }
 
-.card:hover .card-name {
-  color: #c8aa6e;
-}
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
 
-.card-desc {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  line-height: 1.4;
-  margin-bottom: 8px;
+.link-card {
+  display: block;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 15px 18px;
+  transition: border-color .15s, background .15s;
 }
+.link-card:hover { border-color: var(--gold-line); background: var(--gold-bg-light); }
 
-.card-url {
-  color: #555;
-  font-size: 0.78em;
-  font-family: monospace;
-}
+.card-name { color: var(--text-primary); font-size: var(--text-md); font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+.card-name .ext { color: var(--text-dim); font-size: 0.85em; }
+.link-card:hover .card-name { color: var(--gold); }
+.link-card:hover .ext { color: var(--gold); }
+.card-desc { color: var(--text-muted); font-size: var(--text-sm); line-height: 1.5; margin-bottom: 8px; }
+.card-url { color: var(--text-dim); font-size: 0.78em; }
 </style>

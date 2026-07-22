@@ -1,12 +1,16 @@
 <template>
   <div class="pi-view">
-    <h1 class="title">{{ t('pi.title') }}<PageHelp topic="pi" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('pi.title') }}<PageHelp topic="pi" /></h1>
+      </div>
+    </div>
 
-    <div v-if="!dataReady" class="loading-text">Loading...</div>
+    <div v-if="!dataReady" class="loading-text">{{ t('home.loading') }}</div>
 
     <template v-else>
       <!-- Search + runs -->
-      <div class="search-section">
+      <div class="card search-section">
         <div class="search-row">
           <div class="search-wrap">
             <input
@@ -31,7 +35,7 @@
           </div>
           <div class="runs-wrap">
             <label>{{ t('pi.runs') }}</label>
-            <input v-model.number="runs" type="number" min="1" class="runs-input" />
+            <input v-model.number="runs" type="number" min="1" class="runs-input num" />
           </div>
         </div>
       </div>
@@ -39,7 +43,7 @@
       <!-- Production chain -->
       <div v-if="chain.length" class="chain-section">
         <div class="levels-row">
-          <div v-for="lvl in chain" :key="lvl.tier" class="level-col">
+          <div v-for="lvl in chain" :key="lvl.tier" class="card level-col">
             <h3 class="level-title">{{ tierLabel(lvl.tier) }}</h3>
             <table class="level-table">
               <thead>
@@ -231,195 +235,58 @@ function copyName(name, e) {
 </script>
 
 <style scoped>
-.pi-view {
-  padding-top: 20px;
-}
-
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-.loading-text {
-  text-align: center;
-  color: #555;
-  padding: 40px;
-}
+.loading-text { text-align: center; color: var(--text-dim); padding: 40px; }
 
 /* ── Search ── */
-.search-section {
-  max-width: 600px;
-  margin: 0 auto 20px;
-}
-
-.search-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.search-wrap {
-  flex: 1;
-  position: relative;
-}
-
+.search-section { padding: 14px 16px; margin-bottom: 16px; }
+.search-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 240px; }
 .search-input {
-  width: 100%;
-  padding: 10px 14px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  font-size: 0.95em;
-  outline: none;
-  box-sizing: border-box;
+  width: 100%; height: 34px; padding: 0 11px;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary); font-size: var(--text-base);
 }
-
-.search-input:focus {
-  border-color: #c8aa6e;
-}
+.search-input:focus { outline: none; border-color: var(--gold-line); }
 
 .dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  z-index: 100;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg-panel); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-pop);
+  max-height: 300px; overflow-y: auto; z-index: 100; padding: 4px;
 }
+.dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+.dropdown-item:hover, .dropdown-item.active { background: var(--bg-elevated); }
+.type-icon { width: 24px; height: 24px; border-radius: 4px; flex: none; }
 
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 0.9em;
-  color: #d0d0d0;
-  transition: background 0.15s;
-}
+.tier-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+.tier-0 { color: var(--text-muted); background: rgba(144, 150, 160, 0.14); }
+.tier-1 { color: var(--green); background: var(--green-bg); }
+.tier-2 { color: var(--blue); background: var(--blue-bg); }
+.tier-3 { color: var(--orange); background: var(--orange-bg); }
+.tier-4 { color: var(--purple); background: var(--purple-bg); }
 
-.dropdown-item:hover {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-}
-
-.dropdown-item.active {
-  color: #c8aa6e;
-  background: rgba(200, 170, 110, 0.12);
-}
-
-.tier-badge {
-  margin-left: auto;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 0.75em;
-  font-weight: 700;
-}
-
-.tier-1 { color: #8a8a8a; background: rgba(138, 138, 138, 0.15); }
-.tier-2 { color: #4caf50; background: rgba(76, 175, 80, 0.15); }
-.tier-3 { color: #ff9800; background: rgba(255, 152, 0, 0.15); }
-.tier-4 { color: #c8aa6e; background: rgba(200, 170, 110, 0.15); }
-
-.runs-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.runs-wrap label {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  white-space: nowrap;
-}
-
+.runs-wrap { display: flex; flex-direction: column; gap: 4px; }
+.runs-wrap label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
 .runs-input {
-  width: 70px;
-  padding: 10px 8px;
-  background: #0d0d0d;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #d0d0d0;
-  text-align: center;
-  font-size: 0.95em;
-  outline: none;
+  width: 110px; height: 34px; text-align: center;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary);
 }
+.runs-input:focus { outline: none; border-color: var(--gold-line); }
 
-.runs-input:focus {
-  border-color: #c8aa6e;
-}
-
-/* ── Chain ── */
-.chain-section {
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
-.levels-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.level-col {
-  min-width: 240px;
-  flex-shrink: 0;
-}
-
-.level-title {
-  color: #c8aa6e;
-  font-size: 0.95em;
-  margin-bottom: 8px;
-  padding-left: 4px;
-  border-left: 3px solid #c8aa6e;
-}
-
-.level-table {
-  width: 100%;
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  border-collapse: collapse;
-}
-
+/* ── Production chain ── */
+.levels-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.level-col { flex: 0 0 auto; width: 288px; overflow: hidden; }
+.level-title { font-size: var(--text-base); font-weight: 650; padding: 11px 14px; border-bottom: 1px solid var(--border-default); margin: 0; }
+.level-table { width: 100%; border-collapse: collapse; }
 .level-table th {
-  background: rgba(200, 170, 110, 0.08);
-  color: #c8aa6e;
-  padding: 8px 10px;
-  font-size: 0.8em;
-  font-weight: 500;
-  border-bottom: 1px solid #2a2a2a;
+  text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
+  background: var(--bg-panel-2); padding: 8px 14px; border-bottom: 1px solid var(--border-default); font-weight: 600;
 }
-
-.level-table td {
-  padding: 6px 10px;
-  border-bottom: 1px solid rgba(42, 42, 42, 0.5);
-  font-size: 0.85em;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.type-icon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 3px;
-}
-
-.num {
-  text-align: right;
-  white-space: nowrap;
-}
+.level-table td { padding: 7px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.level-table tbody tr:last-child td { border-bottom: none; }
+.level-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+.level-table th.num, .level-table td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.name-cell .type-icon { width: 22px; height: 22px; }
 </style>

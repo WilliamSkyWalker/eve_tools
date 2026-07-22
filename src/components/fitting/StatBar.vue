@@ -42,34 +42,34 @@ function fmt(n) {
 }
 
 .bar-label {
-  color: #8a8a8a;
+  color: var(--text-muted);
   font-size: 0.8em;
 }
 
 .bar-values {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.8em;
 }
 
 .bar-values.over {
-  color: #ef5350;
+  color: var(--red);
 }
 
 .bar-track {
   height: 6px;
-  background: #2a2a2a;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  background: #c8aa6e;
+  background: var(--gold);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 .bar-fill.over {
-  background: #ef5350;
+  background: var(--red);
 }
 </style>

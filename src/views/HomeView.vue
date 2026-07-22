@@ -1,193 +1,105 @@
 <template>
   <div class="home">
-    <h1 class="title">{{ t('home.title') }}<PageHelp topic="home" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('home.title') }}<PageHelp topic="home" /></h1>
+        <p class="sub">{{ t('home.hotPvp') }} · {{ t('home.hotNpc') }} · {{ t('home.sovCampaigns') }}</p>
+      </div>
+    </div>
 
-    <div class="server-cards">
-      <div class="server-card">
-        <div class="server-header">
-          <span class="server-name clr-gf">{{ t('server.gf') }}</span>
-          <span class="server-status" :class="serenity.online ? 'online' : 'offline'">
-            {{ serenity.online ? t('home.online') : t('home.offline') }}
+    <!-- Server KPI tiles -->
+    <div class="kpi-row">
+      <div class="card kpi" v-for="s in [{ st: serenity, key: 'gf' }, { st: tranquility, key: 'of' }]" :key="s.key">
+        <div class="kpi-badge" :class="s.key">
+          <span class="dot" :class="{ live: s.st.online, dead: !s.st.online && !s.st.loading }"></span>
+          {{ t('server.' + s.key) }}
+          <span class="kpi-status" :class="s.st.online ? 'online' : 'offline'">
+            {{ s.st.loading ? '…' : (s.st.online ? t('home.online') : t('home.offline')) }}
           </span>
         </div>
-        <div class="server-players">
-          <span class="player-count">{{ serenity.loading ? '...' : formatNumber(serenity.players) }}</span>
-          <span class="player-label">{{ t('home.players') }}</span>
-        </div>
-        <div class="server-kills">
-          <span class="kill-count">{{ serenity.loading ? '...' : formatNumber(serenity.shipKills) }}</span>
-          <span class="kill-label">{{ t('home.killsLastHour') }}</span>
-        </div>
-      </div>
-
-      <div class="server-card">
-        <div class="server-header">
-          <span class="server-name clr-of">{{ t('server.of') }}</span>
-          <span class="server-status" :class="tranquility.online ? 'online' : 'offline'">
-            {{ tranquility.online ? t('home.online') : t('home.offline') }}
-          </span>
-        </div>
-        <div class="server-players">
-          <span class="player-count">{{ tranquility.loading ? '...' : formatNumber(tranquility.players) }}</span>
-          <span class="player-label">{{ t('home.players') }}</span>
-        </div>
-        <div class="server-kills">
-          <span class="kill-count">{{ tranquility.loading ? '...' : formatNumber(tranquility.shipKills) }}</span>
-          <span class="kill-label">{{ t('home.killsLastHour') }}</span>
+        <div class="kpi-stats">
+          <div class="stat-block">
+            <span class="v num">{{ s.st.loading ? '…' : formatNumber(s.st.players) }}</span>
+            <span class="l">{{ t('home.players') }}</span>
+          </div>
+          <div class="stat-block">
+            <span class="v num kills">{{ s.st.loading ? '…' : formatNumber(s.st.shipKills) }}</span>
+            <span class="l">{{ t('home.killsLastHour') }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="hotzone-row">
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-gf">{{ t('server.gf') }}</span> {{ t('home.hotPvp') }}</h2>
-        <div v-if="serenityHotLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="serenityPvpZones.length" class="hotzone-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ t('home.region') }}</th>
-              <th>{{ t('home.shipKills') }}</th>
-              <th>{{ t('home.podKills') }}</th>
-            </tr>
-          </thead>
+    <!-- PvP hot zones -->
+    <div class="grid-2">
+      <div class="card" v-for="col in [
+        { key: 'gf', loading: serenityHotLoading, zones: serenityPvpZones },
+        { key: 'of', loading: tranquilityHotLoading, zones: tranquilityPvpZones }
+      ]" :key="'pvp-' + col.key">
+        <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.hotPvp') }}</div>
+        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <table v-else-if="col.zones.length" class="data-table">
+          <thead><tr><th class="rank">#</th><th>{{ t('home.region') }}</th><th class="r">{{ t('home.shipKills') }}</th><th class="r">{{ t('home.podKills') }}</th></tr></thead>
           <tbody>
-            <tr v-for="(zone, i) in serenityPvpZones" :key="zone.regionEn">
+            <tr v-for="(zone, i) in col.zones" :key="zone.regionEn">
               <td class="rank">{{ i + 1 }}</td>
-              <td class="region-name">{{ regionName(zone) }}</td>
-              <td class="kill-val ship">{{ formatNumber(zone.shipKills) }}</td>
-              <td class="kill-val pod">{{ formatNumber(zone.podKills) }}</td>
+              <td class="cell-name">{{ regionName(zone) }}</td>
+              <td class="r num t-red">{{ formatNumber(zone.shipKills) }}</td>
+              <td class="r num t-orange">{{ formatNumber(zone.podKills) }}</td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="no-data">{{ t('home.noData') }}</p>
-      </div>
-
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-of">{{ t('server.of') }}</span> {{ t('home.hotPvp') }}</h2>
-        <div v-if="tranquilityHotLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="tranquilityPvpZones.length" class="hotzone-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ t('home.region') }}</th>
-              <th>{{ t('home.shipKills') }}</th>
-              <th>{{ t('home.podKills') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(zone, i) in tranquilityPvpZones" :key="zone.regionEn">
-              <td class="rank">{{ i + 1 }}</td>
-              <td class="region-name">{{ regionName(zone) }}</td>
-              <td class="kill-val ship">{{ formatNumber(zone.shipKills) }}</td>
-              <td class="kill-val pod">{{ formatNumber(zone.podKills) }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="no-data">{{ t('home.noData') }}</p>
+        <p v-else class="state-msg">{{ t('home.noData') }}</p>
       </div>
     </div>
 
-    <div class="hotzone-row">
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-gf">{{ t('server.gf') }}</span> {{ t('home.hotNpc') }}</h2>
-        <div v-if="serenityHotLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="serenityNpcZones.length" class="hotzone-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ t('home.region') }}</th>
-              <th>{{ t('home.npcKills') }}</th>
-            </tr>
-          </thead>
+    <!-- NPC hot zones -->
+    <div class="grid-2">
+      <div class="card" v-for="col in [
+        { key: 'gf', loading: serenityHotLoading, zones: serenityNpcZones },
+        { key: 'of', loading: tranquilityHotLoading, zones: tranquilityNpcZones }
+      ]" :key="'npc-' + col.key">
+        <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.hotNpc') }}</div>
+        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <table v-else-if="col.zones.length" class="data-table">
+          <thead><tr><th class="rank">#</th><th>{{ t('home.region') }}</th><th class="r">{{ t('home.npcKills') }}</th></tr></thead>
           <tbody>
-            <tr v-for="(zone, i) in serenityNpcZones" :key="zone.regionEn">
+            <tr v-for="(zone, i) in col.zones" :key="zone.regionEn">
               <td class="rank">{{ i + 1 }}</td>
-              <td class="region-name">{{ regionName(zone) }}</td>
-              <td class="kill-val npc">{{ formatNumber(zone.npcKills) }}</td>
+              <td class="cell-name">{{ regionName(zone) }}</td>
+              <td class="r num t-muted">{{ formatNumber(zone.npcKills) }}</td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="no-data">{{ t('home.noData') }}</p>
-      </div>
-
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-of">{{ t('server.of') }}</span> {{ t('home.hotNpc') }}</h2>
-        <div v-if="tranquilityHotLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="tranquilityNpcZones.length" class="hotzone-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ t('home.region') }}</th>
-              <th>{{ t('home.npcKills') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(zone, i) in tranquilityNpcZones" :key="zone.regionEn">
-              <td class="rank">{{ i + 1 }}</td>
-              <td class="region-name">{{ regionName(zone) }}</td>
-              <td class="kill-val npc">{{ formatNumber(zone.npcKills) }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="no-data">{{ t('home.noData') }}</p>
+        <p v-else class="state-msg">{{ t('home.noData') }}</p>
       </div>
     </div>
-    <div class="hotzone-row">
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-gf">{{ t('server.gf') }}</span> {{ t('home.sovCampaigns') }}</h2>
-        <div v-if="serenitySovLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="serenitySov.length" class="hotzone-table sov-table">
-          <thead>
-            <tr>
-              <th>{{ t('home.sovSystem') }}</th>
-              <th>{{ t('home.sovDefender') }}</th>
-              <th>{{ t('home.sovProgress') }}</th>
-            </tr>
-          </thead>
+
+    <!-- Sovereignty campaigns -->
+    <div class="grid-2">
+      <div class="card" v-for="col in [
+        { key: 'gf', loading: serenitySovLoading, sov: serenitySov },
+        { key: 'of', loading: tranquilitySovLoading, sov: tranquilitySov }
+      ]" :key="'sov-' + col.key">
+        <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.sovCampaigns') }}</div>
+        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <table v-else-if="col.sov.length" class="data-table">
+          <thead><tr><th>{{ t('home.sovSystem') }}</th><th>{{ t('home.sovDefender') }}</th><th style="width:40%">{{ t('home.sovProgress') }}</th></tr></thead>
           <tbody>
-            <tr v-for="c in serenitySov" :key="c.campaign_id">
-              <td class="region-name">{{ c.systemName }}</td>
-              <td class="sov-alliance">{{ c.defenderName }}</td>
-              <td class="sov-progress">
+            <tr v-for="c in col.sov" :key="c.campaign_id">
+              <td class="cell-name">{{ c.systemName }}</td>
+              <td class="sov-alliance t-muted">{{ c.defenderName }}</td>
+              <td>
                 <div class="progress-bar">
                   <div class="progress-def" :style="{ width: (c.defender_score * 100) + '%' }"></div>
                   <div class="progress-atk" :style="{ width: (c.attackers_score * 100) + '%' }"></div>
                 </div>
-                <span class="progress-text">{{ Math.round(c.defender_score * 100) }}% / {{ Math.round(c.attackers_score * 100) }}%</span>
+                <span class="num progress-text">{{ Math.round(c.defender_score * 100) }}% / {{ Math.round(c.attackers_score * 100) }}%</span>
               </td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="no-data">{{ t('home.sovNone') }}</p>
-      </div>
-
-      <div class="hotzone-section">
-        <h2 class="section-title"><span class="clr-of">{{ t('server.of') }}</span> {{ t('home.sovCampaigns') }}</h2>
-        <div v-if="tranquilitySovLoading" class="loading-text">{{ t('home.loading') }}</div>
-        <table v-else-if="tranquilitySov.length" class="hotzone-table sov-table">
-          <thead>
-            <tr>
-              <th>{{ t('home.sovSystem') }}</th>
-              <th>{{ t('home.sovDefender') }}</th>
-              <th>{{ t('home.sovProgress') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="c in tranquilitySov" :key="c.campaign_id">
-              <td class="region-name">{{ c.systemName }}</td>
-              <td class="sov-alliance">{{ c.defenderName }}</td>
-              <td class="sov-progress">
-                <div class="progress-bar">
-                  <div class="progress-def" :style="{ width: (c.defender_score * 100) + '%' }"></div>
-                  <div class="progress-atk" :style="{ width: (c.attackers_score * 100) + '%' }"></div>
-                </div>
-                <span class="progress-text">{{ Math.round(c.defender_score * 100) }}% / {{ Math.round(c.attackers_score * 100) }}%</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="no-data">{{ t('home.sovNone') }}</p>
+        <p v-else class="state-msg">{{ t('home.sovNone') }}</p>
       </div>
     </div>
   </div>
@@ -356,227 +268,40 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.home {
-  padding-top: 40px;
-  max-width: 1100px;
-  margin: 0 auto;
+.home { max-width: 1160px; margin: 0 auto; }
+
+/* ── KPI tiles ── */
+.kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.kpi { display: flex; align-items: center; gap: 24px; padding: 18px 22px; flex-wrap: wrap; }
+.kpi-badge {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 15px; font-weight: 700; min-width: 130px;
 }
+.kpi-badge.gf { color: var(--gf); }
+.kpi-badge.of { color: var(--of); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); flex: none; }
+.dot.live { background: var(--green); box-shadow: 0 0 0 3px var(--green-bg); }
+.dot.dead { background: var(--red); box-shadow: 0 0 0 3px var(--red-bg); }
+.kpi-status { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+.kpi-status.online { color: var(--green); }
+.kpi-status.offline { color: var(--red); }
+.kpi-stats { display: flex; gap: 32px; margin-left: auto; }
+.stat-block { display: flex; flex-direction: column; }
+.stat-block .v { font-size: 26px; font-weight: 700; line-height: 1.15; color: var(--text-primary); }
+.stat-block .v.kills { color: var(--red); }
+.stat-block .l { font-size: 11.5px; color: var(--text-dim); }
 
-.title {
-  color: #c8aa6e;
-  font-size: 2em;
-  text-align: center;
-  margin-bottom: 32px;
-}
+/* ── Hot-zone grid ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.sov-alliance { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
 
-/* ── Server Cards ── */
-.server-cards {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-bottom: 40px;
-}
+.progress-bar { display: flex; height: 5px; border-radius: 3px; background: var(--bg-elevated); overflow: hidden; margin-bottom: 4px; }
+.progress-def { background: var(--green); height: 100%; }
+.progress-atk { background: var(--red); height: 100%; }
+.progress-text { color: var(--text-dim); font-size: 0.72em; }
 
-.server-card {
-  flex: 1;
-  max-width: 400px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 24px;
-  transition: border-color 0.2s;
-}
-
-.server-card:hover {
-  border-color: #333;
-}
-
-.server-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.server-name {
-  font-size: 1.2em;
-  font-weight: 700;
-}
-
-.server-status {
-  font-size: 0.75em;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.server-status.online {
-  color: #4caf50;
-  background: rgba(76, 175, 80, 0.12);
-}
-
-.server-status.offline {
-  color: #ef5350;
-  background: rgba(239, 83, 80, 0.12);
-}
-
-.server-players {
-  margin-bottom: 10px;
-}
-
-.player-count {
-  font-size: 2em;
-  font-weight: 700;
-  color: #e6e6e6;
-}
-
-.player-label {
-  color: #555;
-  font-size: 0.85em;
-  margin-left: 8px;
-}
-
-.kill-count {
-  font-size: 1.3em;
-  font-weight: 600;
-  color: #ef5350;
-}
-
-.kill-label {
-  color: #555;
-  font-size: 0.85em;
-  margin-left: 8px;
-}
-
-.clr-gf { color: #ff9800; }
-.clr-of { color: #4caf50; }
-
-/* ── Hot Zones ── */
-.hotzone-row {
-  display: flex;
-  gap: 20px;
-}
-
-.hotzone-section {
-  flex: 1;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 24px;
-}
-
-.section-title {
-  color: #c8aa6e;
-  font-size: 1.1em;
-  margin-bottom: 16px;
-}
-
-.loading-text {
-  color: #555;
-  text-align: center;
-  padding: 20px;
-}
-
-.no-data {
-  color: #555;
-  text-align: center;
-  padding: 20px;
-}
-
-.hotzone-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.hotzone-table th {
-  color: #8a8a8a;
-  font-size: 0.8em;
-  font-weight: 600;
-  text-align: right;
-  padding: 6px 12px;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.hotzone-table th:first-child,
-.hotzone-table th:nth-child(2) {
-  text-align: left;
-}
-
-.hotzone-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.rank {
-  color: #555;
-  font-size: 0.85em;
-  width: 30px;
-}
-
-.region-name {
-  color: #e6e6e6;
-  font-weight: 500;
-}
-
-.kill-val {
-  text-align: right;
-  font-size: 0.9em;
-  font-variant-numeric: tabular-nums;
-}
-
-.kill-val.ship { color: #ef5350; }
-.kill-val.pod { color: #ff9800; }
-.kill-val.npc { color: #8a8a8a; }
-
-/* ── Sovereignty ── */
-.hotzone-row + .hotzone-row {
-  margin-top: 20px;
-}
-
-.sov-table th {
-  text-align: left;
-}
-
-.sov-type {
-  color: #c8aa6e;
-  font-size: 0.85em;
-}
-
-.sov-alliance {
-  color: #8a8a8a;
-  font-size: 0.85em;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sov-progress {
-  min-width: 120px;
-}
-
-.progress-bar {
-  display: flex;
-  height: 6px;
-  border-radius: 3px;
-  background: #2a2a2a;
-  overflow: hidden;
-  margin-bottom: 3px;
-}
-
-.progress-def {
-  background: #4caf50;
-  height: 100%;
-}
-
-.progress-atk {
-  background: #ef5350;
-  height: 100%;
-}
-
-.progress-text {
-  color: #555;
-  font-size: 0.75em;
-  font-variant-numeric: tabular-nums;
+@media (max-width: 760px) {
+  .kpi-row, .grid-2 { grid-template-columns: 1fr; }
+  .kpi-stats { margin-left: 0; }
 }
 </style>

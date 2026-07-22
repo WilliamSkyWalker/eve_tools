@@ -1,6 +1,10 @@
 <template>
   <div class="fitting-sim">
-    <h1 class="title">{{ t('fit.title') }}<PageHelp topic="fitting" /></h1>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('fit.title') }} <span class="srv-chip gf beta-chip">{{ t('nav.beta') }}</span><PageHelp topic="fitting" /></h1>
+      </div>
+    </div>
 
     <!-- Ship search + game-fit import/export, side by side at the top -->
     <div class="top-bar">
@@ -147,7 +151,7 @@ const fittingStats = computed(() => {
 }
 
 .title {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 1.8em;
   margin-bottom: 16px;
   text-align: center;
@@ -210,8 +214,8 @@ const fittingStats = computed(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 12px 14px;
 }
@@ -221,7 +225,7 @@ const fittingStats = computed(() => {
   height: 64px;
   border-radius: 6px;
   flex-shrink: 0;
-  background: #0d0d0d;
+  background: var(--bg-input);
 }
 
 .ship-info {
@@ -230,7 +234,7 @@ const fittingStats = computed(() => {
 }
 
 .ship-name {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 1.1em;
   font-weight: 600;
   white-space: nowrap;
@@ -241,8 +245,8 @@ const fittingStats = computed(() => {
 .fit-name-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #2a2a2a;
-  color: #8a8a8a;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-muted);
   font-size: 0.82em;
   padding: 2px 0;
   width: 100%;
@@ -250,14 +254,14 @@ const fittingStats = computed(() => {
 }
 
 .fit-name-input:focus {
-  border-bottom-color: #c8aa6e;
-  color: #d0d0d0;
+  border-bottom-color: var(--gold);
+  color: var(--text-primary);
 }
 
 .clear-btn {
-  background: #2a2a2a;
+  background: var(--border-default);
   border: none;
-  color: #8a8a8a;
+  color: var(--text-muted);
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 0.75em;
@@ -274,7 +278,7 @@ const fittingStats = computed(() => {
 }
 
 .action-btn {
-  background: #2a2a2a;
+  background: var(--border-default);
   border: none;
   padding: 5px 8px;
   border-radius: 4px;
@@ -284,12 +288,12 @@ const fittingStats = computed(() => {
 }
 
 .action-btn:hover {
-  background: #3a3a3a;
+  background: var(--border-strong);
 }
 
 .clear-btn:hover {
-  background: #3a3a3a;
-  color: #ef5350;
+  background: var(--border-strong);
+  color: var(--red);
 }
 
 .saved-fits {
@@ -302,34 +306,34 @@ const fittingStats = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   padding: 3px 6px 3px 10px;
   font-size: 0.75em;
 }
 
 .saved-name {
-  color: #8a8a8a;
+  color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s;
 }
 
 .saved-name:hover {
-  color: #c8aa6e;
+  color: var(--gold);
 }
 
 .del-btn {
   background: none;
   border: none;
-  color: #555;
+  color: var(--text-dim);
   cursor: pointer;
   font-size: 1.1em;
   padding: 0 2px;
 }
 
 .del-btn:hover {
-  color: #ef5350;
+  color: var(--red);
 }
 
 /* Responsive */

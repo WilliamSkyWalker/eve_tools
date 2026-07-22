@@ -1,7 +1,11 @@
 <template>
   <div class="credits-page">
-    <h1 class="title">{{ t('credits.title') }}</h1>
-    <p class="subtitle">{{ t('credits.subtitle') }}</p>
+    <div class="page-head">
+      <div class="titles">
+        <h1>{{ t('credits.title') }}</h1>
+        <p class="sub">{{ t('credits.subtitle') }}</p>
+      </div>
+    </div>
 
     <div class="credits-list">
       <div class="credit-card">
@@ -62,85 +66,23 @@ const { t } = useI18n()
 </script>
 
 <style scoped>
-.credits-page {
-  padding-top: 40px;
-  max-width: 800px;
-  margin: 0 auto;
-}
+.credits-page { max-width: 800px; margin: 0 auto; }
 
-.title {
-  color: #c8aa6e;
-  font-size: 1.8em;
-  margin-bottom: 4px;
-  text-align: center;
-}
-
-.subtitle {
-  color: #8a8a8a;
-  margin-bottom: 32px;
-  text-align: center;
-}
-
-.credits-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
+.credits-list { display: flex; flex-direction: column; gap: 12px; }
 .credit-card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 20px 24px;
-  transition: border-color 0.2s;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  transition: border-color .15s;
 }
+.credit-card:hover { border-color: var(--border-strong); }
+.credit-card h2 { color: var(--gold); font-size: var(--text-lg); margin-bottom: 4px; }
+.credit-author { color: var(--text-muted); font-size: var(--text-sm); margin-bottom: 8px; }
+.credit-desc { color: var(--text-secondary); font-size: var(--text-base); margin-bottom: 8px; line-height: 1.55; }
+.credit-link { color: var(--gold); font-size: var(--text-sm); opacity: .85; }
+.credit-link:hover { opacity: 1; text-decoration: underline; }
 
-.credit-card:hover {
-  border-color: #3a3a3a;
-}
-
-.credit-card h2 {
-  color: #c8aa6e;
-  font-size: 1.2em;
-  margin-bottom: 4px;
-}
-
-.credit-author {
-  color: #8a8a8a;
-  font-size: 0.9em;
-  margin-bottom: 8px;
-}
-
-.credit-desc {
-  color: #d0d0d0;
-  font-size: 0.95em;
-  margin-bottom: 8px;
-  line-height: 1.5;
-}
-
-.credit-link {
-  color: #c8aa6e;
-  text-decoration: none;
-  font-size: 0.9em;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.credit-link:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.legal-notice {
-  margin-top: 32px;
-  padding: 16px 20px;
-  border-top: 1px solid #2a2a2a;
-  text-align: center;
-}
-
-.legal-notice p {
-  color: #555;
-  font-size: 0.85em;
-  line-height: 1.6;
-}
+.legal-notice { margin-top: 28px; padding: 16px 20px; border-top: 1px solid var(--border-default); text-align: center; }
+.legal-notice p { color: var(--text-dim); font-size: var(--text-sm); line-height: 1.6; }
 </style>

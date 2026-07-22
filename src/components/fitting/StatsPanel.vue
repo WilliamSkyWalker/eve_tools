@@ -51,20 +51,20 @@ const { t } = useI18n()
 }
 
 .stats-section {
-  background: #141414;
-  border: 1px solid #222;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--bg-elevated);
   border-radius: 6px;
   padding: 10px 12px;
 }
 
 .section-title {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 0.78em;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
   padding-bottom: 4px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-default);
 }
 </style>

@@ -157,15 +157,15 @@ function decrementFighter(f) {
 
 <style scoped>
 .drone-bay {
-  background: #141414;
-  border: 1px solid #222;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--bg-elevated);
   border-radius: 6px;
   padding: 8px;
   margin-bottom: 8px;
 }
 
 .fighter-bay {
-  border-color: #333;
+  border-color: var(--border-default);
 }
 
 .bay-header {
@@ -176,7 +176,7 @@ function decrementFighter(f) {
 }
 
 .bay-label {
-  color: #c8aa6e;
+  color: var(--gold);
   font-size: 0.75em;
   font-weight: 600;
   text-transform: uppercase;
@@ -184,19 +184,19 @@ function decrementFighter(f) {
 }
 
 .fighter-label {
-  color: #ef5350;
+  color: var(--red);
 }
 
 .bay-info {
-  color: #555;
+  color: var(--text-dim);
   font-size: 0.7em;
   flex: 1;
 }
 
 .add-btn {
-  background: #2a2a2a;
+  background: var(--border-default);
   border: none;
-  color: #c8aa6e;
+  color: var(--gold);
   width: 24px;
   height: 24px;
   border-radius: 4px;
@@ -208,7 +208,7 @@ function decrementFighter(f) {
   justify-content: center;
 }
 
-.add-btn:hover { background: #3a3a3a; }
+.add-btn:hover { background: var(--border-strong); }
 
 .drone-list { display: flex; flex-direction: column; gap: 3px; }
 
@@ -220,12 +220,12 @@ function decrementFighter(f) {
   border-radius: 4px;
 }
 
-.drone-item:hover { background: rgba(200, 170, 110, 0.04); }
+.drone-item:hover { background: var(--gold-bg-light); }
 
 .type-icon { width: 22px; height: 22px; border-radius: 3px; flex-shrink: 0; }
 
 .drone-name {
-  color: #d0d0d0;
+  color: var(--text-primary);
   font-size: 0.82em;
   flex: 1;
   white-space: nowrap;
@@ -236,9 +236,9 @@ function decrementFighter(f) {
 .drone-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 
 .count-btn {
-  background: #2a2a2a;
+  background: var(--border-default);
   border: none;
-  color: #d0d0d0;
+  color: var(--text-primary);
   width: 20px;
   height: 20px;
   border-radius: 3px;
@@ -250,12 +250,12 @@ function decrementFighter(f) {
   justify-content: center;
 }
 
-.count-btn:hover { background: #3a3a3a; }
-.drone-count { color: #c8aa6e; font-size: 0.82em; min-width: 16px; text-align: center; }
-.remove-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 1em; padding: 0 2px; }
-.remove-btn:hover { color: #ef5350; }
+.count-btn:hover { background: var(--border-strong); }
+.drone-count { color: var(--gold); font-size: 0.82em; min-width: 16px; text-align: center; }
+.remove-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1em; padding: 0 2px; }
+.remove-btn:hover { color: var(--red); }
 
-.drone-bay.drop-hover { border-color: #ab47bc; background: rgba(171, 71, 188, 0.08); }
+.drone-bay.drop-hover { border-color: var(--purple); background: var(--purple-bg); }
 
-.empty-bay { color: #444; font-size: 0.8em; font-style: italic; text-align: center; padding: 8px; }
+.empty-bay { color: var(--border-strong); font-size: 0.8em; font-style: italic; text-align: center; padding: 8px; }
 </style>
