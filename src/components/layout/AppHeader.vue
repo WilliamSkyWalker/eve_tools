@@ -158,6 +158,12 @@
             <p class="card-desc">{{ t('credits.evebookmarks.desc') }}</p>
             <a href="https://github.com/OkYk/eve-bookmarks" target="_blank" rel="noopener" class="card-link">github.com/OkYk/eve-bookmarks</a>
           </div>
+          <div class="modal-card">
+            <h3>zKillboard</h3>
+            <p class="card-author">Squizz Caphinator</p>
+            <p class="card-desc">{{ t('credits.zkillboard.desc') }}</p>
+            <a href="https://zkillboard.com/" target="_blank" rel="noopener" class="card-link">zkillboard.com</a>
+          </div>
         </div>
         <p class="modal-legal">{{ t('credits.legal') }}</p>
       </div>

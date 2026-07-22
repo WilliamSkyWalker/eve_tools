@@ -386,6 +386,7 @@ const messages = {
     'credits.evebookmarks.desc': '虫洞系统社区数据，包含每个 J 系统的效应和静态洞口连接信息。',
     'credits.pyfa.desc': '配船模拟器设计参考。Pyfa 是 EVE Online 社区最广泛使用的离线配船工具，本项目的 Dogma 属性计算引擎和堆叠惩罚算法参考了其实现。',
     'credits.eveshipfit.desc': '配船模拟器 Dogma 引擎架构参考。EVEShipFit 的 modifierInfo 解析和多阶段属性计算方案为本项目提供了重要参考。',
+    'credits.zkillboard.desc': '主权势力地图的联盟 PvP 活跃度与成员数据来源（世界服）。提供各联盟近 7 天活跃击杀统计与总成员数。',
     'credits.legal': 'EVE Online 和 EVE 标志是 CCP hf. 的注册商标。本工具为第三方粉丝项目，与 CCP Games 无关。所有 EVE Online 相关知识产权归 CCP hf. 所有。',
 
     // Donate
@@ -579,6 +580,8 @@ const messages = {
     'sovmap.activePvp': '活跃 PvP（7天）',
     'sovmap.members': '成员数',
     'sovmap.tqOnly': '仅世界服可用',
+    'sovmap.alliance': '联盟',
+    'sovmap.sovSystems': '主权星系',
 
     // Help (per-page)
     'help.btnTitle': '帮助',
@@ -1137,6 +1140,7 @@ const messages = {
     'credits.evebookmarks.desc': 'Community-sourced wormhole system data, including per-system effects and static wormhole connections for all J-space systems.',
     'credits.pyfa.desc': 'Fitting simulator design reference. Pyfa is the most widely used offline fitting tool in the EVE Online community. Our Dogma attribute calculation engine and stacking penalty algorithm are based on its implementation.',
     'credits.eveshipfit.desc': 'Dogma engine architecture reference. EVEShipFit\'s modifierInfo parsing and multi-pass attribute calculation approach provided key insights for this project.',
+    'credits.zkillboard.desc': 'Source of alliance PvP activity and member counts on the sovereignty map (Tranquility). Provides each alliance\'s trailing-7-day active-kill stats and total member count.',
     'credits.legal': 'EVE Online and the EVE logo are registered trademarks of CCP hf. This is a third-party fan project and is not affiliated with CCP Games. All EVE Online related intellectual property belongs to CCP hf.',
 
     // Donate
@@ -1330,6 +1334,8 @@ const messages = {
     'sovmap.activePvp': 'Active PvP (7d)',
     'sovmap.members': 'Members',
     'sovmap.tqOnly': 'TQ only',
+    'sovmap.alliance': 'Alliance',
+    'sovmap.sovSystems': 'Sov systems',
 
     // Help (per-page)
     'help.btnTitle': 'Help',

@@ -44,16 +44,36 @@
         </div>
       </div>
 
-      <!-- Legend -->
+      <!-- Legend / stats table -->
       <div class="legend">
-        <h3 class="legend-title">{{ t('sovmap.topAlliances') }}</h3>
-        <div class="legend-items">
-          <div v-for="a in legendAlliances" :key="a.id" class="legend-item">
-            <span class="swatch" :style="{ background: allianceColorSolid(a.id) }"></span>
-            <span class="legend-name">{{ names[a.id] || `#${a.id}` }}</span>
-            <span class="legend-count">{{ a.count }}</span>
-            <span v-if="isWorld" class="legend-active" :title="t('sovmap.activePvp')">⚔ {{ fmtStat(a.id, 'activePvp') }}</span>
-          </div>
+        <div class="legend-head">
+          <h3 class="legend-title">{{ t('sovmap.topAlliances') }}</h3>
+          <span v-if="!isWorld" class="legend-note">{{ t('sovmap.activePvp') }} · {{ t('sovmap.tqOnly') }}</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table legend-table">
+            <thead>
+              <tr>
+                <th class="rank">#</th>
+                <th>{{ t('sovmap.alliance') }}</th>
+                <th class="r">{{ t('sovmap.sovSystems') }}</th>
+                <th v-if="isWorld" class="r">{{ t('sovmap.activePvp') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(a, i) in legendAlliances" :key="a.id">
+                <td class="rank">{{ i + 1 }}</td>
+                <td>
+                  <div class="al-cell">
+                    <span class="swatch" :style="{ background: allianceColorSolid(a.id) }"></span>
+                    <span class="al-name">{{ names[a.id] || `#${a.id}` }}</span>
+                  </div>
+                </td>
+                <td class="r num">{{ a.count.toLocaleString() }}</td>
+                <td v-if="isWorld" class="r num t-red">{{ fmtStat(a.id, 'activePvp') }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </template>
@@ -538,21 +558,21 @@ canvas:active { cursor: grabbing; }
 .tooltip-others { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-default); }
 .tooltip-other-row { color: var(--text-muted); font-size: 0.78em; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 
-/* Legend */
+/* Legend / stats table */
 .legend {
   background: var(--bg-panel);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  overflow: hidden;
   margin-bottom: 40px;
 }
-.legend-title { color: var(--text-primary); font-size: var(--text-md); font-weight: 600; margin-bottom: 12px; }
-.legend-items { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.legend-name { color: var(--text-secondary); font-size: 0.82em; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.legend-count { color: var(--text-dim); font-size: 0.72em; font-family: var(--font-mono); }
-.legend-active { color: var(--red); font-size: 0.72em; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.legend-head { display: flex; align-items: baseline; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-default); }
+.legend-title { color: var(--text-primary); font-size: var(--text-md); font-weight: 600; }
+.legend-note { font-size: var(--text-xs); color: var(--text-dim); }
+.legend-table td { padding: 7px 14px; }
+.al-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.al-name { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tooltip-metrics { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--border-default); display: flex; flex-direction: column; gap: 2px; font-size: 0.8em; color: var(--text-muted); }
 .tooltip-metrics b { color: var(--text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }

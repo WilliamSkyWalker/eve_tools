@@ -52,6 +52,15 @@
         </a>
       </div>
 
+      <div class="credit-card">
+        <h2>zKillboard</h2>
+        <p class="credit-author">Squizz Caphinator</p>
+        <p class="credit-desc">{{ t('credits.zkillboard.desc') }}</p>
+        <a href="https://zkillboard.com/" target="_blank" rel="noopener" class="credit-link">
+          zkillboard.com
+        </a>
+      </div>
+
     </div>
 
     <div class="legal-notice">
