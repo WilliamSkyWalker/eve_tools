@@ -576,6 +576,9 @@ const messages = {
     'sovmap.systems': '星系',
     'sovmap.unclaimed': '无主权',
     'sovmap.topAlliances': '主要联盟',
+    'sovmap.activePvp': '活跃 PvP（7天）',
+    'sovmap.members': '成员数',
+    'sovmap.tqOnly': '仅世界服可用',
 
     // Help (per-page)
     'help.btnTitle': '帮助',
@@ -1324,6 +1327,9 @@ const messages = {
     'sovmap.systems': 'systems',
     'sovmap.unclaimed': 'Unclaimed',
     'sovmap.topAlliances': 'Top Alliances',
+    'sovmap.activePvp': 'Active PvP (7d)',
+    'sovmap.members': 'Members',
+    'sovmap.tqOnly': 'TQ only',
 
     // Help (per-page)
     'help.btnTitle': 'Help',

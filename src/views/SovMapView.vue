@@ -30,6 +30,10 @@
             {{ names[hoveredRegion.dominant.id] || `#${hoveredRegion.dominant.id}` }}
             <span class="tooltip-count">({{ hoveredRegion.dominant.count }}/{{ hoveredRegion.totalSov }})</span>
           </div>
+          <div v-if="hoveredRegion.dominant" class="tooltip-metrics">
+            <span>{{ t('sovmap.activePvp') }}: <b>{{ fmtStat(hoveredRegion.dominant.id, 'activePvp') }}</b></span>
+            <span>{{ t('sovmap.members') }}: <b>{{ fmtStat(hoveredRegion.dominant.id, 'members') }}</b></span>
+          </div>
           <div v-else class="tooltip-unclaimed">{{ t('sovmap.unclaimed') }}</div>
           <div v-if="Object.keys(hoveredRegion.allianceCounts).length > 1" class="tooltip-others">
             <div v-for="[aid, count] in topAlliances(hoveredRegion)" :key="aid" class="tooltip-other-row">
@@ -48,6 +52,7 @@
             <span class="swatch" :style="{ background: allianceColorSolid(a.id) }"></span>
             <span class="legend-name">{{ names[a.id] || `#${a.id}` }}</span>
             <span class="legend-count">{{ a.count }}</span>
+            <span v-if="isWorld" class="legend-active" :title="t('sovmap.activePvp')">⚔ {{ fmtStat(a.id, 'activePvp') }}</span>
           </div>
         </div>
       </div>
@@ -68,9 +73,28 @@ import {
   allianceColorRGB,
   allianceColorSolid,
 } from '../services/sovereignty'
+import { fetchAlliancePvpStats } from '../services/allianceStats'
 
 const settings = useSettingsStore()
 const { t, locale } = useI18n()
+
+// zKillboard (member count + active PvP) is Tranquility-only.
+const isWorld = computed(() => settings.datasource === 'tranquility')
+const statsById = reactive({}) // allianceId -> { members, activePvp } | { loading } | { error }
+function ensureStats(id) {
+  if (!isWorld.value || !id || statsById[id]) return
+  statsById[id] = { loading: true }
+  fetchAlliancePvpStats(id)
+    .then((s) => { statsById[id] = s })
+    .catch(() => { statsById[id] = { error: true } })
+}
+function fmtStat(id, key) {
+  if (!isWorld.value) return t('sovmap.tqOnly')
+  const s = statsById[id]
+  if (!s || s.loading) return '…'
+  if (s.error || s[key] == null) return '—'
+  return s[key].toLocaleString()
+}
 
 const loading = ref(true)
 const error = ref(null)
@@ -220,6 +244,7 @@ function onMouseMove(e) {
   if (dragging) return
 
   hoveredRegion.value = findRegionAtPoint(mouseX.value, mouseY.value)
+  if (hoveredRegion.value?.dominant) ensureStats(hoveredRegion.value.dominant.id)
 }
 
 function onMouseLeave() {
@@ -452,6 +477,9 @@ async function loadData() {
     keySystems = [...capByAlliance.values()]
       .sort((s1, s2) => (allianceTotals[s2.allianceId] || 0) - (allianceTotals[s1.allianceId] || 0))
 
+    // Prefetch zKill member/active-PvP stats for the legend (world server only)
+    if (isWorld.value) legendAlliances.value.forEach(a => ensureStats(a.id))
+
     // Reset view
     view.ox = 0
     view.oy = 0
@@ -524,4 +552,8 @@ canvas:active { cursor: grabbing; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .legend-name { color: var(--text-secondary); font-size: 0.82em; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .legend-count { color: var(--text-dim); font-size: 0.72em; font-family: var(--font-mono); }
+.legend-active { color: var(--red); font-size: 0.72em; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.tooltip-metrics { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--border-default); display: flex; flex-direction: column; gap: 2px; font-size: 0.8em; color: var(--text-muted); }
+.tooltip-metrics b { color: var(--text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
 </style>
