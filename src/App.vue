@@ -45,8 +45,13 @@ function applyMeta() {
   document.title = key ? `${t(key)} | EVE Kit` : t('app.title')
   document.documentElement.lang = locale.value === 'zh' ? 'zh-CN' : 'en'
 
-  // Canonical = the actual current path (query/hash stripped)
-  const url = ORIGIN + (route.path === '/' ? '/' : route.path)
+  // Canonical: promote the world-server (of) version to search engines — the
+  // /gf/* (Serenity) pages point their canonical at the matching /of/* URL so
+  // Google indexes and ranks the /of/ set. (Both still work for users; Baidu,
+  // which is lenient on canonical, keeps the /gf/ pages it already crawled.)
+  let path = route.path === '/' ? '/' : route.path
+  if (path.startsWith('/gf/')) path = '/of/' + path.slice(4)
+  const url = ORIGIN + path
   const link = document.querySelector('link[rel="canonical"]')
   if (link) link.setAttribute('href', url)
   const og = document.querySelector('meta[property="og:url"]')
