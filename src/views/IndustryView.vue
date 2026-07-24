@@ -37,7 +37,7 @@
           <table class="tier-table">
             <colgroup>
               <col><!-- product name fills remaining width -->
-              <col class="col-qty">
+              <col class="col-runs">
             </colgroup>
             <tbody>
               <tr v-for="item in currentItems" :key="item.blueprint_type_id">
@@ -771,9 +771,9 @@ function formatNumber(n) {
 
 /* ── Tier columns ── */
 .tier-grid { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
-.tier-col { flex: 0 0 auto; width: 300px; overflow: hidden; }
-.tier-col-product { width: 220px; }
-.tier-col-me { width: 384px; }
+/* Cards size to their content (longest name + full number); the grid wraps /
+   scrolls when they don't all fit on one row. */
+.tier-col { flex: 0 0 auto; min-width: 190px; }
 
 .tier-head { padding: 11px 14px; border-bottom: 1px solid var(--border-default); }
 .tier-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -792,19 +792,19 @@ function formatNumber(n) {
 .stat-item.loading-stat { color: var(--text-dim); }
 
 .tier-table { width: 100%; border-collapse: collapse; }
-.tier-table td { padding: 6px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; vertical-align: middle; }
+.tier-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; vertical-align: middle; }
 .tier-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
-.col-qty { width: 86px; }
-.col-me { width: 66px; }
+.col-me { width: 62px; }
 
-.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.tier-table .type-icon { width: 22px; height: 22px; flex: none; border-radius: 4px; }
-.product-name-text, .copyable { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Nothing is truncated: both name and quantity show in full and the card
+   grows to fit (see .tier-col width:auto). */
+.name-cell { white-space: nowrap; }
+.tier-table .type-icon { width: 22px; height: 22px; border-radius: 4px; vertical-align: middle; margin-right: 8px; }
 .name-reaction { color: var(--orange); }
 .name-mfg { color: var(--green); }
 .name-skipped { color: var(--text-dim); text-decoration: line-through; }
-.qty-cell { text-align: right; color: var(--text-primary); }
-.me-cell { text-align: center; }
+.qty-cell { text-align: right; color: var(--text-primary); font-size: 13px; white-space: nowrap; padding-left: 12px; }
+.me-cell { text-align: center; width: 62px; white-space: nowrap; }
 .me-input {
   width: 54px; height: 26px; text-align: center;
   background: var(--bg-input); border: 1px solid var(--border-default);

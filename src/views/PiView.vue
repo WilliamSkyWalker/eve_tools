@@ -276,7 +276,7 @@ function copyName(name, e) {
 
 /* ── Production chain ── */
 .levels-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
-.level-col { flex: 0 0 auto; width: 288px; overflow: hidden; }
+.level-col { flex: 0 0 auto; min-width: 200px; }
 .level-title { font-size: var(--text-base); font-weight: 650; padding: 11px 14px; border-bottom: 1px solid var(--border-default); margin: 0; }
 .level-table { width: 100%; border-collapse: collapse; }
 .level-table th {
@@ -286,7 +286,7 @@ function copyName(name, e) {
 .level-table td { padding: 7px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
 .level-table tbody tr:last-child td { border-bottom: none; }
 .level-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
-.level-table th.num, .level-table td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.name-cell { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.name-cell .type-icon { width: 22px; height: 22px; }
+.level-table th.num, .level-table td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 14px; }
+.name-cell { white-space: nowrap; }
+.name-cell .type-icon { width: 22px; height: 22px; border-radius: 4px; vertical-align: middle; margin-right: 8px; }
 </style>
