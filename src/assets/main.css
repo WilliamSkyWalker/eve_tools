@@ -64,6 +64,9 @@
   --text-md: 15px;
   --text-lg: 16px;
   --text-xl: 20px;
+  /* Result-table body cells (industry / market / reprocess / LP / PI / …) — a notch
+     larger than chrome so the numbers you came for read comfortably. Tune here. */
+  --text-result: 15px;
 
   /* ── Fonts ── */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -330,7 +333,7 @@ textarea.ta:focus { outline: none; border-color: var(--gold-line); }
 .data-table td {
   padding: 8px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.035);
-  font-size: var(--text-base);
+  font-size: var(--text-result);
 }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }

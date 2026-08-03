@@ -283,7 +283,7 @@ function copyName(name, e) {
   text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
   background: var(--bg-panel-2); padding: 8px 14px; border-bottom: 1px solid var(--border-default); font-weight: 600;
 }
-.level-table td { padding: 7px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.level-table td { padding: 7px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-result); }
 .level-table tbody tr:last-child td { border-bottom: none; }
 .level-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 .level-table th.num, .level-table td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 14px; }

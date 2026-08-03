@@ -417,7 +417,7 @@ async function onCalculate() {
   text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
   background: var(--bg-panel-2); padding: 9px 12px; border-bottom: 1px solid var(--border-default); font-weight: 600; text-align: left;
 }
-.route-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.route-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-result); }
 .route-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 .col-num { width: 46px; text-align: center; color: var(--text-dim); font-family: var(--font-mono); }
 .col-sec, .col-dist { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

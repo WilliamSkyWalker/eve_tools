@@ -387,6 +387,12 @@ async function main() {
     if (raw.length) t2ships.push([tid, raw])
   }
   console.log(`  ${t2ships.length} T2 ships`)
+  // T2 ship hulls always ship on both servers — new hulls (e.g. Command Carriers
+  // 指挥航母: Salvation/Simurgh/Gaia/Ymir) land on Tranquility months before the
+  // Serenity ESI type dump catches up. Supplement 国服 from 欧服 so the T2 profit
+  // ranking isn't missing hulls that objectively exist in-game. Names fall back to
+  // the TQ (CCP) Chinese until NetEase publishes its own.
+  const t2ShipIds = new Set(t2ships.map(([tid]) => tid))
 
   // ── Step 5: Filter types to only those referenced in industry ──
   console.log('Filtering types for industry...')
@@ -443,13 +449,15 @@ async function main() {
   // Tranquility: types from CSV, exclude Serenity-only items, zh from CSV (CCP).
   // Serenity: types intersected with Serenity ESI list + Serenity-only items,
   //   zh from Serenity ESI (NetEase) when available.
-  function buildTypes({ skipSerenityOnly, restrictToSerenity, zhSource }) {
+  function buildTypes({ skipSerenityOnly, restrictToSerenity, zhSource, alwaysInclude }) {
     const types = {}, groups2 = {}
     for (const tid of industryTypeIds) {
       const t = allTypes[tid]
       if (!t) continue
       if (skipSerenityOnly && serenityOnlyIds.has(tid)) continue
-      if (restrictToSerenity && !serenityAllTypeIds.has(tid)) continue
+      // restrictToSerenity keeps TQ-only market items out of 国服, but T2 ship hulls
+      // (alwaysInclude) are supplemented from 欧服 even when Serenity's ESI list lags.
+      if (restrictToSerenity && !serenityAllTypeIds.has(tid) && !alwaysInclude.has(tid)) continue
       // Serenity prefers NetEase zh, falls back to whatever's in t.nz
       // (Serenity-only items have their NetEase name stored there).
       const zh = zhSource === 'serenity'
@@ -466,9 +474,9 @@ async function main() {
     return { types, groups: groups2 }
   }
 
-  const tqOut = buildTypes({ skipSerenityOnly: true, restrictToSerenity: false, zhSource: 'tranquility' })
+  const tqOut = buildTypes({ skipSerenityOnly: true, restrictToSerenity: false, zhSource: 'tranquility', alwaysInclude: t2ShipIds })
   const srOut = serenityAllTypeIds
-    ? buildTypes({ skipSerenityOnly: false, restrictToSerenity: true, zhSource: 'serenity' })
+    ? buildTypes({ skipSerenityOnly: false, restrictToSerenity: true, zhSource: 'serenity', alwaysInclude: t2ShipIds })
     : tqOut  // fallback: identical to TQ when Serenity data wasn't fetched
 
   for (const [server, out] of [['tranquility', tqOut], ['serenity', srOut]]) {

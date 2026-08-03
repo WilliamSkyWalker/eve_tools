@@ -364,7 +364,7 @@ function copyName(name, e) {
   background: var(--bg-panel-2); padding: 9px 12px; border-bottom: 1px solid var(--border-default);
   font-weight: 600; white-space: nowrap; text-align: left;
 }
-.offer-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); vertical-align: top; }
+.offer-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-result); vertical-align: top; }
 .offer-table tbody tr:last-child td { border-bottom: none; }
 .offer-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 

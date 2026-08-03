@@ -195,7 +195,7 @@ function parseLocal() {
   text-transform: uppercase; font-size: var(--text-xs); color: var(--text-dim); letter-spacing: 0.03em;
   background: var(--bg-panel-2); padding: 9px 14px; border-bottom: 1px solid var(--border-default); font-weight: 600; text-align: left;
 }
-.scan-table td { padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-base); }
+.scan-table td { padding: 8px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.035); font-size: var(--text-result); }
 .col-num, th.col-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 th.col-num { font-family: var(--font-sans); }
 .col-rank { color: var(--text-dim); width: 40px; font-family: var(--font-mono); }

@@ -784,7 +784,7 @@ function formatNumber(n) {
   padding: 2px 8px; background: none; transition: color .15s, border-color .15s;
 }
 .tier-inv-btn:hover { color: var(--gold); border-color: var(--gold-line); }
-.tier-stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tier-stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--text-sm); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .stat-item.sell { color: var(--green); }
 .stat-item.buy { color: var(--red); }
 .stat-item.volume { color: var(--blue); }
@@ -792,7 +792,7 @@ function formatNumber(n) {
 .stat-item.loading-stat { color: var(--text-dim); }
 
 .tier-table { width: 100%; border-collapse: collapse; }
-.tier-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 14px; vertical-align: middle; }
+.tier-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: var(--text-result); vertical-align: middle; }
 .tier-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
 .col-me { width: 62px; }
 
@@ -803,7 +803,7 @@ function formatNumber(n) {
 .name-reaction { color: var(--orange); }
 .name-mfg { color: var(--green); }
 .name-skipped { color: var(--text-dim); text-decoration: line-through; }
-.qty-cell { text-align: right; color: var(--text-primary); font-size: 13px; white-space: nowrap; padding-left: 12px; }
+.qty-cell { text-align: right; color: var(--text-primary); font-size: var(--text-result); white-space: nowrap; padding-left: 12px; }
 .me-cell { text-align: center; width: 62px; white-space: nowrap; }
 .me-input {
   width: 54px; height: 26px; text-align: center;

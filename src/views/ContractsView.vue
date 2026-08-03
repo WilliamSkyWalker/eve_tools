@@ -904,7 +904,7 @@ function formatDateTime(dateStr) {
 
 .items-table td {
   padding: 6px 10px;
-  font-size: 0.9em;
+  font-size: var(--text-base);
   border-bottom: 1px solid var(--bg-panel-2);
 }
 
