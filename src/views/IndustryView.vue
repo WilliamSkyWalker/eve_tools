@@ -52,17 +52,17 @@
         </section>
 
         <!-- Level columns -->
-        <section v-for="lvl in levels" :key="lvl.level" class="card tier-col" :class="{ 'tier-col-me': lvl.level === 0 && hasManufacturable(lvl) }">
+        <section v-for="lvl in levels" :key="lvl.key" class="card tier-col" :class="{ 'tier-col-me': isMeCol(lvl) }">
           <header class="tier-head">
             <div class="tier-title-row">
-              <span class="tier-name">{{ levelLabel(lvl.level) }}</span>
-              <button class="tier-inv-btn" @click="openInventory(lvl.level)">{{ t('industry.inventoryBtn') }}</button>
+              <span class="tier-name">{{ levelLabel(lvl) }}</span>
+              <button class="tier-inv-btn" @click="openInventory(lvl)">{{ t('industry.inventoryBtn') }}</button>
             </div>
-            <div v-if="levelStats[lvl.level]" class="tier-stats">
-              <span v-if="levelStats[lvl.level].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.level].sellTotal) }}</span>
-              <span v-if="levelStats[lvl.level].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.level].buyTotal) }}</span>
-              <span v-if="levelStats[lvl.level].volume" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(levelStats[lvl.level].volume) }}</span>
-              <span v-if="levelStats[lvl.level].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.level].minTime) }} ~ {{ formatTime(levelStats[lvl.level].maxTime) }}</span>
+            <div v-if="levelStats[lvl.key]" class="tier-stats">
+              <span v-if="levelStats[lvl.key].sellTotal != null" class="stat-item sell">{{ t('industry.sell') }} {{ formatPrice(levelStats[lvl.key].sellTotal) }}</span>
+              <span v-if="levelStats[lvl.key].buyTotal != null" class="stat-item buy">{{ t('industry.buy') }} {{ formatPrice(levelStats[lvl.key].buyTotal) }}</span>
+              <span v-if="levelStats[lvl.key].volume" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(levelStats[lvl.key].volume) }}</span>
+              <span v-if="levelStats[lvl.key].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.key].minTime) }} ~ {{ formatTime(levelStats[lvl.key].maxTime) }}</span>
             </div>
             <div v-else-if="priceLoading" class="tier-stats"><span class="stat-item loading-stat">...</span></div>
           </header>
@@ -70,7 +70,7 @@
             <colgroup>
               <col><!-- material name fills remaining width -->
               <col class="col-qty">
-              <col v-if="lvl.level === 0 && hasManufacturable(lvl)" class="col-me">
+              <col v-if="isMeCol(lvl)" class="col-me">
             </colgroup>
             <tbody>
               <template v-for="(mat, idx) in lvl.materials" :key="mat.type_id">
@@ -80,7 +80,7 @@
                 <tr v-if="idx === 0 || mat.group_name !== lvl.materials[idx - 1].group_name || mat.build !== lvl.materials[idx - 1].build" class="group-row">
                   <td :colspan="colSpan(lvl)" class="group-label">{{ mat.group_name }}</td>
                 </tr>
-                <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.level, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.level, mat.type_id, mat.quantity)">
+                <tr :class="{ 'skipped-row': skippedItems.has(mat.type_id), 'owned-row': isOwned(lvl.key, mat.type_id, mat.quantity) }" @contextmenu.prevent="toggleOwned(lvl.key, mat.type_id, mat.quantity)">
                   <td class="name-cell">
                     <img class="type-icon" :src="typeIcon(mat.type_id)" alt="" loading="lazy" @error="onTypeIconError">
                     <span
@@ -96,7 +96,7 @@
                     >{{ mat.type_name }}</span>
                   </td>
                   <td class="qty-cell num">{{ formatNumber(mat.quantity) }}</td>
-                  <td class="me-cell" v-if="lvl.level === 0 && hasManufacturable(lvl)">
+                  <td class="me-cell" v-if="isMeCol(lvl)">
                     <input
                       v-if="mat.build && !mat.is_reaction"
                       type="number"
@@ -150,7 +150,7 @@
       <div v-if="inventoryModal !== null" class="modal-overlay" @click.self="inventoryModal = null">
         <div class="modal-content inv-modal">
           <button class="modal-close" @click="inventoryModal = null">&times;</button>
-          <h2 class="modal-title">{{ levelLabel(inventoryModal) }} - {{ t('industry.pasteInventory') }}</h2>
+          <h2 class="modal-title">{{ modalTitle }} - {{ t('industry.pasteInventory') }}</h2>
 
           <div class="inv-body">
             <!-- Left: paste area -->
@@ -296,12 +296,26 @@ watch(() => settings.locale, () => {
   if (currentItems.value.length) fetchBom()
 })
 
-function levelLabel(n) {
-  if (n === 'summary') return t('industry.rawSummary')
-  const names = t('industry.levels')
-  if (Array.isArray(names) && n < names.length) return names[n]
-  return t('industry.levelN', { n: n + 1 })
+// A column is either the raw-summary sentinel, or a { track, tier } descriptor.
+function levelLabel(lvl) {
+  if (lvl === 'summary' || lvl?.key === 'summary') return t('industry.rawSummary')
+  if (lvl.track === 'react') return t('industry.reactTier', { n: lvl.tier })
+  return t('industry.mfgTier', { n: lvl.tier })
 }
+
+// Per-component ME inputs only make sense on the manufacturing track's top round
+// (the final product's direct manufactured components).
+function isMeCol(lvl) {
+  return lvl.track === 'mfg' && lvl.level === 0 && hasManufacturable(lvl)
+}
+
+const modalTitle = computed(() => {
+  const k = inventoryModal.value
+  if (k === null) return ''
+  if (k === 'summary') return t('industry.rawSummary')
+  const col = levels.value.find(l => l.key === k)
+  return col ? levelLabel(col) : ''
+})
 
 async function fetchBom() {
   if (!currentItems.value.length) return
@@ -312,9 +326,32 @@ async function fetchBom() {
     summary.value = data.summary || []
     computeTimeStats()
     fetchLevelPrices()
+    return data
   } finally {
     calculating.value = false
   }
+}
+
+// Walk a BOM tree collecting manufacturable nodes to auto-build. The level columns
+// only show items already marked build, so discovery must run off the tree (which
+// still carries every node) — otherwise the first pass would find nothing.
+function collectBuildableFromTree(tree, indData, finalProductIds) {
+  let added = false
+  function walk(node) {
+    for (const child of node.children || []) {
+      const tid = child.type_id
+      if (child.is_manufacturable && !buildItems.value[String(tid)]?.build && !skippedItems.has(tid)) {
+        const group = indData?.types[tid]?.g
+        if (!(SKIP_EXPAND_GROUPS.has(group) && !finalProductIds.has(tid))) {
+          buildItems.value[String(tid)] = { me_level: globalMe.value, build: true }
+          added = true
+        }
+      }
+      if (child.children?.length) walk(child)
+    }
+  }
+  walk(tree)
+  return added
 }
 
 // Theoretical best time multipliers (all skills V + best structure + T2 rig lowsec)
@@ -327,8 +364,7 @@ function computeTimeStats() {
   const indData = getIndustryData()
   if (!indData) return
 
-  // Compute production time per level, then shift to next level for display
-  const timeByLevel = {} // level -> { totalBase, totalBest }
+  // Each column shows the time to build the items produced in that round.
   for (const lvl of levels.value) {
     let totalBase = 0
     let totalBest = 0
@@ -343,19 +379,13 @@ function computeTimeStats() {
       totalBase += jobTime
       totalBest += jobTime * (mat.is_reaction ? REACT_BEST_MULT : MFG_BEST_MULT)
     }
-    if (totalBase > 0) timeByLevel[lvl.level] = { totalBase, totalBest }
-  }
-
-  // Display time at level N+1 (child materials level shows parent's production time)
-  for (const lvl of levels.value) {
-    const existing = levelStats[lvl.level]
-    const parentTime = timeByLevel[lvl.level - 1]
-    levelStats[lvl.level] = {
+    const existing = levelStats[lvl.key]
+    levelStats[lvl.key] = {
       sellTotal: existing?.sellTotal ?? null,
       buyTotal: existing?.buyTotal ?? null,
       volume: existing?.volume ?? null,
-      minTime: parentTime ? Math.round(parentTime.totalBest) : null,
-      maxTime: parentTime ? parentTime.totalBase : null,
+      minTime: totalBase > 0 ? Math.round(totalBest) : null,
+      maxTime: totalBase > 0 ? totalBase : null,
     }
   }
 }
@@ -405,18 +435,18 @@ async function fetchLevelPrices() {
     for (const lvl of levels.value) {
       let sellTotal = 0, buyTotal = 0, volume = 0
       for (const mat of lvl.materials) {
-        if (isOwned(lvl.level, mat.type_id, mat.quantity)) continue
+        if (isOwned(lvl.key, mat.type_id, mat.quantity)) continue
         const p = prices[mat.type_id]
         if (p?.sell_price) sellTotal += p.sell_price * mat.quantity
         if (p?.buy_price) buyTotal += p.buy_price * mat.quantity
         volume += volOf(mat.type_id) * mat.quantity
       }
-      if (levelStats[lvl.level]) {
-        levelStats[lvl.level].sellTotal = sellTotal
-        levelStats[lvl.level].buyTotal = buyTotal
-        levelStats[lvl.level].volume = volume
+      if (levelStats[lvl.key]) {
+        levelStats[lvl.key].sellTotal = sellTotal
+        levelStats[lvl.key].buyTotal = buyTotal
+        levelStats[lvl.key].volume = volume
       } else {
-        levelStats[lvl.level] = { sellTotal, buyTotal, volume, minTime: null, maxTime: null }
+        levelStats[lvl.key] = { sellTotal, buyTotal, volume, minTime: null, maxTime: null }
       }
     }
   } catch { /* prices optional */ }
@@ -477,20 +507,16 @@ async function onCalculate(items) {
 
   const finalProductIds = new Set(items.map(i => i.product_type_id))
   const indData = getIndustryData()
-  let prevCount = 0
-  for (let i = 0; i < 10; i++) {
-    await fetchBom()
-    for (const lvl of levels.value) {
-      for (const mat of lvl.materials) {
-        if (mat.is_manufacturable && !buildItems.value[String(mat.type_id)]?.build && !skippedItems.has(mat.type_id)) {
-          const group = indData?.types[mat.type_id]?.g
-          if (SKIP_EXPAND_GROUPS.has(group) && !finalProductIds.has(mat.type_id)) continue
-          buildItems.value[String(mat.type_id)] = { me_level: globalMe.value, build: true }
-        }
-      }
+  // Iteratively expand: each pass builds the tree with the current buildItems,
+  // reveals one deeper layer of manufacturable nodes, and marks them to build —
+  // until a pass adds nothing (fixpoint).
+  for (let i = 0; i < 15; i++) {
+    const data = await fetchBom()
+    let added = false
+    for (const tree of data?.trees || []) {
+      if (collectBuildableFromTree(tree, indData, finalProductIds)) added = true
     }
-    if (Object.keys(buildItems.value).length === prevCount) break
-    prevCount = Object.keys(buildItems.value).length
+    if (!added) break
   }
 }
 
@@ -565,7 +591,7 @@ function hasInventory(level) {
 }
 
 function colSpan(lvl) {
-  return (lvl.level === 0 && hasManufacturable(lvl)) ? 3 : 2
+  return isMeCol(lvl) ? 3 : 2
 }
 
 function onTableCopy(event, lvl) {
@@ -634,7 +660,7 @@ const modalMaterials = computed(() => {
   if (level === 'summary') {
     mats = summary.value.map(m => ({ type_id: m.type_id, type_name: m.type_name, quantity: m.total_quantity }))
   } else {
-    const lvl = levels.value.find(l => l.level === level)
+    const lvl = levels.value.find(l => l.key === level)
     if (!lvl) return []
     mats = lvl.materials
   }
@@ -671,7 +697,8 @@ function onInventoryInput() {
   parseInventoryText()
 }
 
-function openInventory(level) {
+function openInventory(lvl) {
+  const level = lvl === 'summary' ? 'summary' : lvl.key
   inventoryModal.value = level
   inventoryText.value = ''
   copyLabel.value = t('industry.copyNeed')

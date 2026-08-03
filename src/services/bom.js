@@ -118,86 +118,98 @@ export function aggregateRawMaterials(tree) {
 }
 
 export function flattenBomToLevels(trees) {
-  const levelMap = {}  // level -> { type_id -> info }
+  // Two independent tracks — manufacturing (分解) and reaction (逆反应) — so that
+  // items of the same production stage group into one column no matter how deep
+  // the *other* track's chain runs. Depth is counted separately per track: a
+  // reaction product is placed by its depth inside the reaction sub-tree, NOT by
+  // the manufacturing depth of whatever consumes it (which is what used to scatter
+  // e.g. all Composites across several columns when a deep T2-capital chain was
+  // mixed with a shallow T2 chain). Quantities are summed per (track, level) round,
+  // so an item used in several rounds shows the amount needed in each ("按轮重复").
+  const mfgMap = {}    // level -> { type_id -> info }
+  const reactMap = {}
 
-  function walk(node, level) {
-    for (const child of (node.children || [])) {
-      const tid = child.type_id
-      if (!levelMap[level]) levelMap[level] = {}
-      if (!levelMap[level][tid]) {
-        levelMap[level][tid] = {
-          type_name: '',
-          quantity: 0,
-          is_manufacturable: false,
-          is_reaction: false,
-          blueprint_type_id: null,
-          source_activity: null,
-          build: false,
-        }
+  function entryFor(map, level, tid) {
+    if (!map[level]) map[level] = {}
+    if (!map[level][tid]) {
+      map[level][tid] = {
+        type_name: '', quantity: 0, is_manufacturable: false, is_reaction: false,
+        blueprint_type_id: null, source_activity: null, build: false,
       }
-      const entry = levelMap[level][tid]
+    }
+    return map[level][tid]
+  }
+
+  // ctx = current track ('mfg' | 'react'); depth = level at which node's children land.
+  // Only items you actually build land in a stage column — raw / bought / skipped
+  // items go to the raw summary instead (aggregateRawMaterials). Because non-built
+  // leaves never create a deeper column, each track's max level equals its deepest
+  // *built* stage, so the tier labels line up with the vocabulary (一级/二级 …).
+  function walk(node, ctx, depth) {
+    for (const child of (node.children || [])) {
+      if (!child.build) continue
+      // A reaction product reached from the manufacturing track opens a fresh
+      // reaction track at level 0; anything already inside a reaction chain
+      // stays in the reaction track.
+      let cctx, clevel
+      if (ctx === 'mfg' && child.is_reaction) { cctx = 'react'; clevel = 0 }
+      else if (ctx === 'react') { cctx = 'react'; clevel = depth }
+      else { cctx = 'mfg'; clevel = depth }
+
+      const entry = entryFor(cctx === 'react' ? reactMap : mfgMap, clevel, child.type_id)
       entry.type_name = child.type_name
       entry.quantity += child.quantity
       entry.is_manufacturable = child.is_manufacturable || false
       entry.is_reaction = child.is_reaction || false
       entry.blueprint_type_id = child.blueprint_type_id
       entry.source_activity = child.source_activity
-      entry.build = child.build || false
+      entry.build = true
 
-      if (child.build && child.children?.length) {
-        walk(child, level + 1)
+      if (child.children?.length) walk(child, cctx, clevel + 1)
+    }
+  }
+  for (const tree of trees) walk(tree, 'mfg', 0)
+
+  const maxLevelOf = map => Object.keys(map).reduce((m, k) => Math.max(m, Number(k)), 0)
+  const maxMfg = maxLevelOf(mfgMap)
+  const maxReact = maxLevelOf(reactMap)
+
+  function buildCols(map, track, maxL) {
+    return Object.keys(map).map(Number).sort((a, b) => a - b).map(level => {
+      const materials = Object.entries(map[level]).map(([tid, info]) => ({
+        type_id: parseInt(tid),
+        type_name: info.type_name,
+        quantity: info.quantity,
+        is_manufacturable: info.is_manufacturable,
+        is_reaction: info.is_reaction,
+        blueprint_type_id: info.blueprint_type_id,
+        source_activity: info.source_activity,
+        build: info.build,
+        group_name: getGroupName(parseInt(tid)),
+      }))
+      materials.sort((a, b) => {
+        // build=true items first (待加工), then others (其他材料)
+        if (a.build !== b.build) return a.build ? -1 : 1
+        const gc = a.group_name.localeCompare(b.group_name)
+        return gc !== 0 ? gc : a.type_name.localeCompare(b.type_name)
+      })
+      const hasBuild = materials.some(m => m.build)
+      const hasOther = materials.some(m => !m.build)
+      return {
+        key: `${track}-${level}`,
+        track,
+        level,
+        // Tier counted from raw (1 = closest to raw): deepest column = 一级 stage.
+        tier: maxL - level + 1,
+        materials,
+        hasMixed: hasBuild && hasOther,
       }
-    }
-  }
-
-  for (const tree of trees) {
-    walk(tree, 0)
-  }
-
-  // Consolidate: move each material to its deepest level so that
-  // the same material is only listed once and can be prepared together.
-  const deepestLevel = {}  // type_id -> max level
-  for (const [lvl, mats] of Object.entries(levelMap)) {
-    for (const tid of Object.keys(mats)) {
-      deepestLevel[tid] = Math.max(deepestLevel[tid] ?? -1, Number(lvl))
-    }
-  }
-  const consolidated = {}
-  for (const [lvl, mats] of Object.entries(levelMap)) {
-    for (const [tid, info] of Object.entries(mats)) {
-      const target = deepestLevel[tid]
-      if (!consolidated[target]) consolidated[target] = {}
-      if (!consolidated[target][tid]) {
-        consolidated[target][tid] = { ...info }
-      } else {
-        consolidated[target][tid].quantity += info.quantity
-      }
-    }
-  }
-
-  const levels = Object.keys(consolidated).map(Number).sort((a, b) => a - b)
-  return levels.map(level => {
-    const materials = Object.entries(consolidated[level]).map(([tid, info]) => ({
-      type_id: parseInt(tid),
-      type_name: info.type_name,
-      quantity: info.quantity,
-      is_manufacturable: info.is_manufacturable,
-      is_reaction: info.is_reaction,
-      blueprint_type_id: info.blueprint_type_id,
-      source_activity: info.source_activity,
-      build: info.build,
-      group_name: getGroupName(parseInt(tid)),
-    }))
-    materials.sort((a, b) => {
-      // build=true items first (待加工), then others (其他材料)
-      if (a.build !== b.build) return a.build ? -1 : 1
-      const gc = a.group_name.localeCompare(b.group_name)
-      return gc !== 0 ? gc : a.type_name.localeCompare(b.type_name)
     })
-    const hasBuild = materials.some(m => m.build)
-    const hasOther = materials.some(m => !m.build)
-    return { level, materials, hasMixed: hasBuild && hasOther }
-  })
+  }
+
+  // Manufacturing columns first (shallow→deep), then reaction columns, mirroring
+  // the reference layout (第N次分解 … then 第N次逆反应 …).
+  return [...buildCols(mfgMap, 'mfg', maxMfg), ...buildCols(reactMap, 'react', maxReact)]
 }
 
 export function buildBatchBom(items, buildItems = {}) {
@@ -228,5 +240,8 @@ export function buildBatchBom(items, buildItems = {}) {
     }))
     .sort((a, b) => a.type_id - b.type_id)
 
-  return { levels, summary }
+  // `trees` is returned so callers can drive iterative auto-build discovery from
+  // the tree (which still carries every manufacturable node), independent of the
+  // build-only level columns.
+  return { levels, summary, trees }
 }
