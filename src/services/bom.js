@@ -128,6 +128,7 @@ export function flattenBomToLevels(trees) {
   // so an item used in several rounds shows the amount needed in each ("按轮重复").
   const mfgMap = {}    // level -> { type_id -> info }
   const reactMap = {}
+  const fuelMap = {}   // manufactured items consumed inside reaction chains (fuel blocks)
 
   function entryFor(map, level, tid) {
     if (!map[level]) map[level] = {}
@@ -140,39 +141,55 @@ export function flattenBomToLevels(trees) {
     return map[level][tid]
   }
 
-  // ctx = current track ('mfg' | 'react'); depth = level at which node's children land.
-  // Only items you actually build land in a stage column — raw / bought / skipped
-  // items go to the raw summary instead (aggregateRawMaterials). Because non-built
-  // leaves never create a deeper column, each track's max level equals its deepest
-  // *built* stage, so the tier labels line up with the vocabulary (一级/二级 …).
-  function walk(node, ctx, depth) {
+  const mapFor = ctx => (ctx === 'react' ? reactMap : ctx === 'fuel' ? fuelMap : mfgMap)
+  function place(ctx, level, child, isBuild) {
+    const entry = entryFor(mapFor(ctx), level, child.type_id)
+    entry.type_name = child.type_name
+    entry.quantity += child.quantity
+    entry.is_manufacturable = child.is_manufacturable || false
+    entry.is_reaction = child.is_reaction || false
+    entry.blueprint_type_id = child.blueprint_type_id
+    entry.source_activity = child.source_activity
+    entry.build = isBuild
+  }
+
+  // Two independent tracks — manufacturing (分解) and reaction (逆反应) — so items of
+  // the same production stage group into one column no matter how deep the *other*
+  // track's chain runs (depth is counted per-track). A manufactured item consumed
+  // inside a reaction chain (a fuel block) is not a reaction product, so it gets its
+  // own `fuel` step shown after the reactions instead of inflating the reaction tiers.
+  //
+  // (ctx, nodeLevel) = where `node` itself sits. Its BUILD children go one step deeper
+  // (or open a new track); its RAW / bought children are shown as 其他材料 in node's own
+  // column — the materials consumed to make this step's products. Raw never creates a
+  // deeper column, so each track's max level = its deepest *built* stage and the tier
+  // labels line up with the vocabulary (一级/二级 …). Raw also lands in the raw summary
+  // (aggregateRawMaterials) as the overall shopping total.
+  function walk(node, ctx, nodeLevel) {
     for (const child of (node.children || [])) {
-      if (!child.build) continue
-      // A reaction product reached from the manufacturing track opens a fresh
-      // reaction track at level 0; anything already inside a reaction chain
-      // stays in the reaction track.
+      if (!child.build) {
+        place(ctx, Math.max(nodeLevel, 0), child, false)
+        continue
+      }
       let cctx, clevel
       if (ctx === 'mfg' && child.is_reaction) { cctx = 'react'; clevel = 0 }
-      else if (ctx === 'react') { cctx = 'react'; clevel = depth }
-      else { cctx = 'mfg'; clevel = depth }
+      else if (ctx === 'react' && child.is_reaction) { cctx = 'react'; clevel = nodeLevel + 1 }
+      else if (ctx === 'react' && !child.is_reaction) { cctx = 'fuel'; clevel = 0 }
+      else if (ctx === 'fuel') { cctx = 'fuel'; clevel = nodeLevel + 1 }
+      else { cctx = 'mfg'; clevel = nodeLevel + 1 }
 
-      const entry = entryFor(cctx === 'react' ? reactMap : mfgMap, clevel, child.type_id)
-      entry.type_name = child.type_name
-      entry.quantity += child.quantity
-      entry.is_manufacturable = child.is_manufacturable || false
-      entry.is_reaction = child.is_reaction || false
-      entry.blueprint_type_id = child.blueprint_type_id
-      entry.source_activity = child.source_activity
-      entry.build = true
-
-      if (child.children?.length) walk(child, cctx, clevel + 1)
+      place(cctx, clevel, child, true)
+      if (child.children?.length) walk(child, cctx, clevel)
     }
   }
-  for (const tree of trees) walk(tree, 'mfg', 0)
+  // Root (final product) sits at level -1 and isn't shown; its direct materials are
+  // the first manufacturing round (mfg level 0), with raw clamped up to 0.
+  for (const tree of trees) walk(tree, 'mfg', -1)
 
   const maxLevelOf = map => Object.keys(map).reduce((m, k) => Math.max(m, Number(k)), 0)
   const maxMfg = maxLevelOf(mfgMap)
   const maxReact = maxLevelOf(reactMap)
+  const maxFuel = maxLevelOf(fuelMap)
 
   function buildCols(map, track, maxL) {
     return Object.keys(map).map(Number).sort((a, b) => a - b).map(level => {
@@ -207,9 +224,14 @@ export function flattenBomToLevels(trees) {
     })
   }
 
-  // Manufacturing columns first (shallow→deep), then reaction columns, mirroring
-  // the reference layout (第N次分解 … then 第N次逆反应 …).
-  return [...buildCols(mfgMap, 'mfg', maxMfg), ...buildCols(reactMap, 'react', maxReact)]
+  // Manufacturing columns first (shallow→deep), then reaction columns, then the
+  // fuel-block step last — mirroring the reference layout (第N次分解 … 第N次逆反应 …)
+  // and keeping fuel-block manufacturing as a distinct step after the reactions.
+  return [
+    ...buildCols(mfgMap, 'mfg', maxMfg),
+    ...buildCols(reactMap, 'react', maxReact),
+    ...buildCols(fuelMap, 'fuel', maxFuel),
+  ]
 }
 
 export function buildBatchBom(items, buildItems = {}) {

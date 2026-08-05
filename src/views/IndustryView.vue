@@ -218,7 +218,11 @@ import { typeIcon, onTypeIconError } from '../services/typeIcon'
 
 const settings = useSettingsStore()
 
-// Groups to skip during auto-expand (buy instead of build)
+// Groups to skip during auto-expand (buy instead of build). Fuel blocks are bought
+// when they're just an intermediate, but the `!finalProductIds.has(tid)` exception
+// below still expands them when the user manufactures a fuel block DIRECTLY (it's
+// the queued product) — so "build a fuel block" shows its recipe, while "build a
+// ship that uses fuel blocks" leaves them as a purchased material.
 const SKIP_EXPAND_GROUPS = new Set([
   1136, // Fuel Block
   1042, // Basic Commodities - Tier 1 (PI)
@@ -299,6 +303,7 @@ watch(() => settings.locale, () => {
 // A column is either the raw-summary sentinel, or a { track, tier } descriptor.
 function levelLabel(lvl) {
   if (lvl === 'summary' || lvl?.key === 'summary') return t('industry.rawSummary')
+  if (lvl.track === 'fuel') return t('industry.fuelStep')
   if (lvl.track === 'react') return t('industry.reactTier', { n: lvl.tier })
   return t('industry.mfgTier', { n: lvl.tier })
 }
