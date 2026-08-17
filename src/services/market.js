@@ -8,12 +8,38 @@ import { getOrderPricesForTypes } from './esiClient'
 import { locName } from './locale'
 
 /**
+ * Zero-width and formatting characters that survive copy/paste from the game
+ * client or a web page but carry no meaning: ZWSP/ZWNJ/ZWJ, bidi marks, word
+ * joiner, BOM, soft hyphen. Left in place they silently break name lookup
+ * (e.g. "猎獒级" with a trailing ZWSP would never match "猎獒级").
+ * Note: \t is NOT stripped — column splitting depends on it.
+ */
+const INVISIBLE_RE = /[\u00AD\u200B-\u200F\u2060\uFEFF]/g
+
+/**
+ * Normalize a pasted field: drop invisible characters, NFKC-fold (full-width
+ * → half-width for digits/latin/punctuation, 　→ space), collapse runs of
+ * whitespace, trim. `\s` already covers NBSP and 全角空格.
+ */
+function cleanField(s) {
+  return s.replace(INVISIBLE_RE, '').normalize('NFKC').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Lookup key for name → typeID matching. Both sides of the comparison (SDE
+ * names and user input) go through this, so it can only ever widen matching.
+ */
+function lookupKey(s) {
+  return cleanField(s).toLowerCase()
+}
+
+/**
  * Try to parse a string as an integer quantity.
  * Handles comma/dot/space as thousand separators: "1,000", "1.000", "1 000"
  */
 function parseQty(s) {
   if (!s) return null
-  const cleaned = s.replace(/[\s,.]/g, '')
+  const cleaned = cleanField(s).replace(/[\s,.]/g, '')
   const n = parseInt(cleaned, 10)
   return isNaN(n) || n <= 0 ? null : n
 }
@@ -31,7 +57,9 @@ function parseQty(s) {
 export function parseMaterialText(text) {
   const results = []
   for (const rawLine of text.split('\n')) {
-    const line = rawLine.trim()
+    // Strip invisibles before anything else — a ZWSP between name and quantity
+    // would otherwise defeat both the tab split and the "Name 100" regex.
+    const line = rawLine.replace(INVISIBLE_RE, '').trim()
     if (!line) continue
 
     let name = null
@@ -75,18 +103,20 @@ export function resolveItemNames(names) {
   const data = getIndustryData()
   if (!data) return names.map(name => ({ name, type_id: null, type_name: null, matched: false }))
 
-  // Build reverse lookup: name/nz -> type_id (lazy, one-time)
+  // Build reverse lookup: name/nz -> type_id (lazy, one-time).
+  // Keys go through lookupKey so pasted text with stray invisible characters,
+  // full-width digits/punctuation or doubled spaces still resolves.
   if (!data._nameLookup) {
     data._nameLookup = new Map()
     for (const [tidStr, t] of Object.entries(data.types)) {
       const tid = parseInt(tidStr)
-      if (t.n) data._nameLookup.set(t.n.toLowerCase(), { tid, t })
-      if (t.nz) data._nameLookup.set(t.nz, { tid, t })
+      if (t.n) data._nameLookup.set(lookupKey(t.n), { tid, t })
+      if (t.nz) data._nameLookup.set(lookupKey(t.nz), { tid, t })
     }
   }
 
   return names.map(name => {
-    const entry = data._nameLookup.get(name.toLowerCase()) || data._nameLookup.get(name)
+    const entry = data._nameLookup.get(lookupKey(name))
     return {
       name,
       type_id: entry?.tid ?? null,
