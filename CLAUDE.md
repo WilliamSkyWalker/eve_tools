@@ -38,7 +38,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`systemSearch.js`** — 星系名称前缀搜索
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表、效应信标加成数据（硬编码C1-C6各效应乘数）
 - **`sovereignty.js`** — 00主权数据（ESI sovereignty/map）、按区域聚合、凸包计算、联盟颜色生成
-- **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）
+- **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）。订单价默认查 The Forge（10000002）再按吉他星系（30000142）过滤；**PLEX/伊甸币（44992）例外**——它只在账号级全局市场大区 **19000001** 挂单，查 The Forge 返回空数组，故由 `GLOBAL_MARKET_TYPE_IDS` / `marketRegionFor()` 单独改路由（国服/世界服皆然，吉他星系过滤照旧生效）
 - **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场三个工具拆成三条独立路由（`/market` 价格查询、`/market/reprocess` 化矿计算、`/market/ore` 矿石价值，均由 `MarketView.vue` 渲染，`route.meta.mtab` 决定激活的 tab；页内 tab 栏点击时 `router.push` 到对应路由）：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）。化矿计算含"价格折扣"：全局折扣（矿石/废铁效率旁，改后需点"计算化矿"重算，作为每行折扣的初始值）+ 每行折扣列（改后立刻影响该行收单小计和合计）。**粘贴文本归一化**：`parseMaterialText` 先剥掉行内不可见字符（`INVISIBLE_RE` = 零宽 `\u200B-\u200D`、bidi 标记 `\u200E/\u200F`、word joiner `\u2060`、BOM `\uFEFF`、软连字符 `\u00AD`；**不含 `\t`**，列分割靠它），`resolveItemNames` 的反查表两侧（SDE 名字和用户输入）都过 `lookupKey()`＝剥不可见字符 → NFKC（全角数字/标点→半角、全角空格→空格）→ 折叠连续空白 → trim → 小写。这样从游戏/网页复制时夹带零宽字符或全角数字不会再莫名"未匹配"。已验证归一化没有引入新的重名冲突（国服/世界服 collision 数量与旧方案完全一致）。同一套清洗也惠及 Industry 的"已有材料"粘贴和 `ManufacturingQueue`
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索
 - **`t2margin.js`** — T2 舰船制造利润排行。读取 `industry.t2ships` 预计算原材料 BOM，拉取吉他订单价后计算：收入=成品吉他收单，成本=原料吉他卖单×数量，利润率=(收入−成本)/成本，按利润率降序。过滤 AT 特别版舰（复用 `blueprintLookup.isSpecialEdition`）和收单>卖单的异常挂单
@@ -170,7 +170,7 @@ Vitest + @vue/test-utils + happy-dom。配置在 `vitest.config.js`,全局 setup
 
 - 服务层测试用 `vi.mock('../data/loader', ...)` 注入 `src/__tests__/fixtures/industry.js` 里的微型 fixture(Rifter + 2 矿,够覆盖 ME 公式 / BOM 递归 / 蓝图搜索过滤)。
 - 组件测试 mock `useI18n` 让消息可控,通过 `attachTo: document.body` 才能让 Teleport 渲染的 modal 可被 `document.querySelector` 拿到;每个 `it` 结尾必须 `wrapper.unmount()`,否则上一次测试遗留的 Teleport DOM 会污染下一次。
-- 当前已覆盖:calculator(ME 公式)、bom(递归 + 聚合)、dogma stackingPenalty、market parseMaterialText/resolveItemNames(含不可见字符与全角归一化)、blueprintLookup 搜索/过滤、PageHelp 组件交互。共 51 用例,全部本地跑,不接 CI。
+- 当前已覆盖:calculator(ME 公式)、bom(递归 + 聚合)、dogma stackingPenalty、market parseMaterialText/resolveItemNames(含不可见字符与全角归一化)、blueprintLookup 搜索/过滤、esiClient 订单大区路由(PLEX→19000001)、PageHelp 组件交互。共 54 用例,全部本地跑,不接 CI。
 
 ## 编码规范
 更新代码时，更新 [CLAUDE.md](CLAUDE.md)

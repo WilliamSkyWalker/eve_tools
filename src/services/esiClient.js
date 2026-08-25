@@ -80,6 +80,18 @@ export async function getPricesForTypes(typeIds, datasource = 'serenity') {
 const DEFAULT_REGION_ID = 10000002  // The Forge (Jita)
 const JITA_SYSTEM_ID = 30000142     // Jita system ID
 
+// PLEX/伊甸币 does not trade in a normal region: CCP moved it to the account-wide
+// "global" market region 19000001 (both Serenity and Tranquility). Asking The Forge
+// for its orders returns an empty array, so those types have to be routed there
+// explicitly — the Jita system filter below still applies, since region 19000001
+// carries per-system orders like any other region.
+const GLOBAL_MARKET_REGION_ID = 19000001
+const GLOBAL_MARKET_TYPE_IDS = new Set([44992])
+
+function marketRegionFor(typeId, regionId) {
+  return GLOBAL_MARKET_TYPE_IDS.has(typeId) ? GLOBAL_MARKET_REGION_ID : regionId
+}
+
 export async function getMarketOrders(regionId, typeId, datasource = 'serenity') {
   const { data } = await esiGet(datasource, `/markets/${regionId}/orders/`, {
     type_id: typeId,
@@ -139,7 +151,7 @@ export async function getOrderPricesForTypes(typeIds, datasource = 'serenity', r
   async function worker() {
     while (pending.length) {
       const tid = pending.shift()
-      const r = await fetchOrderPricesForType(regionId, tid, datasource)
+      const r = await fetchOrderPricesForType(marketRegionFor(tid, regionId), tid, datasource)
       if (r._source === 'fresh') freshSuccess++
       else if (r._source === 'esi-down') freshDown++
       prices[tid] = { buy_price: r.buy_price, sell_price: r.sell_price }
