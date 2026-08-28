@@ -52,6 +52,12 @@ const categories = [
     ],
   },
   {
+    key: 'client',
+    items: [
+      { name: 'EVE-O Preview', i18n: 'eveopreview', url: 'https://github.com/Proopai/eve-o-preview', display: 'github.com/Proopai/eve-o-preview' },
+    ],
+  },
+  {
     key: 'wormhole',
     items: [
       { name: 'Anoik.is', i18n: 'anoik', url: 'https://anoik.is/', display: 'anoik.is' },
