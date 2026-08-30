@@ -39,7 +39,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`wormholeSearch.js`** — 虫洞系统搜索、详情、类型列表、效应信标加成数据（硬编码C1-C6各效应乘数）
 - **`sovereignty.js`** — 00主权数据（ESI sovereignty/map）、按区域聚合、凸包计算、联盟颜色生成
 - **`esiClient.js`** — 浏览器直连 ESI（市场价格、订单、合同），内置价格缓存（1小时 TTL）。订单价默认查 The Forge（10000002）再按吉他星系（30000142）过滤；**PLEX/伊甸币（44992）例外**——它只在账号级全局市场大区 **19000001** 挂单，查 The Forge 返回空数组，故由 `GLOBAL_MARKET_TYPE_IDS` / `marketRegionFor()` 单独改路由（国服/世界服皆然，吉他星系过滤照旧生效）
-- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场三个工具拆成三条独立路由（`/market` 价格查询、`/market/reprocess` 化矿计算、`/market/ore` 矿石价值，均由 `MarketView.vue` 渲染，`route.meta.mtab` 决定激活的 tab；页内 tab 栏点击时 `router.push` 到对应路由）：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）。化矿计算含"价格折扣"：全局折扣（矿石/废铁效率旁，改后需点"计算化矿"重算，作为每行折扣的初始值）+ 每行折扣列（改后立刻影响该行收单小计和合计）。**粘贴文本归一化**：`parseMaterialText` 先剥掉行内不可见字符（`INVISIBLE_RE` = 零宽 `\u200B-\u200D`、bidi 标记 `\u200E/\u200F`、word joiner `\u2060`、BOM `\uFEFF`、软连字符 `\u00AD`；**不含 `\t`**，列分割靠它），`resolveItemNames` 的反查表两侧（SDE 名字和用户输入）都过 `lookupKey()`＝剥不可见字符 → NFKC（全角数字/标点→半角、全角空格→空格）→ 折叠连续空白 → trim → 小写。这样从游戏/网页复制时夹带零宽字符或全角数字不会再莫名"未匹配"。已验证归一化没有引入新的重名冲突（国服/世界服 collision 数量与旧方案完全一致）。同一套清洗也惠及 Industry 的"已有材料"粘贴和 `ManufacturingQueue`
+- **`market.js`** — 材料文本解析 + 物品名称解析（本地）+ ESI 订单价格。市场三个工具拆成三条独立路由（`/market` 价格查询、`/market/reprocess` 化矿计算、`/market/ore` 矿石价值，均由 `MarketView.vue` 渲染，`route.meta.mtab` 决定激活的 tab；页内 tab 栏点击时 `router.push` 到对应路由）：价格查询、化矿计算（吉他收单）、矿石价值（按 ISK/m³ 排序，80%化矿率，吉他收单）。价格查询和化矿输入会在名称解析后按 typeID 合并重复物品并累加数量（中英文别名也能合并；未写数量的行按 1 件计）。支持配装清单的 `3x 物品名` / `3× 物品名` 数量前缀，并自动忽略高/中/低槽、改装件、弹药等分组标题。化矿计算含"价格折扣"：全局折扣（矿石/废铁效率旁，改后需点"计算化矿"重算，作为每行折扣的初始值）+ 每行折扣列（改后立刻影响该行收单小计和合计）。**粘贴文本归一化**：`parseMaterialText` 先剥掉行内不可见字符（`INVISIBLE_RE` = 零宽 `\u200B-\u200D`、bidi 标记 `\u200E/\u200F`、word joiner `\u2060`、BOM `\uFEFF`、软连字符 `\u00AD`；**不含 `\t`**，列分割靠它），`resolveItemNames` 的反查表两侧（SDE 名字和用户输入）都过 `lookupKey()`＝剥不可见字符 → NFKC（全角数字/标点→半角、全角空格→空格）→ 折叠连续空白 → trim → 小写。这样从游戏/网页复制时夹带零宽字符或全角数字不会再莫名"未匹配"。已验证归一化没有引入新的重名冲突（国服/世界服 collision 数量与旧方案完全一致）。同一套清洗也惠及 Industry 的"已有材料"粘贴和 `ManufacturingQueue`
 - **`contracts.js`** — 合同查询、物品详情（含吉他价格对比）、区域搜索
 - **`t2margin.js`** — T2 舰船制造利润排行。读取 `industry.t2ships` 预计算原材料 BOM，拉取吉他订单价后计算：收入=成品吉他收单，成本=原料吉他卖单×数量，利润率=(收入−成本)/成本，按利润率降序。过滤 AT 特别版舰（复用 `blueprintLookup.isSpecialEdition`）和收单>卖单的异常挂单
 - **`dogmaEngine.js`** — 配船模拟 Dogma 属性计算引擎。收集基础属性、效果和修改器（modifierInfo），按 6 种 operation 类型顺序应用（PreMul→ModAdd→PostMul→PostPercent→PostAssign），PostPercent 非 stackable 修改器应用堆叠惩罚公式 `0.5^((i/2.22292081)^2)`。假设 All Skills Level V（技能等级属性 280 固定返回 5）
@@ -176,4 +176,3 @@ Vitest + @vue/test-utils + happy-dom。配置在 `vitest.config.js`,全局 setup
 
 ## 编码规范
 更新代码时，更新 [CLAUDE.md](CLAUDE.md)
-

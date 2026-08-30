@@ -9,7 +9,7 @@ vi.mock('../data/loader', async () => {
 })
 vi.mock('./esiClient', () => ({ getOrderPricesForTypes: vi.fn() }))
 
-const { parseMaterialText, resolveItemNames } = await import('./market.js')
+const { parseMaterialText, resolveItemNames, mergeResolvedItems, marketCompare } = await import('./market.js')
 
 describe('parseMaterialText', () => {
   it('parses tab-separated lines (EVE inventory paste)', () => {
@@ -37,6 +37,40 @@ describe('parseMaterialText', () => {
   it('parses "Name xN" / "Name ×N" suffix', () => {
     expect(parseMaterialText('Rifter x2')).toEqual([{ name: 'Rifter', quantity: 2 }])
     expect(parseMaterialText('裂谷级 ×3')).toEqual([{ name: '裂谷级', quantity: 3 }])
+  })
+
+  it('parses fitting-list quantity prefixes and skips section headings', () => {
+    const text = [
+      '高能量槽',
+      '3x 双联千兆级脉冲激光器 II',
+      '1x 帝国海军大型EMP立体炸弹',
+      '中能量槽',
+      '2x 旗舰级电容注电器 I',
+      '低能量槽',
+      '1x 损伤控制 II',
+      '改装件插槽',
+      '3x 旗舰级三角装甲聚合器 I',
+      '弹药',
+      '135x 电容注电器装料 400',
+      '2x 最佳射程提升脚本',
+    ].join('\n')
+
+    expect(parseMaterialText(text)).toEqual([
+      { name: '双联千兆级脉冲激光器 II', quantity: 3 },
+      { name: '帝国海军大型EMP立体炸弹', quantity: 1 },
+      { name: '旗舰级电容注电器 I', quantity: 2 },
+      { name: '损伤控制 II', quantity: 1 },
+      { name: '旗舰级三角装甲聚合器 I', quantity: 3 },
+      { name: '电容注电器装料 400', quantity: 135 },
+      { name: '最佳射程提升脚本', quantity: 2 },
+    ])
+  })
+
+  it('accepts spaces, multiplication signs, and full-width digits in fitting prefixes', () => {
+    expect(parseMaterialText('3 x Rifter\n２× 裂谷级')).toEqual([
+      { name: 'Rifter', quantity: 3 },
+      { name: '裂谷级', quantity: 2 },
+    ])
   })
 
   it('treats name-only lines as quantity null', () => {
@@ -92,6 +126,47 @@ describe('resolveItemNames', () => {
   it('reports unmatched names without a type_id', () => {
     expect(resolveItemNames(['Not A Real Item'])).toEqual([
       { name: 'Not A Real Item', type_id: null, type_name: null, volume: null, matched: false },
+    ])
+  })
+})
+
+describe('mergeResolvedItems', () => {
+  it('merges duplicate rows and sums their quantities', () => {
+    const parsed = parseMaterialText('Tritanium\t2\nTritanium\t3\nMexallon\t4')
+    expect(mergeResolvedItems(parsed).map(item => [item.type_id, item.quantity])).toEqual([
+      [34, 5],
+      [36, 4],
+    ])
+  })
+
+  it('merges aliases that resolve to the same type and counts name-only rows as one', () => {
+    const parsed = parseMaterialText('Tritanium\n三钛合金\t2\nTritanium')
+    expect(mergeResolvedItems(parsed)).toMatchObject([
+      { type_id: 34, quantity: 4, matched: true },
+    ])
+  })
+
+  it('merges repeated unmatched names using normalized lookup keys', () => {
+    const parsed = parseMaterialText('Unknown Item\t2\nunknown  item\t3')
+    expect(mergeResolvedItems(parsed)).toMatchObject([
+      { name: 'Unknown Item', quantity: 5, matched: false },
+    ])
+  })
+})
+
+describe('marketCompare', () => {
+  it('fetches and returns one priced row per merged item', async () => {
+    const { getOrderPricesForTypes } = await import('./esiClient')
+    getOrderPricesForTypes.mockResolvedValue({
+      prices: { 34: { buy_price: 5, sell_price: 6 } },
+      esiUnavailable: false,
+    })
+
+    const result = await marketCompare('Tritanium\t2\n三钛合金\t3')
+
+    expect(getOrderPricesForTypes).toHaveBeenCalledWith([34], 'serenity')
+    expect(result.items).toMatchObject([
+      { type_id: 34, quantity: 5, buy_price: 5, sell_price: 6 },
     ])
   })
 })

@@ -16,6 +16,8 @@ import { locName } from './locale'
  */
 const INVISIBLE_RE = /[\u00AD\u200B-\u200F\u2060\uFEFF]/g
 
+const MATERIAL_SECTION_RE = /^(?:高能量槽|中能量槽|低能量槽|改装件插槽|弹药|无人机|货舱|植入体|增效剂|子系统|high power slots?|medium power slots?|low power slots?|rig slots?|charges?|drones?|cargo|implants?|boosters?|subsystems?)$/i
+
 /**
  * Normalize a pasted field: drop invisible characters, NFKC-fold (full-width
  * → half-width for digits/latin/punctuation, 　→ space), collapse runs of
@@ -51,6 +53,7 @@ function parseQty(s) {
  *   - Tab-separated (EVE inventory/contract/asset copy): Name\tQty\tGroup\t...
  *     Quantity is found by scanning all columns after the first for a pure number.
  *   - Space-separated: "Tritanium 100000"
+ *   - Fitting list prefix: "3x Mega Pulse Laser II"
  *   - Suffix format: "Tritanium x2", "Tritanium ×3"
  *   - Name only (quantity defaults to null)
  */
@@ -59,8 +62,8 @@ export function parseMaterialText(text) {
   for (const rawLine of text.split('\n')) {
     // Strip invisibles before anything else — a ZWSP between name and quantity
     // would otherwise defeat both the tab split and the "Name 100" regex.
-    const line = rawLine.replace(INVISIBLE_RE, '').trim()
-    if (!line) continue
+    const line = rawLine.replace(INVISIBLE_RE, '').normalize('NFKC').trim()
+    if (!line || MATERIAL_SECTION_RE.test(line)) continue
 
     let name = null
     let quantity = null
@@ -74,19 +77,25 @@ export function parseMaterialText(text) {
         if (q != null) { quantity = q; break }
       }
     } else {
-      // Check for "Name x2" / "Name ×3" suffix
-      const xMatch = line.match(/^(.+?)\s+[x×](\d+)\s*$/i)
-      if (xMatch) {
-        name = xMatch[1].trim()
-        quantity = parseInt(xMatch[2], 10) || null
+      // Fitting lists use "3x Item Name"; shopping lists often use "Item Name x3".
+      const prefixMatch = line.match(/^([\d,.\s]+)\s*[x×]\s*(.+)$/i)
+      if (prefixMatch) {
+        name = prefixMatch[2].trim()
+        quantity = parseQty(prefixMatch[1])
       } else {
-        // Try "Name 100000" format
-        const spaceMatch = line.match(/^(.+?)\s+([\d,.\s]+)\s*$/)
-        if (spaceMatch) {
-          name = spaceMatch[1].trim()
-          quantity = parseQty(spaceMatch[2])
+        const suffixMatch = line.match(/^(.+?)\s+[x×]([\d,.\s]+)\s*$/i)
+        if (suffixMatch) {
+          name = suffixMatch[1].trim()
+          quantity = parseQty(suffixMatch[2])
         } else {
-          name = line
+          // Try "Name 100000" format
+          const spaceMatch = line.match(/^(.+?)\s+([\d,.\s]+)\s*$/)
+          if (spaceMatch) {
+            name = spaceMatch[1].trim()
+            quantity = parseQty(spaceMatch[2])
+          } else {
+            name = line
+          }
         }
       }
     }
@@ -128,6 +137,31 @@ export function resolveItemNames(names) {
 }
 
 /**
+ * Resolve parsed rows and merge duplicates by type ID. Unmatched rows are
+ * merged by their normalized pasted name so repeated typos do not flood the
+ * result table. A row without an explicit quantity represents one item.
+ */
+export function mergeResolvedItems(parsed) {
+  const resolved = resolveItemNames(parsed.map(item => item.name))
+  const merged = new Map()
+
+  for (let i = 0; i < resolved.length; i++) {
+    const item = resolved[i]
+    const key = item.matched ? `type:${item.type_id}` : `name:${lookupKey(item.name)}`
+    const quantity = parsed[i].quantity ?? 1
+    const existing = merged.get(key)
+
+    if (existing) {
+      existing.quantity += quantity
+    } else {
+      merged.set(key, { ...item, quantity })
+    }
+  }
+
+  return [...merged.values()]
+}
+
+/**
  * Full market compare: parse text, resolve names, fetch order prices.
  * Equivalent to the Django market_compare endpoint.
  */
@@ -135,23 +169,17 @@ export async function marketCompare(text, datasource = 'serenity') {
   const parsed = parseMaterialText(text)
   if (!parsed.length) return { items: [] }
 
-  const names = parsed.map(p => p.name)
-  const resolved = resolveItemNames(names)
+  const merged = mergeResolvedItems(parsed)
 
-  const typeIds = resolved.filter(r => r.matched).map(r => r.type_id)
+  const typeIds = merged.filter(item => item.matched).map(item => item.type_id)
   const { prices: orderPrices, esiUnavailable } = typeIds.length
     ? await getOrderPricesForTypes(typeIds, datasource)
     : { prices: {}, esiUnavailable: false }
 
-  const items = resolved.map((res, i) => {
-    const op = res.type_id ? (orderPrices[res.type_id] || {}) : {}
+  const items = merged.map(item => {
+    const op = item.type_id ? (orderPrices[item.type_id] || {}) : {}
     return {
-      name: res.name,
-      type_id: res.type_id,
-      type_name: res.type_name,
-      volume: res.volume,
-      quantity: parsed[i].quantity,
-      matched: res.matched,
+      ...item,
       buy_price: op.buy_price ?? null,
       sell_price: op.sell_price ?? null,
     }

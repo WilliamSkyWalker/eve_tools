@@ -76,7 +76,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in sortedItems" :key="item.name" :class="{ unmatched: !item.matched }">
+            <tr v-for="item in sortedItems" :key="item.type_id || item.name" :class="{ unmatched: !item.matched }">
               <td class="col-name">
                 <div class="name-cell">
                   <img v-if="item.matched" class="type-icon" :src="typeIcon(item.type_id)" alt="" loading="lazy" @error="onTypeIconError">
@@ -255,7 +255,7 @@ import { marketCompare } from '../api/prices'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadIndustryData, getIndustryData } from '../data/loader'
-import { parseMaterialText, resolveItemNames } from '../services/market'
+import { parseMaterialText, mergeResolvedItems } from '../services/market'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { locName } from '../services/locale'
 import { typeIcon, onTypeIconError } from '../services/typeIcon'
@@ -422,30 +422,24 @@ async function calcReprocess() {
     const parsed = parseMaterialText(reprocessText.value)
     if (!parsed.length) { reprocessError.value = t('market.error'); return }
 
-    const resolved = resolveItemNames(parsed.map(p => p.name))
+    const mergedItems = mergeResolvedItems(parsed)
     const oreRate = reprocessRateOre.value / 100
     const scrapRate = reprocessRateScrap.value / 100
     const discount = reprocessDiscount.value
 
-    // Build input items list
-    reprocessInputItems.value = resolved.map((r, i) => ({
-      ...r,
-      quantity: parsed[i].quantity || 1,
-    }))
+    reprocessInputItems.value = mergedItems
 
     // Calculate reprocessing output
     const outputMap = {} // matTypeId -> total qty
-    for (let i = 0; i < resolved.length; i++) {
-      const r = resolved[i]
-      if (!r.matched) continue
-      const qty = parsed[i].quantity || 1
-      const mats = indData.reprocess?.[r.type_id]
+    for (const item of mergedItems) {
+      if (!item.matched) continue
+      const mats = indData.reprocess?.[item.type_id]
       if (!mats) continue
-      const itemGroup = indData.types[r.type_id]?.g
+      const itemGroup = indData.types[item.type_id]?.g
       const rate = ORE_GROUPS.has(itemGroup) ? oreRate : scrapRate
-      const portionSize = indData.types[r.type_id]?.ps || 1
+      const portionSize = indData.types[item.type_id]?.ps || 1
       for (const [matTid, matQty] of mats) {
-        const output = Math.floor(matQty * (qty / portionSize) * rate)
+        const output = Math.floor(matQty * (item.quantity / portionSize) * rate)
         if (output > 0) {
           outputMap[matTid] = (outputMap[matTid] || 0) + output
         }
