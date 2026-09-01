@@ -20,6 +20,9 @@ let navigationPromise = null
 let wormholeData = null
 let wormholePromise = null
 
+let guideData = null
+let guidePromise = null
+
 async function fetchJson(url) {
   const resp = await fetch(url)
   if (!resp.ok) throw new Error(`Failed to load ${url}: ${resp.status}`)
@@ -64,6 +67,17 @@ export async function loadWormholeData() {
     })
   }
   return wormholePromise
+}
+
+export async function loadGuideData() {
+  if (guideData) return guideData
+  if (!guidePromise) {
+    guidePromise = fetchJson(`${import.meta.env.BASE_URL}data/guides.json`).then(data => {
+      guideData = data
+      return data
+    })
+  }
+  return guidePromise
 }
 
 let lpStoreData = null
@@ -121,5 +135,6 @@ export async function loadDogmaData() {
 export function getIndustryData() { return industryData }
 export function getNavigationData() { return navigationData }
 export function getWormholeData() { return wormholeData }
+export function getGuideData() { return guideData }
 export function getLpStoreData() { return lpStoreData }
 export function getDogmaData() { return dogmaData }

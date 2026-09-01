@@ -240,6 +240,7 @@ const navGroups = computed(() => {
     ]},
     { key: 'combat', items: [
       { name: 'fitting', ic: 'rocket', to: p('fitting'), beta: true },
+      { name: 'guides', ic: 'book', to: p('guides'), beta: true },
       { name: 'dscan', ic: 'radar', to: p('dscan'), beta: true },
     ]},
   ]

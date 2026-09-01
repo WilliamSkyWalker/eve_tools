@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "data:guides": "node scripts/fetch-guides.mjs",
+    "data:guides:zh": "node scripts/translate-guides-qoder.mjs",
+    "data:guides:zh:local": "python3 scripts/translate-guides.py",
     "test": "vitest run",
     "test:watch": "vitest"
   },

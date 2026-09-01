@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、行星工业 PI、配船模拟器、旗舰跳跃路线规划、虫洞星系查询、D-Scan/Local解析器、00主权势力地图、公开合同查询（隐藏功能，连点logo 5次解锁）和友情链接（EVE常用工具网站）。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
+eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（无后端）。包含蓝图材料计算器、市场价格查询、LP商店计算器、行星工业 PI、配船模拟器、旗舰跳跃路线规划、虫洞星系查询、PvE攻略文档、D-Scan/Local解析器、00主权势力地图、公开合同查询（隐藏功能，连点logo 5次解锁）和友情链接（EVE常用工具网站）。支持国服 Serenity 和世界服 Tranquility（通过 /gf 和 /of 路由区分）。致谢和捐赠均为 AppHeader 中的弹窗（非独立路由）。
 
 ## Tech Stack
 
@@ -25,6 +25,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`navigation.json`** (~1.4MB) — 星系（含 3D 光年坐标、安全等级）、区域、星门跳跃连接。坐标已在构建时从米转换为光年。
 - **`wormhole.json`** (~125KB) — 虫洞星系（等级、效应、静态洞口）、虫洞类型属性。
 - **`lpstore.json`** (~2MB) — LP商店数据：NPC军团、兑换报价（物品、LP/ISK花费、所需材料）、相关物品类型名。由 `--fetch-lp` 从 ESI 获取。
+- **`guides.json`** — PvE 攻略库，包含 1–5 级安全任务、战斗异常、DED、未评级死亡空间和远征。由 `scripts/fetch-guides.mjs` 通过 EVE University Wiki MediaWiki API 生成，抽取 Missiondetails / CMBSiteInfo、推荐舰船、伤害与抗性、NPC 波次、触发和 EWAR 字段；`scripts/translate-guides-qoder.mjs` 将内容分批并发交给本机 Qoder CLI CN，生成 `zh.title` / `zh.sections` 简体中文。前端中文模式显示中文主标题和正文并保留英文标题。正文来源采用 CC BY-SA 4.0，页面必须保留来源链接、修订号和机器翻译说明。国服/世界服共用同一份攻略数据。
 - **`dogma-serenity.json`** / **`dogma-tranquility.json`** (~3MB 每份) — 按服务器拆分。配船模拟器数据：属性定义（attrs）、效果定义含modifierInfo（effects）、可装配物品类型属性和效果（types：Ship/Module/Charge/Drone/Implant/Subsystem/Skill）、分组（groups）、类别（categories）。由 `dgmAttributeTypes`、`dgmEffects`、`dgmTypeEffects`、`dgmTypeAttributes` CSV 生成。**Serenity 文件包含国服特有可装配物品**（如座头鲸、莫斯级、国庆药剂等），其 dogma 属性和效果通过 `--fetch-serenity-extras` 从 Serenity ESI `/universe/types` 的响应中提取（同一请求里附带 dogma_attributes / dogma_effects，无额外网络开销）；不带此 flag 时 dogma-serenity.json = dogma-tranquility.json。Serenity 文件中物品中文名优先使用 NetEase 翻译（不在 `serenityZhNames` 覆盖范围内的，回退到 t.nz）。modifierInfo 为从 CSV 中 YAML 格式解析的修改器列表，使用短 key（d=domain, f=func, ma=modifiedAttributeID, ya=modifyingAttributeID, op=operation, sk=skillTypeID, gid=groupID）。`loader.js` 按 `settings.datasource` 加载对应文件。
 
 ### 服务层 (`src/services/`)
@@ -44,6 +45,7 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 - **`t2margin.js`** — T2 舰船制造利润排行。读取 `industry.t2ships` 预计算原材料 BOM，拉取吉他订单价后计算：收入=成品吉他收单，成本=原料吉他卖单×数量，利润率=(收入−成本)/成本，按利润率降序。过滤 AT 特别版舰（复用 `blueprintLookup.isSpecialEdition`）和收单>卖单的异常挂单
 - **`dogmaEngine.js`** — 配船模拟 Dogma 属性计算引擎。收集基础属性、效果和修改器（modifierInfo），按 6 种 operation 类型顺序应用（PreMul→ModAdd→PostMul→PostPercent→PostAssign），PostPercent 非 stackable 修改器应用堆叠惩罚公式 `0.5^((i/2.22292081)^2)`。假设 All Skills Level V（技能等级属性 280 固定返回 5）
 - **`fittingStats.js`** — 从 Dogma 计算结果提取人类可读统计：CPU/PG/校准值使用量、盾/甲/壳 HP+抗性+EHP、速度/起跳时间/跃迁速度、电容容量/回充、锁定距离/分辨率/最大锁定数
+- **`guides.js`** — PvE 攻略的全文筛选、类别/势力 facet 和固定类别排序
 
 ### API 兼容层 (`src/api/`)
 
@@ -58,6 +60,8 @@ eve_tools — EVE Kit (eve-kit.com)，EVE Online 工业工具，纯前端 SPA（
 所有功能页通过 `/:server(gf|of)/` 动态路由前缀区分服务器。`stores/settings.js` 持久化 server 和 locale 到 localStorage。`i18n.js` 提供双语翻译。捐赠弹窗根据语言切换：中文显示微信赞赏码（`public/donate-wechat.png`），英文显示 Ko-fi 按钮。
 
 `LinksView.vue` 的友情链接按综合信息、配装与战斗、客户端工具、虫洞、地图与导航、工业与市场、国服专用分类；EVE-O Preview 指向 `Proopai/eve-o-preview` 仓库。
+
+`GuideView.vue` 同时渲染攻略列表和 `/:server/guides/:slug` 详情。列表支持全文、类别、1–5 级、势力筛选及五级任务快捷入口；舰船限制为独立列，每篇明确标为“限制舰型 / 无限制 / 未注明”，数据优先取 Missiondetails / CMBSiteInfo 模板，并从正文中的 acceleration gate / restricted to 描述补抓。详情展示舰船建议/限制、伤害抗性、流程正文、NPC 波次、触发与 EWAR，并保留 UniWiki 来源、CC BY-SA 4.0 和 revision ID。
 
 ### 工业视图 (`IndustryView.vue`)
 
@@ -83,7 +87,7 @@ T2 利润榜已从 Industry 弹窗**拆成独立页面** `T2RankView.vue`（路�
 
 ### 应用壳（AppHeader.vue）
 
-顶部 `.appbar`（sticky + backdrop-blur）：品牌（点 logo 5 次解锁合同、单击弹致谢）+ **分组下拉导航**（工业/市场/导航/战斗装配 四组，hover 或点击展开，菜单项含图标+名称+说明+`测试中`badge；`.menu::before` 透明桥接触发器与菜单间隙，防止鼠标下移时 `mouseleave` 收起）+ **全局命令面板**（点中间搜索框或 `⌘K`/`Ctrl+K`，↑↓ 选、回车跳转，`nav.item.*`/`nav.desc.*` 驱动，未来可扩展搜物品/星系/蓝图）+ 右侧控件（国服⇄世界服分段 `.seg`、语言、反馈、捐赠）。**移动端**（≤960px）：隐藏横向导航和搜索框，改为汉堡按钮打开右侧抽屉 + 搜索图标；≤520px 进一步收窄。导航模型（`navGroups` computed）按 `settings.server` 生成带前缀的 router 链接，合同项仅在 `contractsUnlocked` 时出现。分组归属：**工业**=工业制造计算 / T2 利润榜 / 行星工业；**市场**=价格查询 / 化矿计算 / 矿石价值 / LP 商店 / 公开合同；**导航**=旗舰跳跃路线 / 虫洞查询 / 主权势力地图；**战斗装配**=配船模拟器 / D-Scan。
+顶部 `.appbar`（sticky + backdrop-blur）：品牌（点 logo 5 次解锁合同、单击弹致谢）+ **分组下拉导航**（工业/市场/导航/战斗装配 四组，hover 或点击展开，菜单项含图标+名称+说明+`测试中`badge；`.menu::before` 透明桥接触发器与菜单间隙，防止鼠标下移时 `mouseleave` 收起）+ **全局命令面板**（点中间搜索框或 `⌘K`/`Ctrl+K`，↑↓ 选、回车跳转，`nav.item.*`/`nav.desc.*` 驱动，未来可扩展搜物品/星系/蓝图）+ 右侧控件（国服⇄世界服分段 `.seg`、语言、反馈、捐赠）。**移动端**（≤960px）：隐藏横向导航和搜索框，改为汉堡按钮打开右侧抽屉 + 搜索图标；≤520px 进一步收窄。导航模型（`navGroups` computed）按 `settings.server` 生成带前缀的 router 链接，合同项仅在 `contractsUnlocked` 时出现。分组归属：**工业**=工业制造计算 / T2 利润榜 / 行星工业；**市场**=价格查询 / 化矿计算 / 矿石价值 / LP 商店 / 公开合同；**导航**=旗舰跳跃路线 / 虫洞查询 / 主权势力地图；**战斗装配**=配船模拟器 / PvE攻略 / D-Scan。
 
 ### 视觉配色（旧页面参考）
 
@@ -147,6 +151,10 @@ node scripts/convert-sde.mjs --download           # 下载最新 CSV 后生成 J
 node scripts/convert-sde.mjs --fetch-zh-names     # 同时从 Serenity ESI 获取中文物品名+地图名
 node scripts/convert-sde.mjs --fetch-lp           # 从 ESI 获取 LP 商店数据（需联网，约30秒）
 node scripts/convert-sde.mjs --fetch-serenity-extras  # 拉取国服独有物品（座头鲸等）+ 国服中文名 + 国服 dogma 数据，输出 industry-serenity.json / dogma-serenity.json（约1分钟，不带此 flag 时 *-serenity.json = *-tranquility.json）
+npm run data:guides                              # 从 EVE University Wiki API 更新 PvE 攻略库
+npm run data:guides:zh                           # 用 Qoder CLI CN 分批并发生成中文标题和正文
+pip install -r scripts/requirements-guides-translate.txt
+npm run data:guides:zh:local                     # 无 Qoder 时使用本地离线模型（较慢）
 
 # 前端开发（从项目根目录执行）
 npm install
@@ -172,7 +180,7 @@ Vitest + @vue/test-utils + happy-dom。配置在 `vitest.config.js`,全局 setup
 
 - 服务层测试用 `vi.mock('../data/loader', ...)` 注入 `src/__tests__/fixtures/industry.js` 里的微型 fixture(Rifter + 2 矿,够覆盖 ME 公式 / BOM 递归 / 蓝图搜索过滤)。
 - 组件测试 mock `useI18n` 让消息可控,通过 `attachTo: document.body` 才能让 Teleport 渲染的 modal 可被 `document.querySelector` 拿到;每个 `it` 结尾必须 `wrapper.unmount()`,否则上一次测试遗留的 Teleport DOM 会污染下一次。
-- 当前已覆盖:calculator(ME 公式)、bom(递归 + 聚合)、dogma stackingPenalty、market parseMaterialText/resolveItemNames(含不可见字符与全角归一化)、blueprintLookup 搜索/过滤、esiClient 订单大区路由(PLEX→19000001)、PageHelp 组件交互。共 54 用例,全部本地跑,不接 CI。
+- 当前已覆盖:calculator(ME 公式)、bom(递归 + 聚合)、dogma stackingPenalty、market parseMaterialText/resolveItemNames(含不可见字符与全角归一化)、blueprintLookup 搜索/过滤、esiClient 订单大区路由(PLEX→19000001)、攻略筛选/facet、PageHelp 组件交互。全部本地跑,不接 CI。
 
 ## 编码规范
 更新代码时，更新 [CLAUDE.md](CLAUDE.md)

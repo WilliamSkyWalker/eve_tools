@@ -53,6 +53,16 @@ const router = createRouter({
       component: () => import('../views/DscanView.vue'),
     },
     {
+      path: '/:server(gf|of)/guides',
+      name: 'guides',
+      component: () => import('../views/GuideView.vue'),
+    },
+    {
+      path: '/:server(gf|of)/guides/:slug',
+      name: 'guide-detail',
+      component: () => import('../views/GuideView.vue'),
+    },
+    {
       path: '/:server(gf|of)/lpstore',
       name: 'lpstore',
       component: () => import('../views/LpStoreView.vue'),
