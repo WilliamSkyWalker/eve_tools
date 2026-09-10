@@ -15,6 +15,29 @@
         <label class="global-me-label">{{ t('industry.subComponentMe') }}</label>
         <input type="number" v-model.number="globalMe" min="0" max="10" class="inp mini num" />
         <button class="btn sm" @click="applyGlobalMe">{{ t('industry.applyMe') }}</button>
+        <span class="bar-sep"></span>
+        <label class="global-me-label">{{ t('industry.secTier') }}</label>
+        <select v-model="secTier" class="sel mini">
+          <option value="highsec">{{ t('industry.linesTier.highsec') }}</option>
+          <option value="lowsec">{{ t('industry.linesTier.lowsec') }}</option>
+          <option value="null">{{ t('industry.linesTier.null') }}</option>
+        </select>
+        <label class="global-me-label">{{ t('industry.mfgStructure') }}</label>
+        <select v-model="mfgStructure" class="sel mini">
+          <option value="npc">{{ t('industry.mfgStructure.npc') }}</option>
+          <option value="raitaru">{{ t('industry.mfgStructure.raitaru') }}</option>
+          <option value="sotiyo_azbel">{{ t('industry.mfgStructure.sotiyo_azbel') }}</option>
+        </select>
+        <label class="global-me-label">{{ t('industry.reactStructure') }}</label>
+        <select v-model="reactStructure" class="sel mini">
+          <option value="npc">{{ t('industry.reactStructure.npc') }}</option>
+          <option value="athanor">{{ t('industry.reactStructure.athanor') }}</option>
+          <option value="tatara">{{ t('industry.reactStructure.tatara') }}</option>
+        </select>
+        <label class="global-me-label time-rig-label">
+          <input type="checkbox" v-model="hasTimeRig" />
+          {{ t('industry.hasTimeRig') }}
+        </label>
         <span class="bar-spacer"></span>
         <button class="btn sm ghost" @click="sharePlan">{{ shareLabel }}</button>
       </div>
@@ -65,6 +88,10 @@
               <span v-if="levelStats[lvl.key].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.key].minTime) }} ~ {{ formatTime(levelStats[lvl.key].maxTime) }}</span>
             </div>
             <div v-else-if="priceLoading" class="tier-stats"><span class="stat-item loading-stat">...</span></div>
+            <div v-if="lineStats[lvl.key] != null" class="tier-stats lines-row" :title="t('industry.linesHint')">
+              <span class="stat-item lines-label">{{ t('industry.linesTitle') }}</span>
+              <span class="stat-item lines">{{ formatNumber(lineStats[lvl.key]) }}</span>
+            </div>
           </header>
           <table class="tier-table" @copy="onTableCopy($event, lvl)">
             <colgroup>
@@ -362,8 +389,46 @@ function collectBuildableFromTree(tree, indData, finalProductIds) {
 // Theoretical best time multipliers (all skills V + best structure + T2 rig lowsec)
 // Manufacturing: TE20(0.80) × Industry V(0.80) × Adv Industry V(0.85) × Sotiyo(0.70) × T2 rig(0.958)
 const MFG_BEST_MULT = 0.80 * 0.80 * 0.85 * 0.70 * 0.958  // ≈ 0.365
-// Reaction: Reactions V(0.75) × Adv Industry V(0.85) × Tatara(0.75) × T2 rig(0.958)
-const REACT_BEST_MULT = 0.75 * 0.85 * 0.75 * 0.958  // ≈ 0.458
+// Reaction: Reactions V(0.80) × Tatara(0.75) × T2 rig(0.958). Advanced Industry does
+// not apply to reaction jobs, only to manufacturing/research.
+const REACT_BEST_MULT = 0.80 * 0.75 * 0.958  // ≈ 0.575
+
+// ---- Production-line estimator ----
+// A single manufacturing/reaction job cannot run longer than 30 days; if a batch's
+// total job time (base time × runs × bonus multiplier) exceeds that cap, it must be
+// split across additional parallel job slots ("lines") to finish in one wave.
+const JOB_TIME_CAP = 30 * 86400
+// Skills assumed maxed: Industry V (-20%) + Advanced Industry V (-15%) for manufacturing;
+// Reactions V (-20%) for reactions (Advanced Industry doesn't apply to reactions).
+const SKILL_MFG_MULT = 0.80 * 0.85
+const SKILL_REACT_MULT = 0.80
+// User-selectable security tier + structure (defaults: null-sec, best structures).
+const secTier = ref('null')
+const mfgStructure = ref('sotiyo_azbel')
+const reactStructure = ref('tatara')
+// Whether a T2 time-efficiency rig is assumed fitted (many industrialists fit ME
+// rigs instead, so this must not be silently forced on).
+const hasTimeRig = ref(false)
+const MFG_STRUCTURE_MULT = { npc: 1, raitaru: 0.75, sotiyo_azbel: 0.70 }
+const REACT_STRUCTURE_MULT = { npc: 1, athanor: 0.80, tatara: 0.75 }
+// NPC stations/refineries don't support rigs; only Upwell structures do.
+const STRUCTURE_SUPPORTS_RIG = { npc: false, raitaru: true, sotiyo_azbel: true, athanor: true, tatara: true }
+const T2_RIG_BASE = 0.024
+const RIG_SEC_FACTOR = { highsec: 1, lowsec: 1.2667, null: 1.5333 }
+
+function currentLineMult(isReaction) {
+  const skill = isReaction ? SKILL_REACT_MULT : SKILL_MFG_MULT
+  const structureKey = isReaction ? reactStructure.value : mfgStructure.value
+  const structureMult = isReaction ? REACT_STRUCTURE_MULT[structureKey] : MFG_STRUCTURE_MULT[structureKey]
+  const applyRig = hasTimeRig.value && STRUCTURE_SUPPORTS_RIG[structureKey]
+  const rig = applyRig ? (1 - T2_RIG_BASE * RIG_SEC_FACTOR[secTier.value]) : 1
+  return skill * structureMult * rig
+}
+
+// Each round (level column) builds via manufacturing or reaction jobs sequentially;
+// track how many parallel job slots ("lines") that round needs under the selected
+// security tier + structure, keyed by lvl.key so each round is shown independently.
+const lineStats = reactive({}) // level -> number of lines needed, or null
 
 function computeTimeStats() {
   const indData = getIndustryData()
@@ -373,6 +438,7 @@ function computeTimeStats() {
   for (const lvl of levels.value) {
     let totalBase = 0
     let totalBest = 0
+    let lines = 0
     for (const mat of lvl.materials) {
       if (!mat.build || !mat.blueprint_type_id || !mat.source_activity) continue
       const baseTime = indData.activities?.[mat.blueprint_type_id]?.[mat.source_activity]
@@ -383,6 +449,8 @@ function computeTimeStats() {
       const jobTime = baseTime * runs
       totalBase += jobTime
       totalBest += jobTime * (mat.is_reaction ? REACT_BEST_MULT : MFG_BEST_MULT)
+      const tieredJobTime = jobTime * currentLineMult(mat.is_reaction)
+      lines += Math.ceil(tieredJobTime / JOB_TIME_CAP)
     }
     const existing = levelStats[lvl.key]
     levelStats[lvl.key] = {
@@ -392,8 +460,16 @@ function computeTimeStats() {
       minTime: totalBase > 0 ? Math.round(totalBest) : null,
       maxTime: totalBase > 0 ? totalBase : null,
     }
+    lineStats[lvl.key] = totalBase > 0 ? lines : null
   }
 }
+
+// Re-derive the line estimate (cheap, no re-fetch) whenever the security tier or
+// structure selection changes.
+watch([secTier, mfgStructure, reactStructure, hasTimeRig], () => {
+  if (levels.value.length) computeTimeStats()
+})
+
 
 async function fetchLevelPrices() {
   priceLoading.value = true
@@ -799,7 +875,14 @@ function formatNumber(n) {
 /* ── Global ME bar + share ── */
 .global-me-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 16px; flex-wrap: wrap; }
 .global-me-label { font-size: var(--text-sm); color: var(--text-muted); }
+.bar-sep { width: 1px; align-self: stretch; background: var(--border-default); margin: 0 2px; }
+.time-rig-label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 .bar-spacer { flex: 1; }
+
+/* ── Production line estimator ── */
+.lines-row { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border-default); }
+.lines-label { color: var(--text-dim); }
+.stat-item.lines { color: var(--gold); }
 
 /* ── Tier columns ── */
 .tier-grid { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
