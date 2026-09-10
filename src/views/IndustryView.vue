@@ -30,7 +30,6 @@
         </select>
         <label class="global-me-label">{{ t('industry.reactStructure') }}</label>
         <select v-model="reactStructure" class="sel mini">
-          <option value="npc">{{ t('industry.reactStructure.npc') }}</option>
           <option value="athanor">{{ t('industry.reactStructure.athanor') }}</option>
           <option value="tatara">{{ t('industry.reactStructure.tatara') }}</option>
         </select>
