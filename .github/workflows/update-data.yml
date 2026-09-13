@@ -1,0 +1,40 @@
+name: Weekly Game Data Update
+
+on:
+  schedule:
+    # 00:00 UTC every Friday (08:00 AM CST / Beijing Time)
+    - cron: '0 0 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and convert SDE & LP data
+        run: node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras --fetch-lp
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add public/data/
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): weekly game data update"
+            git push
+          fi
