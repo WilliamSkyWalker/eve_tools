@@ -33,13 +33,22 @@ EVE Online 工业工具，纯前端 SPA，支持世界服 (Tranquility) 和国�
 - Global ME setting for sub-components / 子组件 ME 全局设置
 - Plan share and import / 分享与导入
 - Locale toggle re-localizes the cached BOM in place; no need to recalculate after switching EN/中 / 切换语言后已计算的 BOM 自动重写所有材料名（不必重算）
-- Includes a Sisi preview of the four Cradle of War T2 Command Carriers (Salvation / Simurgh / Gaia / Ymir) until they land on TQ / 内置 Sisi 测试服 Cradle of War 四艘 T2 指挥航母（Salvation / Simurgh / Gaia / Ymir）预览数据，正式上 TQ 后自动覆盖
+- **T2 Profit Ranking (`/t2rank`)**: Real-time ranking of all T2 ships by manufacturing margin (Jita buy revenue vs. fully expanded raw material Jita sell cost) / **T2 利润榜 (`/t2rank`)**：预计算全展开原材料 BOM，按制造利润率（成品吉他收单 vs 原料吉他卖单）降序实时排行
 
-### Market / 市场价格查询
+### Market / 市场工具
 
-- Price lookup: paste material list, query Jita buy/sell / 价格查询：粘贴材料清单，查询吉他收单/卖单价格
-- Reprocessing calculator (ore/ice/moon/scrap, configurable yield) / 化矿计算：矿石/冰矿/月矿/废铁化矿产物及总价
-- Ore value ranking by ISK/m³ / 矿石价值：按 ISK/m³ 排序所有矿石
+- **Price Lookup (`/market`)**: Paste material lists, query Jita buy/sell order prices / **价格查询 (`/market`)**：粘贴材料清单，查询吉他收单/卖单价格
+- **Reprocessing (`/market/reprocess`)**: Refined output calculation (ore/ice/moon/scrap/Equinox ores, configurable yield and discount), with probabilistic valuation for Equinox ores like Prismaticite / **化矿计算 (`/market/reprocess`)**：矿石/冰矿/月矿/废铁化矿产物及总价，支持自定义化矿率与折扣，内置棱柱岩等 Equinox 概率提炼矿石加权期望估值
+- **Ore Value (`/market/ore`)**: Rank all standard, moon, abyssal, and Equinox ores by ISK/m³ / **矿石价值 (`/market/ore`)**：按 80% 精炼收单 ISK/m³ 排序所有矿石
+- Robust text cleaning: auto-strips invisible/formatting characters and handles full-width text from game/web copies / 文本清洗：自动过滤零宽/不可见字符并完成全角半角归一化
+
+### PvE Guides / PvE 攻略文档
+
+- Comprehensive PvE walkthroughs: Level 1–5 Security Missions, Combat Anomalies, DED Complexes, Unrated Complexes, and Expeditions / 1–5 级安全任务、战斗异常、DED 死亡空间、未评级与远征攻略
+- Search and filter by category, mission level, faction, and **allowed ship classes** / 支持按类别、等级、敌对势力及**准入舰船**多维筛选
+- **Serenity Colossus (Xolotl) Support**: Explicit gate restriction tags and notice banners for CN-only Colossus-class ships (Group 4622) / **国服巨像（索洛托尔级）准入支持**：针对 5 级任务加速轨道代码白名单专门标注巨像（Group 4622）可进/禁入提示
+- Ship suggestions, damage profiles (deal/resist), objective details, wave breakdowns with triggers, and EWAR hazards / 推荐舰船、建议输出/防御抗性、波次触发与电子战单位详情
+- Sourced from EVE University Wiki under CC BY-SA 4.0 / 攻略内容源自 EVE University Wiki（遵循 CC BY-SA 4.0 协议）
 
 ### Fitting Simulator / 模拟配船
 
@@ -123,6 +132,7 @@ EVE Online 工业工具，纯前端 SPA，支持世界服 (Tranquility) 和国�
 | [CCP ESI](https://developers.eveonline.com/) | Market prices, orders, contracts, server status, kills, sovereignty, LP stores / 市场价格、订单、合同、服务器状态、击杀统计、主权、LP 商店 |
 | [Serenity ESI](https://ali-esi.evepc.163.com) | CN server Chinese item, map names, and CN-only fittable types (Hubris-class, etc.) / 国服中文物品名、地图名以及国服独占可装配物品（座头鲸等） |
 | [eve-bookmarks](https://github.com/OkYk/eve-bookmarks) | Wormhole system effects and statics / 虫洞系统效应和静态洞口 |
+| [EVE University Wiki](https://wiki.eveuniversity.org/) | PvE mission, anomaly, and complex guides (CC BY-SA 4.0) / PvE 任务、异常与死亡空间攻略库（CC BY-SA 4.0） |
 | [Pyfa](https://github.com/pyfa-org/Pyfa) | Fitting simulator design reference / 配船模拟器设计参考 |
 | [EVEShipFit](https://github.com/EVEShipFit/dogma-engine) | Dogma engine architecture reference / Dogma 引擎架构参考 |
 
@@ -159,25 +169,28 @@ npm run preview      # Preview production build / 预览构建结果
 ## Data Update / 数据更新
 
 ```bash
-# Download latest SDE and generate JSON (with CN names)
-# 下载最新 SDE 并生成 JSON（含国服中文名）
-node scripts/convert-sde.mjs --download --fetch-zh-names
+# Download latest SDE and generate JSON (with CN names & CN extras)
+# 下载最新 SDE 并生成全套 JSON（含国服中文名与国服独有物品/Dogma数据）
+node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras --fetch-lp
 
-# Also fetch CN-only items + dogma data from Serenity ESI (Hubris-class, etc., ~1 min)
-# 同时从 Serenity ESI 拉取国服独占物品和 dogma 数据（座头鲸等，约 1 分钟）
-node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras
+# Update PvE Guides from EVE University Wiki API
+# 从 EVE University Wiki API 更新 PvE 攻略库
+npm run data:guides
 
-# Generate LP store data (optional, takes ~30s)
-# 生成 LP 商店数据（可选，约 30 秒）
-node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-lp
+# Translate PvE Guides into Chinese with Qoder CLI CN
+# 用 Qoder CLI CN 分批并发翻译生成攻略中文标题与正文
+npm run data:guides:zh
 ```
 
-## Weekly Maintenance / 每周维护
+## Automated & Weekly Maintenance / 自动化与每周维护
+
+- **Automated Workflow**: A GitHub Actions workflow (`.github/workflows/update-data.yml`) runs automatically every Friday at 00:00 UTC (08:00 AM CST) to pull fresh SDE & LP data, rebuild JSON artifacts, and commit changes if updated.
+- **自动定时更新**：配置了 GitHub Actions 定时任务（每周五 08:00 北京时间自动运行），自动拉取最新 SDE 与 LP 数据并提交部署。
 
 ```bash
+# Manual update / 手动维护更新
 git pull
-node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras
-node scripts/apply-sisi-preview.mjs   # Sisi preview overlay (T2 Command Carriers); drop after Cradle of War lands on TQ
+node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras --fetch-lp
 git add public/data/
 git diff --cached --quiet || git commit -m "Weekly SDE data update" && git push
 ```
