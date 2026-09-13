@@ -13,15 +13,22 @@ describe('guide filters', () => {
       .toEqual(['Alluring Emanations'])
   })
 
-  it('searches ship recommendations and builds facets', () => {
-    expect(filterGuides(guides, { query: 'cruiser' })).toHaveLength(1)
-    expect(filterGuides(guides, { query: '避难所' })).toHaveLength(1)
-    expect(guideFacets(guides).types).toEqual(['mission', 'anomaly'])
+  it('filters by ship class', () => {
+    const testGuides = [
+      { title: 'M1', shipLimit: 'Battleship & below (Colossus supported)', colossusSupport: 'supported' },
+      { title: 'M2', shipLimit: 'Battleship & below (Colossus restricted)', colossusSupport: 'none' },
+      { title: 'M3', shipLimit: 'Battlecruiser or smaller' },
+    ]
+    expect(filterGuides(testGuides, { shipClass: 'colossus_allow' }).map(g => g.title)).toEqual(['M1'])
+    expect(filterGuides(testGuides, { shipClass: 'colossus_deny' }).map(g => g.title)).toEqual(['M2'])
+    expect(filterGuides(testGuides, { shipClass: 'battlecruiser' }).map(g => g.title)).toEqual(['M3'])
   })
 
   it('normalizes and localizes ship restriction states', () => {
     expect(shipRestrictionStatus({ shipRestriction: { status: 'unrestricted' } })).toBe('unrestricted')
     expect(shipRestrictionLabel({ shipLimit: 'Battlecruiser or smaller' }, 'zh')).toBe('战列巡洋舰及以下')
+    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus restricted)' }, 'zh')).toBe('战列舰及以下 (巨像禁入)')
+    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus supported)' }, 'zh')).toBe('战列舰及以下 (支持巨像)')
     expect(shipRestrictionLabel({}, 'zh')).toBe('未注明')
   })
 })

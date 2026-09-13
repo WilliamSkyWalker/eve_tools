@@ -8,11 +8,32 @@ export function guideTypeOrder(type) {
 export function filterGuides(guides, filters = {}) {
   const query = (filters.query || '').trim().toLocaleLowerCase()
   const level = filters.level ? Number(filters.level) : null
+  const shipClass = filters.shipClass || ''
 
   return guides
     .filter(guide => !filters.type || guide.type === filters.type)
     .filter(guide => !level || guide.level === level)
     .filter(guide => !filters.faction || guide.faction === filters.faction)
+    .filter(guide => {
+      if (!shipClass) return true
+      const limit = (guide.shipLimit || '').toLowerCase()
+      if (shipClass === 'colossus_allow') {
+        return guide.colossusSupport === 'full' || guide.colossusSupport === 'supported'
+      }
+      if (shipClass === 'colossus_deny') {
+        return guide.colossusSupport === 'none'
+      }
+      if (shipClass === 'battleship') {
+        return !limit.includes('battlecruiser') && !limit.includes('cruiser') && !limit.includes('frigate') && !limit.includes('destroyer')
+      }
+      if (shipClass === 'battlecruiser') {
+        return limit.includes('battlecruiser') || limit.includes('cruiser')
+      }
+      if (shipClass === 'cruiser') {
+        return limit.includes('cruiser')
+      }
+      return true
+    })
     .filter(guide => {
       if (!query) return true
       return [
@@ -48,11 +69,17 @@ export function shipRestrictionStatus(guide) {
 export function shipRestrictionLabel(guide, locale = 'en') {
   const status = shipRestrictionStatus(guide)
   if (status === 'unknown') return locale === 'zh' ? '未注明' : 'Not specified'
-  if (status === 'unrestricted') return locale === 'zh' ? '无限制' : 'Unrestricted'
+  if (guide.shipLimit === 'Unrestricted' || /^(unrestricted|none|no limit|not gated|ungated)$/i.test(guide.shipLimit)) {
+    return locale === 'zh' ? '无限制' : 'Unrestricted'
+  }
   if (locale !== 'zh') return guide.shipLimit
 
   return guide.shipLimit
     .replace(/\bOnly allows:\s*/gi, '仅允许：')
+    .replace(/\bUnrestricted\b/gi, '无限制')
+    .replace(/\bColossus supported\b/gi, '支持巨像')
+    .replace(/\bColossus restricted\b/gi, '巨像禁入')
+    .replace(/\bColossus\b/gi, '巨像')
     .replace(/\bT1\b/g, 'T1')
     .replace(/\bT2\b/g, 'T2')
     .replace(/\bT3\b/g, 'T3')
@@ -76,10 +103,13 @@ export function shipRestrictionLabel(guide, locale = 'en') {
     .replace(/\bFaction\b/gi, '势力')
     .replace(/\bclass ships?\b/gi, '级舰船')
     .replace(/\band their Tech 2 equivalents\b/gi, '及其 T2 衍生舰船')
+    .replace(/&\s*below/gi, '及以下')
     .replace(/\band below\b/gi, '及以下')
+    .replace(/\bbelow\b/gi, '以下')
     .replace(/\bor lower\b/gi, '及以下')
     .replace(/\bor smaller\b/gi, '及以下')
     .replace(/\band smaller\b/gi, '及以下')
+    .replace(/&/g, '及')
     .replace(/\bincluding\b/gi, '包括')
     .replace(/\bOnly\b/gi, '仅')
     .replace(/\bnot allowed\b/gi, '禁止进入')

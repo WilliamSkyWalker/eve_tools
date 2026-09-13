@@ -67,6 +67,13 @@ const messages = {
     'guides.allLevels': '全部等级',
     'guides.faction': '敌对势力',
     'guides.allFactions': '全部势力',
+    'guides.shipFilter': '准入舰船',
+    'guides.allShips': '全部舰船',
+    'guides.ship.colossus_allow': '巨像（可进）',
+    'guides.ship.colossus_deny': '巨像（禁入）',
+    'guides.ship.battleship': '战列级',
+    'guides.ship.battlecruiser': '战巡及以下',
+    'guides.ship.cruiser': '巡洋及以下',
     'guides.levelFive': '五级任务',
     'guides.clear': '清除筛选',
     'guides.results': '篇攻略',
@@ -97,6 +104,9 @@ const messages = {
     'guides.licensePrefix': '本页资料来源：',
     'guides.catalogLicense': '攻略资料来源：',
     'guides.machineTranslated': '中文内容为机器翻译',
+    'guides.colossusNotice.none': '⚠️ 国服【巨像】说明：常规战列及战巡可进入，但由于国服加速轨道代码遗漏 Group 4622 白名单，索洛托尔级（巨像）无法激活轨道进场。',
+    'guides.colossusNotice.full': '💡 国服【巨像】说明：该任务为开放空间/无加速轨道，索洛托尔级（巨像）可直接跃迁入场。',
+    'guides.colossusNotice.supported': '✅ 国服【巨像】说明：该任务加速轨道允许战列及巨像级（Group 4622）通行，索洛托尔级可正常进入。',
 
     // Global search / command palette
     'search.placeholder': '搜索工具…',

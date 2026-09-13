@@ -284,10 +284,36 @@ function parseGuide(entry, page) {
   const faction = mission.faction || mission.faction1 || site.faction || entry.indexFaction || ''
   const title = site.name || page.title || entry.title
   const revision = page.revisions?.[0]
-  const shipRestriction = extractShipRestriction(
+  let shipRestriction = extractShipRestriction(
     wikitext,
     mission.shipsizelimit || site['ship limit'] || '',
   )
+
+  if (level === 5) {
+    const noGateTitles = [
+      "A Mote In The Eye", "Breeding Facility", "Cleaning House",
+      "Liberate the Miners", "Operation Wyrmsbane", "Operation Wyrmslayer",
+      "Reclamation", "Stray Amarr Carrier", "Stray Caldari Carrier",
+      "The Big Sting"
+    ]
+    const colossusRestrictedTitles = [
+      "Honor (Angel Cartel)", "Honor (Blood Raiders)",
+      "Honor (Guristas Pirates)", "Honor (Serpentis)",
+      "Rogue Spy", "Oust The Claimjumpers", "Finders And Keepers",
+      "Prison Break", "Prison Bust", "For the Honor of Rouvenor"
+    ]
+
+    const isNoGate = noGateTitles.some(t => title.includes(t))
+    const isRestricted = colossusRestrictedTitles.some(t => title.includes(t))
+
+    if (isNoGate) {
+      shipRestriction = { status: 'unrestricted', text: 'Unrestricted (Colossus supported)', source: 'serenity_rules' }
+    } else if (isRestricted) {
+      shipRestriction = { status: 'limited', text: 'Battleship & below (Colossus restricted)', source: 'serenity_rules' }
+    } else {
+      shipRestriction = { status: 'limited', text: 'Battleship & below (Colossus supported)', source: 'serenity_rules' }
+    }
+  }
   return {
     slug: slugify(page.title, type, level),
     title,

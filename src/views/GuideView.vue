@@ -69,6 +69,10 @@
               <strong class="t-red">{{ selectedGuide.ewar }}</strong>
             </div>
           </div>
+
+          <div v-if="selectedGuide.colossusSupport" class="colossus-box" :class="`colossus-${selectedGuide.colossusSupport}`">
+            {{ t(`guides.colossusNotice.${selectedGuide.colossusSupport}`) }}
+          </div>
         </div>
 
         <div v-if="selectedGuide.sections.length" class="card prose-card">
@@ -151,6 +155,17 @@
               <option v-for="item in facets.factions" :key="item" :value="item">{{ item }}</option>
             </select>
           </div>
+          <div class="field">
+            <label>{{ t('guides.shipFilter') }}</label>
+            <select v-model="shipClass" class="sel">
+              <option value="">{{ t('guides.allShips') }}</option>
+              <option value="colossus_allow">{{ t('guides.ship.colossus_allow') }}</option>
+              <option value="colossus_deny">{{ t('guides.ship.colossus_deny') }}</option>
+              <option value="battleship">{{ t('guides.ship.battleship') }}</option>
+              <option value="battlecruiser">{{ t('guides.ship.battlecruiser') }}</option>
+              <option value="cruiser">{{ t('guides.ship.cruiser') }}</option>
+            </select>
+          </div>
         </div>
         <div class="quick-filters">
           <button class="btn sm" :class="{ primary: type === 'mission' && level === 5 }" @click="showLevelFive">
@@ -229,6 +244,7 @@ const query = ref('')
 const type = ref('')
 const level = ref('')
 const faction = ref('')
+const shipClass = ref('')
 
 const server = computed(() => settings.server)
 const facets = computed(() => guideFacets(data.value?.guides || []))
@@ -237,12 +253,13 @@ const filtered = computed(() => filterGuides(data.value?.guides || [], {
   type: type.value,
   level: level.value,
   faction: faction.value,
+  shipClass: shipClass.value,
 }))
 const selectedGuide = computed(() =>
   data.value?.guides.find(guide => guide.slug === route.params.slug) || null)
 const generatedDate = computed(() =>
   data.value ? new Date(data.value.generatedAt).toLocaleDateString() : '')
-const hasFilters = computed(() => Boolean(query.value || type.value || level.value || faction.value))
+const hasFilters = computed(() => Boolean(query.value || type.value || level.value || faction.value || shipClass.value))
 
 function typeLabel(value) {
   return t(`guides.type.${value}`)
@@ -278,6 +295,7 @@ function clearFilters() {
   type.value = ''
   level.value = ''
   faction.value = ''
+  shipClass.value = ''
 }
 
 onMounted(async () => {
@@ -295,7 +313,7 @@ onMounted(async () => {
 .guide-page { max-width: 1280px; margin: 0 auto; }
 .source-note, .result-count, .license-note { color: var(--text-dim); font-size: var(--text-xs); }
 .filters-card { padding: 16px; margin-bottom: 16px; }
-.filter-grid { display: grid; grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(150px, 1fr)); gap: 12px; }
+.filter-grid { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr)); gap: 12px; }
 .quick-filters { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .result-count { margin-left: auto; }
 .guide-list-card { overflow: hidden; }
@@ -324,6 +342,10 @@ onMounted(async () => {
 .fact strong { font-size: var(--text-base); }
 .prose-card, .encounters-card { overflow: hidden; }
 .prose-section { padding: 14px 16px; border-bottom: 1px solid var(--border-default); }
+.colossus-box { margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: var(--text-xs); line-height: 1.5; }
+.colossus-none { background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.3); color: var(--red); }
+.colossus-full { background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.3); color: var(--green); }
+.colossus-supported { background: rgba(90, 160, 224, 0.12); border: 1px solid rgba(90, 160, 224, 0.3); color: var(--blue); }
 .prose-section:last-child { border-bottom: 0; }
 .prose-section h3 { color: var(--gold); font-size: var(--text-base); margin-bottom: 5px; }
 .prose-section p { color: var(--text-secondary); line-height: 1.7; white-space: pre-line; }
