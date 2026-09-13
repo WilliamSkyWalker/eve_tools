@@ -165,6 +165,7 @@
       <!-- Reprocessing output -->
       <div v-if="reprocessResults.length" class="result-section">
         <h3 class="section-title">{{ t('market.reprocessOutput') }}</h3>
+        <p class="reprocess-note">{{ t('market.reprocessNote') }}</p>
         <table class="result-table">
           <thead>
             <tr>
@@ -220,6 +221,7 @@
       <div v-if="oreValueError" class="error-msg">{{ oreValueError }}</div>
       <div v-if="oreValues.length" class="result-section">
         <h3 class="section-title">{{ t('market.oreValueTitle') }}</h3>
+        <p class="reprocess-note">{{ t('market.oreValueNote') }}</p>
         <table class="result-table">
           <thead>
             <tr>
@@ -397,6 +399,7 @@ const ORE_GROUPS = new Set([
   4029,4030,4031, // abyssal ores
   4513,4514,4515,4516, // new ores
   4755,4756,4757,4758,4759, // newer ores
+  4857,4915,5085, // Equinox ores
 ])
 
 const reprocessText = ref('')
@@ -521,6 +524,7 @@ const ORE_VALUE_GROUPS = new Set([
   4029,4030,4031, // abyssal ores
   4513,4514,4515,4516, // new ores
   4755,4756,4757,4758,4759, // newer ores
+  4857,4915,5085, // Equinox ores
 ])
 // Special ores with portionSize=1 that should be excluded (survey-scannable asteroids)
 const SPECIAL_ORE_IDS = new Set([28617,28618,28619,28620,28621,28622,28623,28624,28625,28626])
@@ -774,6 +778,17 @@ tr.unmatched td { color: var(--text-dim); }
   border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono);
 }
 .discount-input:focus { outline: none; border-color: var(--gold-line); }
+
+.reprocess-note {
+  margin: 6px 0 12px 0;
+  padding: 8px 12px;
+  background: rgba(216, 185, 120, 0.1);
+  border: 1px solid rgba(216, 185, 120, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--gold);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
 
 @media (max-width: 640px) {
   .price-summary { grid-template-columns: 1fr; }

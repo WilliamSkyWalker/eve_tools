@@ -345,6 +345,21 @@ async function main() {
     }
   })
 
+  // Equinox probabilistic ores (Prismaticite 90041 / Compressed Prismaticite 90307)
+  // Expected base yield per portion (100 units) at 100% efficiency based on equal-probability (1/8) midpoints:
+  const prismaticiteYields = [
+    [34, 54000],       // Tritanium (三钛合金)
+    [35, 12580.875],   // Pyerite (类晶体胶矿)
+    [36, 5060],        // Mexallon (类银超金属)
+    [37, 3450],        // Isogen (同位聚合体)
+    [38, 431.25],      // Nocxium (超新星诺克石)
+    [39, 176.6875],    // Zydrine (晶状石英核岩)
+    [40, 91.5],        // Megacyte (超噬矿)
+    [11399, 58.5],     // Morphite (莫尔石)
+  ]
+  reprocess[90041] = prismaticiteYields
+  reprocess[90307] = prismaticiteYields
+
   // ── Step 4c: Precompute fully-expanded raw-material BOM for every T2 ship ──
   // Powers the industry page's "T2 profit ranking" feature: the raw-material list
   // is static, so only Jita prices are fetched live at runtime. Recursively expands
