@@ -28,6 +28,12 @@ const OUT_DIR = path.join(ROOT, 'public', 'data')
 // them around mid-2026 — the path is now /dump/latest/csv/<table>.csv (plain).
 const FUZZWORK_BASE = 'https://www.fuzzwork.co.uk/dump/latest/csv/'
 const SERENITY_ESI = 'https://ali-esi.evepc.163.com/latest'
+const SERENITY_CRITICAL_NAMES = {
+  92822: '拯救级',
+  92823: '西莫夫级',
+  92824: '盖亚级',
+  92825: '伊米尔级',
+}
 
 const args = process.argv.slice(2)
 const DOWNLOAD = args.includes('--download')
@@ -458,6 +464,12 @@ async function main() {
       if (name) serenityZhNames[id] = name
     }
     console.log(`  Got ${Object.keys(serenityZhNames).length} names`)
+    for (const [id, expected] of Object.entries(SERENITY_CRITICAL_NAMES)) {
+      const actual = serenityZhNames[id]
+      if (actual !== expected) {
+        throw new Error(`Serenity name validation failed for type ${id}: expected "${expected}", got "${actual || '<missing>'}"`)
+      }
+    }
   }
 
   // ── Step 6: Build per-server industry files ──
