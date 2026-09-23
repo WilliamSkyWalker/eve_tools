@@ -399,7 +399,7 @@ const ORE_GROUPS = new Set([
   4029,4030,4031, // abyssal ores
   4513,4514,4515,4516, // new ores
   4755,4756,4757,4758,4759, // newer ores
-  4857,4915,5085, // Equinox ores
+  4857,4915,5083,5084,5085,5086, // Equinox ores (incl. X-Grade Raspite/Polycrase/Moissanite/Kangite)
 ])
 
 const reprocessText = ref('')
@@ -419,8 +419,7 @@ async function calcReprocess() {
   reprocessResults.value = []
 
   try {
-    const indData = getIndustryData()
-    if (!indData) throw new Error('Data not loaded')
+    const indData = getIndustryData() || await loadIndustryData()
 
     const parsed = parseMaterialText(reprocessText.value)
     if (!parsed.length) { reprocessError.value = t('market.error'); return }
@@ -524,7 +523,7 @@ const ORE_VALUE_GROUPS = new Set([
   4029,4030,4031, // abyssal ores
   4513,4514,4515,4516, // new ores
   4755,4756,4757,4758,4759, // newer ores
-  4857,4915,5085, // Equinox ores
+  4857,4915,5083,5084,5085,5086, // Equinox ores (incl. X-Grade Raspite/Polycrase/Moissanite/Kangite)
 ])
 // Special ores with portionSize=1 that should be excluded (survey-scannable asteroids)
 const SPECIAL_ORE_IDS = new Set([28617,28618,28619,28620,28621,28622,28623,28624,28625,28626])
