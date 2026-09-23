@@ -61,12 +61,11 @@
             <tr v-for="o in sortedOffers" :key="o.t">
               <td class="col-name">
                 <div class="name-cell">
-                  <img 
-                    class="type-icon" 
+                  <img
+                    class="type-icon"
                     :src="typeIcon(o.t)"
-                    alt="" 
+                    alt=""
                     loading="lazy"
-                    @error="handleImageError($event)"
                   >
                   <span class="copyable" @click="copyName(typeName(o.t), $event)">{{ typeName(o.t) }}</span>
                 </div>
@@ -305,11 +304,6 @@ function iskPerLpSellClass(offer) {
 function clearCopied() {
   const prev = document.querySelector('.copyable.copied')
   if (prev) prev.classList.remove('copied')
-}
-
-function handleImageError(event) {
-  // Use a generic blueprint icon when type-specific icon fails to load
-  event.target.src = typeIcon(9)
 }
 
 function copyName(name, e) {
