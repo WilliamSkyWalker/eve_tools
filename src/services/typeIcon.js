@@ -14,9 +14,10 @@
  *
  * Fallback chain (walked via a document-level capture listener installed
  * below, so views need no template changes):
- *   same-host other variant → cross-host icon → cross-host render
- * dataset.tried tracks visited URLs to prevent loops; the placeholder case
- * is caught by inspecting img.currentSrc after a successful load.
+ *   cross-host same variant → cross-host other variant → same-host other variant
+ * dataset.tried tracks visited URLs to prevent loops. evetech 404s, so its
+ * misses arrive as a normal error event; NetEase's silent 302 needs an
+ * out-of-band probe (see neteaseIsPlaceholder).
  *
  * Reads the server directly from localStorage (mirrors locale.js) so it works
  * outside component setup; views remount on server switch so binding re-evals.
@@ -56,10 +57,33 @@ export function typeIcon(typeId, size = 32, variant = 'icon') {
 // ── Cross-host fallback ────────────────────────────────────────────────────
 
 // NetEase's "we don't have this icon" response is a 302 to /Type/1_{32|64}.png
-// (or /Render/1_{N}.png). Browsers report the resolved URL in currentSrc, so
-// we can detect it post-load.
+// (or /Render/1_{N}.png) served as HTTP 200. `img.currentSrc` does NOT track
+// HTTP redirects, so nothing on the element reveals the substitution — the
+// only way to see it is to re-request the URL and read Response.url. NetEase
+// answers HEAD with Access-Control-Allow-Origin: *, so a cross-origin fetch
+// can read it. The 302 itself carries Cache-Control: max-age=86400, so repeat
+// probes hit the browser cache.
 const NETEASE_PLACEHOLDER_RE = /image\.evepc\.163\.com\/(?:Type|Render)\/1_\d+\.png/
 const MANAGED_HOST_RE = /image\.evepc\.163\.com|images\.evetech\.net/
+
+const probeResults = new Map()
+
+// Keyed by type+kind rather than URL: NetEase coverage is per type, so a list
+// with the same item in ten rows probes once. Type and Render are kept apart
+// because render coverage is much sparser — a missing render must not be
+// allowed to condemn an icon that NetEase does have.
+function neteaseIsPlaceholder(url) {
+  const typeId = parseTypeId(url)
+  const key = `${isRender(url) ? 'R' : 'T'}:${typeId}`
+  let pending = probeResults.get(key)
+  if (!pending) {
+    pending = fetch(url, { method: 'HEAD' })
+      .then(res => NETEASE_PLACEHOLDER_RE.test(res.url || ''))
+      .catch(() => false)
+    probeResults.set(key, pending)
+  }
+  return pending
+}
 
 function parseTypeId(src) {
   const m = src.match(/image\.evepc\.163\.com\/(?:Type|Render)\/(\d+)_/)
@@ -85,23 +109,27 @@ function fallbackChain(src) {
   if (!typeId || typeId === 1) return []
   const size = parseSize(src)
   const variant = isRender(src) ? 'render' : 'icon'
-  const onNes = isNetease(src)
   const other = variant === 'icon' ? 'render' : 'icon'
-  const cross = onNes ? evetechUrl : neteaseUrl
-  const same = onNes ? neteaseUrl : evetechUrl
-  // Cross-host same-variant is the reliable escape when one CDN lacks the
-  // item; other-variant is a last resort (NetEase Type/Render usually miss
-  // together, evetech 404 is 404 for both).
-  return [cross(typeId, size, variant), cross(typeId, size, other), same(typeId, size, other)]
+  if (isNetease(src)) {
+    // NetEase's Render coverage is far sparser than its Type coverage (even
+    // common ores like Tritanium 302 to the render placeholder), so a
+    // same-host variant hop almost never helps — go straight to evetech.
+    return [evetechUrl(typeId, size, variant), evetechUrl(typeId, size, other)]
+  }
+  return [neteaseUrl(typeId, size, variant), neteaseUrl(typeId, size, other), evetechUrl(typeId, size, other)]
 }
 
-function advance(el) {
+function advance(el, { neteaseMissing = false } = {}) {
+  // A confirmed NetEase placeholder means the CDN lacks that *type*, not just
+  // that one asset — mark it so a later failure on the other host can't walk
+  // back into NetEase's render placeholder.
+  if (neteaseMissing) el.dataset.skipNes = '1'
+  const skipNes = el.dataset.skipNes === '1'
   const tried = new Set((el.dataset.tried || '').split('|').filter(Boolean))
-  // Parse from el.src (the URL we requested), not currentSrc — NetEase's 302
-  // to the placeholder leaves currentSrc pointing at /Type/1_32.png.
   const requested = el.src
   tried.add(requested)
-  const next = fallbackChain(requested).find(u => u && !tried.has(u))
+  const next = fallbackChain(requested)
+    .find(u => u && !tried.has(u) && !(skipNes && isNetease(u)))
   if (!next) {
     el.dataset.fallbackDone = '1'
     return false
@@ -118,9 +146,16 @@ function isManaged(el) {
 function handleLoad(e) {
   const el = e.target
   if (!isManaged(el) || el.dataset.fallbackDone) return
-  const resolved = el.currentSrc || el.src
-  if (!NETEASE_PLACEHOLDER_RE.test(resolved)) return
-  advance(el)
+  // A successful load only proves *something* rendered. On NetEase a missing
+  // type silently renders the placeholder, so probe the requested URL; on
+  // evetech a real miss 404s and arrives via handleError instead.
+  const requested = el.src
+  if (!isNetease(requested)) return
+  neteaseIsPlaceholder(requested).then(missing => {
+    // The element may have been reused/re-rendered while the probe was in
+    // flight; only advance if it still shows the URL we probed.
+    if (missing && el.src === requested) advance(el, { neteaseMissing: true })
+  })
 }
 
 function handleError(e) {
