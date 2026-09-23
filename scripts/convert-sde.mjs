@@ -1054,12 +1054,37 @@ const fetchUniverseNamesSerenity = fetchUniverseNames
 async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
   console.log('Fetching Serenity-only types from ESI...')
 
-  // List all Serenity type IDs (paginated)
+  // List all Serenity type IDs (paginated). Any dropped page silently removes
+  // ~1000 types from the Serenity build, which historically caused entire
+  // families of modules (e.g. 100MN Afterburner I/II) to disappear from name
+  // lookup. Retry each page like _fetchNames does and fail loudly if we still
+  // can't get through.
+  const MAX_ATTEMPTS = 4
+  async function fetchPage(page) {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const resp = await fetch(`${SERENITY_ESI}/universe/types/?datasource=serenity&page=${page}`)
+        if (resp.ok) return await resp.json()
+        const retryable = resp.status >= 500 || resp.status === 420 || resp.status === 429
+        if (!retryable || attempt === MAX_ATTEMPTS) {
+          throw new Error(`ESI /universe/types/ page ${page} returned ${resp.status}`)
+        }
+        const backoff = 500 * Math.pow(2, attempt - 1)
+        console.warn(`  Serenity types page ${page}: ${resp.status}, retry ${attempt}/${MAX_ATTEMPTS - 1} after ${backoff}ms`)
+        await new Promise(r => setTimeout(r, backoff))
+      } catch (e) {
+        if (attempt === MAX_ATTEMPTS) throw e
+        const backoff = 500 * Math.pow(2, attempt - 1)
+        console.warn(`  Serenity types page ${page}: ${e.message}, retry ${attempt}/${MAX_ATTEMPTS - 1} after ${backoff}ms`)
+        await new Promise(r => setTimeout(r, backoff))
+      }
+    }
+  }
+
   const serIds = new Set()
   const firstResp = await fetch(`${SERENITY_ESI}/universe/types/?datasource=serenity&page=1`)
   if (!firstResp.ok) {
-    console.warn(`  Serenity types page 1 failed: ${firstResp.status}`)
-    return serIds
+    throw new Error(`Serenity types page 1 failed: ${firstResp.status}`)
   }
   const firstData = await firstResp.json()
   for (const id of firstData) serIds.add(id)
@@ -1068,18 +1093,22 @@ async function fetchSerenityOnlyTypes(allTypes, groups, outIds) {
 
   const pageQueue = []
   for (let p = 2; p <= totalPages; p++) pageQueue.push(p)
+  const failures = []
   async function pageWorker() {
     while (pageQueue.length) {
       const page = pageQueue.shift()
       try {
-        const resp = await fetch(`${SERENITY_ESI}/universe/types/?datasource=serenity&page=${page}`)
-        if (!resp.ok) continue
-        const data = await resp.json()
+        const data = await fetchPage(page)
         for (const id of data) serIds.add(id)
-      } catch { /* skip */ }
+      } catch (e) {
+        failures.push(`page ${page}: ${e.message}`)
+      }
     }
   }
   await Promise.all(Array.from({ length: 10 }, () => pageWorker()))
+  if (failures.length) {
+    throw new Error(`Serenity types listing incomplete (${failures.length} pages failed): ${failures.slice(0, 5).join('; ')}${failures.length > 5 ? '…' : ''}`)
+  }
   console.log(`  Got ${serIds.size} Serenity type IDs`)
 
   // Find missing
