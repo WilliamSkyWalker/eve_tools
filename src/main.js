@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useSettingsStore } from './stores/settings'
+import { startDataPreload } from './data/preload'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -18,6 +19,9 @@ router.beforeEach((to) => {
     settings.setServer(to.params.server)
   }
 })
+
+// Warm static datasets in the background without delaying the initial page.
+void startDataPreload(router, settings)
 
 // Recover from stale chunk hashes after a redeploy. Vite emits preloadError /
 // router emits onError when a code-split chunk referenced by the cached

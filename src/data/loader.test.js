@@ -60,7 +60,7 @@ describe.each([
   })
 })
 
-it.each(['loadIndustryData', 'loadDogmaData', 'loadNavigationData', 'loadWormholeData'])(
+it.each(['loadIndustryData', 'loadDogmaData', 'loadNavigationData', 'loadWormholeData', 'loadGuideData', 'loadLpStoreData', 'loadPiData'])(
   '%s retries after a failed download', async load => {
     fetch.mockRejectedValueOnce(new Error('offline'))
     await expect(loader[load]()).rejects.toThrow('offline')

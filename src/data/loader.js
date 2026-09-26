@@ -80,6 +80,9 @@ export async function loadGuideData() {
     guidePromise = fetchJson(`${import.meta.env.BASE_URL}data/guides.json`).then(data => {
       guideData = data
       return data
+    }).catch(error => {
+      guidePromise = null
+      throw error
     })
   }
   return guidePromise
@@ -94,6 +97,9 @@ export async function loadLpStoreData() {
     lpStorePromise = fetchJson(`${import.meta.env.BASE_URL}data/lpstore.json`).then(data => {
       lpStoreData = data
       return data
+    }).catch(error => {
+      lpStorePromise = null
+      throw error
     })
   }
   return lpStorePromise
@@ -108,6 +114,9 @@ export async function loadPiData() {
     piPromise = fetchJson(`${import.meta.env.BASE_URL}data/pi.json`).then(data => {
       piData = data
       return data
+    }).catch(error => {
+      piPromise = null
+      throw error
     })
   }
   return piPromise

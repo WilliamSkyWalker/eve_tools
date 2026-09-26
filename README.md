@@ -155,6 +155,10 @@ Industry and dogma data are split per server (`industry-serenity.json` / `indust
 
 工业和 Dogma 数据按服务器拆分输出两份（`industry-serenity.json` / `industry-tranquility.json`，`dogma-serenity.json` / `dogma-tranquility.json`）以避免国/欧服中文翻译冲突：Serenity 使用 NetEase 翻译，Tranquility 使用 CCP 翻译。
 
+After the initial route selects the server, the app preloads its seven static datasets in the background: industry, dogma, navigation, wormholes, LP store, PI, and guides. Pages share cached data and in-flight requests; switching servers only downloads uncached industry/dogma data for that server. Failed downloads can be retried on demand. Live ESI data and images still load as needed.
+
+首次路由确定服务器后，网站会在后台统一预加载工业、装配属性、导航、虫洞、LP 商店、PI 和攻略这 7 份静态数据。各页面复用缓存和正在进行的下载；切服时只补载尚未缓存的对应服工业和装配数据。下载失败后可在使用时重试。实时 ESI 数据和图片仍按需加载。
+
 ---
 
 ## Local Development / 本地开发
