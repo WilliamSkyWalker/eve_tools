@@ -181,7 +181,8 @@ import { loadNavigationData, loadWormholeData } from '../data/loader'
 
 const { t } = useI18n()
 
-onMounted(() => Promise.all([loadNavigationData(), loadWormholeData()]))
+// Preload only; each query also waits for its required data.
+onMounted(() => Promise.all([loadNavigationData(), loadWormholeData()]).catch(() => {}))
 
 const query = ref('')
 const filterClass = ref(null)

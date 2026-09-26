@@ -4,14 +4,14 @@
  *
  * Industry data is per-server (Serenity and Tranquility have different items
  * and Chinese translations, e.g. type 85062 is "侧进蛇级" on Serenity but
- * "响尾蛇级" on TQ — colliding with Rattlesnake). The active dataset reflects
- * the most recent loadIndustryData() call.
+ * "响尾蛇级" on TQ — colliding with Rattlesnake). Getters select the current
+ * server's cache, so a previous server's late response cannot replace it.
  */
 
 import { useSettingsStore } from '../stores/settings'
+import { shallowReactive } from 'vue'
 
-let industryData = null
-const industryCache = {}     // datasource -> data
+const industryCache = shallowReactive({}) // datasource -> data
 const industryPromises = {}  // datasource -> Promise
 
 let navigationData = null
@@ -32,19 +32,18 @@ async function fetchJson(url) {
 export async function loadIndustryData() {
   const ds = useSettingsStore().datasource
   if (industryCache[ds]) {
-    industryData = industryCache[ds]
-    return industryData
+    return industryCache[ds]
   }
   if (!industryPromises[ds]) {
     industryPromises[ds] = fetchJson(`${import.meta.env.BASE_URL}data/industry-${ds}.json`).then(data => {
       industryCache[ds] = data
-      industryData = data
       return data
+    }).catch(error => {
+      delete industryPromises[ds]
+      throw error
     })
   }
-  const data = await industryPromises[ds]
-  industryData = data
-  return data
+  return industryPromises[ds]
 }
 
 export async function loadNavigationData() {
@@ -53,6 +52,9 @@ export async function loadNavigationData() {
     navigationPromise = fetchJson(`${import.meta.env.BASE_URL}data/navigation.json`).then(data => {
       navigationData = data
       return data
+    }).catch(error => {
+      navigationPromise = null
+      throw error
     })
   }
   return navigationPromise
@@ -64,6 +66,9 @@ export async function loadWormholeData() {
     wormholePromise = fetchJson(`${import.meta.env.BASE_URL}data/wormhole.json`).then(data => {
       wormholeData = data
       return data
+    }).catch(error => {
+      wormholePromise = null
+      throw error
     })
   }
   return wormholePromise
@@ -110,31 +115,29 @@ export async function loadPiData() {
 
 export function getPiData() { return piData }
 
-let dogmaData = null
-const dogmaCache = {}     // datasource -> data
+const dogmaCache = shallowReactive({}) // datasource -> data
 const dogmaPromises = {}  // datasource -> Promise
 
 export async function loadDogmaData() {
   const ds = useSettingsStore().datasource
   if (dogmaCache[ds]) {
-    dogmaData = dogmaCache[ds]
-    return dogmaData
+    return dogmaCache[ds]
   }
   if (!dogmaPromises[ds]) {
     dogmaPromises[ds] = fetchJson(`${import.meta.env.BASE_URL}data/dogma-${ds}.json`).then(data => {
       dogmaCache[ds] = data
-      dogmaData = data
       return data
+    }).catch(error => {
+      delete dogmaPromises[ds]
+      throw error
     })
   }
-  const data = await dogmaPromises[ds]
-  dogmaData = data
-  return data
+  return dogmaPromises[ds]
 }
 
-export function getIndustryData() { return industryData }
+export function getIndustryData() { return industryCache[useSettingsStore().datasource] || null }
 export function getNavigationData() { return navigationData }
 export function getWormholeData() { return wormholeData }
 export function getGuideData() { return guideData }
 export function getLpStoreData() { return lpStoreData }
-export function getDogmaData() { return dogmaData }
+export function getDogmaData() { return dogmaCache[useSettingsStore().datasource] || null }

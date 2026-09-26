@@ -278,7 +278,8 @@ function locPick(zh, en) {
   return zh || en || ''
 }
 
-onMounted(() => Promise.all([loadIndustryData(), loadNavigationData()]))
+// Preload only; each query also waits for its required data.
+onMounted(() => Promise.all([loadIndustryData(), loadNavigationData()]).catch(() => {}))
 
 const datasource = computed(() => settings.server === 'of' ? 'tranquility' : 'serenity')
 

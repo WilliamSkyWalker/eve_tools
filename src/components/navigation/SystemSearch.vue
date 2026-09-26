@@ -68,6 +68,9 @@ function onInput() {
       const { data } = await searchSystems(query.value.trim())
       results.value = data.results
       showDropdown.value = results.value.length > 0
+    } catch {
+      results.value = []
+      showDropdown.value = false
     } finally {
       loading.value = false
     }

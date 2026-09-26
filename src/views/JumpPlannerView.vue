@@ -231,7 +231,8 @@ import PageHelp from '../components/layout/PageHelp.vue'
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()
 
-onMounted(() => loadNavigationData())
+// Preload only; each query also waits for its required data.
+onMounted(() => loadNavigationData().catch(() => {}))
 
 // Base jump range × JDC V (20%/level × 5 = ×2.0)
 // Super/Titan base 3.0→6.0, Dread/Carrier/FAX base 3.5→7.0, Blops base 4.0→8.0, JF/Rorqual base 5.0→10.0

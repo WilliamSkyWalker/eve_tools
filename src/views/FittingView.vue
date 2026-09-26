@@ -7,13 +7,15 @@
     </div>
 
     <!-- Ship search + game-fit import/export, side by side at the top -->
-    <div class="top-bar">
+    <div v-if="dataError" class="state-msg">{{ dataError }}</div>
+    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }}</div>
+    <div v-else class="top-bar">
       <ShipSearch class="top-bar-search" @select="onShipSelect" />
       <EftPanel class="top-bar-eft" />
     </div>
 
     <!-- Main Layout: 3 columns -->
-    <div v-if="store.shipTypeId" class="main-layout">
+    <div v-if="dataReady && store.shipTypeId" class="main-layout">
       <!-- Left: Module Browser -->
       <div class="browser-col">
         <ModuleBrowser @auto-place="onAutoPlace" />
@@ -83,13 +85,20 @@ const store = useFittingStore()
 const { t } = useI18n()
 
 const savedFits = ref([])
+const dataReady = ref(false)
+const dataError = ref('')
 
 onMounted(async () => {
-  await loadDogmaData()
-  savedFits.value = store.getSavedFits()
-  // Restore from URL hash if present
-  const hash = window.location.hash.slice(1)
-  if (hash) store.fromUrlHash(hash)
+  try {
+    await loadDogmaData()
+    dataReady.value = true
+    savedFits.value = store.getSavedFits()
+    // Restore from URL hash if present
+    const hash = window.location.hash.slice(1)
+    if (hash) store.fromUrlHash(hash)
+  } catch {
+    dataError.value = t('market.error')
+  }
 })
 
 const shipDisplayName = computed(() => {
@@ -138,6 +147,7 @@ function doShare() {
 
 // Calculate fitting stats reactively
 const fittingStats = computed(() => {
+  if (!dataReady.value) return {}
   const data = getDogmaData()
   if (!data || !store.shipTypeId) return {}
   const calculated = calculateFit(store, data)

@@ -256,7 +256,7 @@ import { useRoute } from 'vue-router'
 import { marketCompare } from '../api/prices'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
-import { loadIndustryData, getIndustryData } from '../data/loader'
+import { loadIndustryData } from '../data/loader'
 import { parseMaterialText, mergeResolvedItems } from '../services/market'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { locName } from '../services/locale'
@@ -342,8 +342,8 @@ function getSortClass(field) {
 }
 
 onMounted(() => {
-  loadIndustryData()
   if (tab.value === 'oreValue') loadOreValues()
+  else loadIndustryData().catch(() => { /* Queries report loading failures. */ })
 })
 
 async function queryPrices() {
@@ -354,6 +354,7 @@ async function queryPrices() {
   items.value = []
 
   try {
+    await loadIndustryData()
     const { data } = await marketCompare(inputText.value, settings.datasource)
     items.value = data.items
     esiDown.value = !!data.esiUnavailable
@@ -419,7 +420,7 @@ async function calcReprocess() {
   reprocessResults.value = []
 
   try {
-    const indData = getIndustryData() || await loadIndustryData()
+    const indData = await loadIndustryData()
 
     const parsed = parseMaterialText(reprocessText.value)
     if (!parsed.length) { reprocessError.value = t('market.error'); return }
@@ -576,8 +577,8 @@ async function loadOreValues() {
   oreValueError.value = ''
 
   try {
-    const indData = getIndustryData()
-    if (!indData) throw new Error('Data not loaded')
+    // Wait for the active server's dataset, including on direct page loads.
+    const indData = await loadIndustryData()
 
     const baseOres = findBaseOres(indData)
     const RATE = 0.8

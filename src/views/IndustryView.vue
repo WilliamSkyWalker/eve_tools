@@ -6,7 +6,9 @@
       </div>
     </div>
 
-    <ManufacturingQueue @calculate="onCalculate" />
+    <div v-if="dataError" class="state-msg">{{ dataError }}</div>
+    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }}</div>
+    <ManufacturingQueue v-else @calculate="onCalculate" />
 
     <div v-if="calculating" class="state-msg">{{ t('industry.calculating') }}</div>
 
@@ -265,6 +267,7 @@ const buildItems = ref({})
 const currentItems = ref([])
 const calculating = ref(false)
 const dataReady = ref(false)
+const dataError = ref('')
 const globalMe = ref(0)
 const skippedItems = reactive(new Set())
 
@@ -306,8 +309,12 @@ const tempInventory = reactive({}) // parsed from textarea in real-time
 const copyLabel = ref('')
 
 onMounted(async () => {
-  await loadIndustryData()
-  dataReady.value = true
+  try {
+    await loadIndustryData()
+    dataReady.value = true
+  } catch {
+    dataError.value = t('market.error')
+  }
   shareLabel.value = t('industry.share')
   copyLabel.value = t('industry.copyNeed')
 })
