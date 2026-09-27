@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { marketCompare } from '../api/prices'
 import { useSettingsStore } from '../stores/settings'
@@ -404,8 +404,29 @@ const ORE_GROUPS = new Set([
 ])
 
 const reprocessText = ref('')
-const reprocessRateOre = ref(80)
-const reprocessRateScrap = ref(50)
+// Keep each server's efficiencies across page visits and browser restarts.
+function savedReprocessRate(kind, fallback) {
+  const key = `eve_reprocess_rate_${settings.datasource}_${kind}`
+  const valid = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
+  let initial = fallback
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored !== null && stored.trim() !== '' && valid(Number(stored))) initial = Number(stored)
+  } catch { /* Storage may be unavailable; retain the default. */ }
+
+  const rate = ref(initial)
+  watch(rate, value => {
+    // Clearing the input while editing must not overwrite the saved value.
+    if (!valid(value)) return
+    try {
+      localStorage.setItem(key, String(value))
+    } catch { /* Keep the input usable even when storage is unavailable. */ }
+  })
+  return rate
+}
+
+const reprocessRateOre = savedReprocessRate('ore', 80)
+const reprocessRateScrap = savedReprocessRate('scrap', 50)
 const reprocessDiscount = ref(100)
 const reprocessInputItems = ref([])
 const reprocessResults = ref([])
