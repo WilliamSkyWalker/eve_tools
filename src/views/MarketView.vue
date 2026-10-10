@@ -220,8 +220,15 @@
       <div v-if="oreValueLoading" class="loading-msg">{{ t('market.oreLoading') }}</div>
       <div v-if="oreValueError" class="error-msg">{{ oreValueError }}</div>
       <div v-if="oreValues.length" class="result-section">
-        <h3 class="section-title">{{ t('market.oreValueTitle') }}</h3>
-        <p class="reprocess-note">{{ t('market.oreValueNote') }}</p>
+        <h3 class="section-title">{{ t('market.oreValueTitle', { price: orePriceLabel }) }}</h3>
+        <div class="reprocess-controls">
+          <label for="ore-price-basis" class="reprocess-label">{{ t('market.orePriceBasis') }}</label>
+          <select id="ore-price-basis" v-model="orePriceBasis" class="ore-price-select">
+            <option value="buy">{{ t('market.colBuy') }}</option>
+            <option value="sell">{{ t('market.colSell') }}</option>
+          </select>
+        </div>
+        <p class="reprocess-note">{{ t('market.oreValueNote', { price: orePriceLabel }) }}</p>
         <table class="result-table">
           <thead>
             <tr>
@@ -550,7 +557,17 @@ const ORE_VALUE_GROUPS = new Set([
 // Special ores with portionSize=1 that should be excluded (survey-scannable asteroids)
 const SPECIAL_ORE_IDS = new Set([28617,28618,28619,28620,28621,28622,28623,28624,28625,28626])
 
-const oreValues = ref([])
+const orePriceBasis = ref('buy')
+const orePriceLabel = computed(() => t(orePriceBasis.value === 'sell' ? 'market.colSell' : 'market.colBuy'))
+const oreValueRows = ref([])
+const oreValues = computed(() => oreValueRows.value.map(ore => {
+  const portionValue = ore[`${orePriceBasis.value}_portion_value`]
+  return {
+    ...ore,
+    portion_value: portionValue,
+    isk_per_m3: ore.total_volume > 0 ? portionValue / ore.total_volume : 0,
+  }
+}).sort((a, b) => b.isk_per_m3 - a.isk_per_m3))
 const oreValueLoading = ref(false)
 const oreValueError = ref('')
 let oreValueLoaded = false
@@ -611,7 +628,7 @@ async function loadOreValues() {
       if (mats) for (const [matTid] of mats) mineralIds.add(matTid)
     }
 
-    // Fetch Jita buy prices for all minerals
+    // Fetch Jita buy and sell prices for all minerals
     let orderPrices = {}
     if (mineralIds.size) {
       try {
@@ -629,28 +646,25 @@ async function loadOreValues() {
       const volume = ore.t.v || 0.1
 
       // Calculate total mineral value per portion
-      let portionValue = 0
+      let buyPortionValue = 0
+      let sellPortionValue = 0
       for (const [matTid, matQty] of mats) {
         const output = Math.floor(matQty * RATE)
-        const buyPrice = orderPrices[matTid]?.buy_price || 0
-        portionValue += output * buyPrice
+        buyPortionValue += output * (orderPrices[matTid]?.buy_price || 0)
+        sellPortionValue += output * (orderPrices[matTid]?.sell_price || 0)
       }
-
-      const totalVolume = volume * portionSize
-      const iskPerM3 = totalVolume > 0 ? portionValue / totalVolume : 0
 
       results.push({
         type_id: ore.type_id,
         type_name: locName(ore.t),
-        isk_per_m3: iskPerM3,
         volume,
-        portion_value: portionValue,
+        total_volume: volume * portionSize,
+        buy_portion_value: buyPortionValue,
+        sell_portion_value: sellPortionValue,
       })
     }
 
-    // Sort by ISK/m³ descending
-    results.sort((a, b) => b.isk_per_m3 - a.isk_per_m3)
-    oreValues.value = results
+    oreValueRows.value = results
     oreValueLoaded = true
   } catch (e) {
     oreValueError.value = t('market.error')
@@ -739,6 +753,12 @@ onUnmounted(() => document.removeEventListener('click', clearCopied))
   border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-mono);
 }
 .reprocess-rate-input:focus { outline: none; border-color: var(--gold-line); }
+.ore-price-select {
+  height: 34px; padding: 0 10px;
+  background: var(--bg-input); border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); color: var(--text-primary);
+}
+.ore-price-select:focus { outline: none; border-color: var(--gold-line); }
 .reprocess-pct { color: var(--text-muted); font-size: var(--text-sm); }
 
 /* ── Messages ── */

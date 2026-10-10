@@ -112,3 +112,46 @@ describe('ore value loading', () => {
     }
   })
 })
+
+
+describe('ore valuation price basis', () => {
+  it('defaults to buy value and recalculates values and ranking when switched to sell and back', async () => {
+    loadIndustryData.mockResolvedValue({
+      types: {
+        ...industryData.types,
+        1228: { n: 'Scordite', nz: '灼烧岩', g: 450, ps: 100, v: 0.2 },
+      },
+      groups: { ...industryData.groups, 450: { n: 'Scordite' } },
+      reprocess: { ...industryData.reprocess, 1228: [[35, 401]] },
+    })
+    getOrderPricesForTypes.mockResolvedValue({ prices: {
+      34: { buy_price: 5, sell_price: 6 },
+      35: { buy_price: 8, sell_price: 20 },
+    } })
+    const wrapper = mount(MarketView)
+    const rows = () => wrapper.findAll('tbody tr').map(row =>
+      row.findAll('td').map(cell => cell.text()))
+    try {
+      await flushPromises()
+      expect(wrapper.get('select').element.value).toBe('buy')
+      const buyRows = rows()
+      expect(buyRows).toEqual([
+        ['凡晶石', '160.00', '0.1 m³', '1,600.00'],
+        ['灼烧岩', '128.00', '0.2 m³', '2,560.00'],
+      ])
+      await wrapper.get('select').setValue('sell')
+      expect(rows()).toEqual([
+        ['灼烧岩', '320.00', '0.2 m³', '6,400.00'],
+        ['凡晶石', '192.00', '0.1 m³', '1,920.00'],
+      ])
+      expect(wrapper.get('.section-title').text()).toContain('吉他卖单')
+      expect(wrapper.get('.reprocess-note').text()).toContain('吉他卖单')
+      await wrapper.get('select').setValue('buy')
+      expect(rows()).toEqual(buyRows)
+      expect(wrapper.get('.section-title').text()).toContain('吉他收单')
+      expect(getOrderPricesForTypes).toHaveBeenCalledTimes(1)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+})
