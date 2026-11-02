@@ -68,6 +68,12 @@ const MANAGED_HOST_RE = /image\.evepc\.163\.com|images\.evetech\.net/
 
 const probeResults = new Map()
 
+async function probeNetease(url, options = {}) {
+  const res = await fetch(url, { method: 'HEAD', ...options })
+  if (!res.ok) throw new Error(`Image probe failed: ${res.status}`)
+  return NETEASE_PLACEHOLDER_RE.test(res.url || '')
+}
+
 // Keyed by type+kind rather than URL: NetEase coverage is per type, so a list
 // with the same item in ten rows probes once. Type and Render are kept apart
 // because render coverage is much sparser — a missing render must not be
@@ -77,12 +83,34 @@ function neteaseIsPlaceholder(url) {
   const key = `${isRender(url) ? 'R' : 'T'}:${typeId}`
   let pending = probeResults.get(key)
   if (!pending) {
-    pending = fetch(url, { method: 'HEAD' })
-      .then(res => NETEASE_PLACEHOLDER_RE.test(res.url || ''))
-      .catch(() => false)
+    pending = probeNetease(url)
+      // A cached image response or transient request failure must not disable
+      // fallback for this type for the rest of the page session.
+      .catch(() => probeNetease(url, { cache: 'reload' }))
+      .catch(() => {
+        probeResults.delete(key)
+        return false
+      })
     probeResults.set(key, pending)
   }
   return pending
+}
+
+// Vue can reuse an <img> when a slot or detail view changes items. Keep the
+// fallback state tied to the current request, rather than to the DOM element
+// forever. Updates made by advance() remain part of that same request.
+const imageRequests = new WeakMap()
+
+function currentRequest(el) {
+  let request = imageRequests.get(el)
+  if (!request || request.src !== el.src) {
+    delete el.dataset.tried
+    delete el.dataset.skipNes
+    delete el.dataset.fallbackDone
+    request = { src: el.src }
+    imageRequests.set(el, request)
+  }
+  return request
 }
 
 function parseTypeId(src) {
@@ -120,6 +148,7 @@ function fallbackChain(src) {
 }
 
 function advance(el, { neteaseMissing = false } = {}) {
+  const request = currentRequest(el)
   // A confirmed NetEase placeholder means the CDN lacks that *type*, not just
   // that one asset — mark it so a later failure on the other host can't walk
   // back into NetEase's render placeholder.
@@ -136,6 +165,7 @@ function advance(el, { neteaseMissing = false } = {}) {
   }
   el.dataset.tried = [...tried, next].join('|')
   el.src = next
+  request.src = el.src
   return true
 }
 
@@ -145,7 +175,9 @@ function isManaged(el) {
 
 function handleLoad(e) {
   const el = e.target
-  if (!isManaged(el) || el.dataset.fallbackDone) return
+  if (!isManaged(el)) return
+  const request = currentRequest(el)
+  if (el.dataset.fallbackDone) return
   // A successful load only proves *something* rendered. On NetEase a missing
   // type silently renders the placeholder, so probe the requested URL; on
   // evetech a real miss 404s and arrives via handleError instead.
@@ -154,13 +186,17 @@ function handleLoad(e) {
   neteaseIsPlaceholder(requested).then(missing => {
     // The element may have been reused/re-rendered while the probe was in
     // flight; only advance if it still shows the URL we probed.
-    if (missing && el.src === requested) advance(el, { neteaseMissing: true })
+    if (missing && imageRequests.get(el) === request && el.src === requested) {
+      advance(el, { neteaseMissing: true })
+    }
   })
 }
 
 function handleError(e) {
   const el = e.target
-  if (!isManaged(el) || el.dataset.fallbackDone) return
+  if (!isManaged(el)) return
+  currentRequest(el)
+  if (el.dataset.fallbackDone) return
   advance(el)
 }
 

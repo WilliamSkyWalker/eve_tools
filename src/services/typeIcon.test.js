@@ -6,12 +6,14 @@ const NETEASE_MISSING = new Set([92819, 92570])
 // Types evetech's CDN lacks (国服-only hulls).
 const EVETECH_MISSING = new Set([84004])
 
-vi.stubGlobal('fetch', vi.fn(async (url) => {
+const probeResponse = async (url) => {
   const s = String(url)
   const id = Number(s.match(/(?:types\/|Type\/|Render\/)(\d+)/)?.[1])
   const missing = NETEASE_MISSING.has(id)
-  return { url: missing ? 'https://image.evepc.163.com/Type/1_32.png' : s, status: 200 }
-}))
+  return { url: missing ? 'https://image.evepc.163.com/Type/1_32.png' : s, status: 200, ok: true }
+}
+
+vi.stubGlobal('fetch', vi.fn(probeResponse))
 
 const { typeIcon } = await import('./typeIcon.js')
 
@@ -27,6 +29,8 @@ const settle = () => new Promise(r => setTimeout(r, 0))
 
 beforeEach(() => {
   document.body.innerHTML = ''
+  fetch.mockReset()
+  fetch.mockImplementation(probeResponse)
 })
 
 describe('typeIcon', () => {
@@ -100,6 +104,101 @@ describe('cross-host icon fallback', () => {
     img.dispatchEvent(new Event('error'))
     expect(img.src).toBe('https://images.evetech.net/types/92819/render?size=32')
     expect(img.dataset.tried).not.toContain('image.evepc.163.com/Render')
+  })
+
+  it('recovers an existing image after a transient placeholder probe failure', async () => {
+    localStorage.setItem('eve_server', 'gf')
+    fetch.mockRejectedValueOnce(new TypeError('NetworkError'))
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    const img = mountImg(typeIcon(94011))
+    img.dispatchEvent(new Event('load'))
+    await settle()
+
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(img.src).toBe('https://images.evetech.net/types/94011/icon?size=32')
+  })
+
+  it('retries failed placeholder probes when the same type is mounted again', async () => {
+    localStorage.setItem('eve_server', 'gf')
+    fetch.mockRejectedValueOnce(new TypeError('NetworkError'))
+    fetch.mockRejectedValueOnce(new TypeError('NetworkError'))
+    const first = mountImg(typeIcon(94008))
+    first.dispatchEvent(new Event('load'))
+    await settle()
+    expect(first.src).toBe('https://image.evepc.163.com/Type/94008_32.png')
+    first.remove()
+
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    const second = mountImg(typeIcon(94008))
+    second.dispatchEvent(new Event('load'))
+    await settle()
+
+    expect(fetch).toHaveBeenCalledTimes(3)
+    expect(second.src).toBe('https://images.evetech.net/types/94008/icon?size=32')
+  })
+
+  it('does not cache an HTTP failure as proof that NetEase has an icon', async () => {
+    localStorage.setItem('eve_server', 'gf')
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/94012_32.png', status: 503, ok: false,
+    })
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    const img = mountImg(typeIcon(94012))
+    img.dispatchEvent(new Event('load'))
+    await settle()
+
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(img.src).toBe('https://images.evetech.net/types/94012/icon?size=32')
+  })
+
+  it('restarts fallback when an exhausted image is reused for Imperial Navy Bastion', async () => {
+    localStorage.setItem('eve_server', 'gf')
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    const img = mountImg(typeIcon(94004))
+    img.dispatchEvent(new Event('load'))
+    await settle()
+    img.dispatchEvent(new Event('error'))
+    img.dispatchEvent(new Event('error'))
+    expect(img.dataset.fallbackDone).toBe('1')
+
+    fetch.mockResolvedValueOnce({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    img.src = typeIcon(93999)
+    img.dispatchEvent(new Event('load'))
+    await settle()
+
+    expect(img.src).toBe('https://images.evetech.net/types/93999/icon?size=32')
+    expect(img.dataset.fallbackDone).toBeUndefined()
+    expect(img.dataset.tried).not.toContain('94004')
+  })
+
+  it('ignores a stale placeholder probe after the element switches types', async () => {
+    localStorage.setItem('eve_server', 'gf')
+    let resolveOldProbe
+    fetch.mockImplementationOnce(() => new Promise(resolve => { resolveOldProbe = resolve }))
+    const img = mountImg(typeIcon(94009))
+    img.dispatchEvent(new Event('load'))
+
+    img.src = typeIcon(94010)
+    img.dispatchEvent(new Event('load'))
+    await settle()
+    resolveOldProbe({
+      url: 'https://image.evepc.163.com/Type/1_32.png', status: 200, ok: true,
+    })
+    await settle()
+
+    expect(img.src).toBe('https://image.evepc.163.com/Type/94010_32.png')
+    expect(img.dataset.tried).toBeUndefined()
+    expect(img.dataset.skipNes).toBeUndefined()
   })
 
   it('never falls back for the placeholder type itself', () => {
