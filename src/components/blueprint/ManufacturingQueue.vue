@@ -200,34 +200,37 @@ function doImport() {
   const text = importText.value.trim()
   if (!text) return
 
-  // Two input formats:
-  //   1) Shared plan: "=== 最终产品 ===" sections with "name\tqty\tMEn" lines
-  //   2) Inventory paste (any format parseMaterialText accepts: tab-separated EVE
-  //      asset/contract dumps, "name x2", "name 100", etc.)
-  let productLines = []
-  if (text.includes('===')) {
-    let inProducts = false
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim()
-      if (/^===.*===/.test(trimmed)) {
-        inProducts = /最终产品|Final Product/i.test(trimmed)
-        continue
-      }
-      if (!inProducts || !trimmed) continue
-      const m = trimmed.match(/^(.+?)\t(\d+)(?:\tME(\d+))?$/)
-      if (m) {
-        productLines.push({ name: m[1].trim(), runs: parseInt(m[2]), me: m[3] != null ? parseInt(m[3]) : null })
+  // Shared plans may lose their tabs or section heading when copied. Strip
+  // each row's optional ME suffix before using the inventory text parser.
+  const lines = text.split('\n').map(line => line.trim())
+  const sectionHeader = /^===.*===$/
+  let inProducts = !lines.some(line => sectionHeader.test(line))
+  const productLines = []
+  for (const line of lines) {
+    if (sectionHeader.test(line)) {
+      inProducts = /最终产品|Final Product/i.test(line)
+      continue
+    }
+    if (!inProducts || !line) continue
+
+    const meSuffix = line.match(/\s+ME(\d+)$/i)
+    const materialText = meSuffix ? line.slice(0, meSuffix.index) : line
+    const me = meSuffix ? parseInt(meSuffix[1], 10) : null
+    // A plan has a distinct runs column: "Cap Booster 400 20 ME2" means
+    // 20 runs of Cap Booster 400, not a space-grouped quantity of 40020.
+    const planRow = meSuffix && materialText.match(/^(.+?)\s+(\d+)$/)
+    const parsed = planRow
+      ? [{ name: planRow[1].trim(), quantity: parseInt(planRow[2], 10) }]
+      : parseMaterialText(materialText)
+    for (const item of parsed) {
+      if (item.quantity != null && item.quantity > 0) {
+        productLines.push({ name: item.name, runs: item.quantity, me })
       }
     }
   }
-  if (!productLines.length) {
-    productLines = parseMaterialText(text)
-      .filter(p => p.quantity != null && p.quantity > 0)
-      .map(p => ({ name: p.name, runs: p.quantity, me: null }))
-  }
 
   if (!productLines.length) {
-    importError.value = t('queue.importError')
+    importError.value = t('queue.importFormatError')
     return
   }
 

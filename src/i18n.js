@@ -280,6 +280,7 @@ const messages = {
     'queue.importTitle': '导入生产计划',
     'queue.importPlaceholder': '粘贴分享的生产计划、游戏内库存、合同物品列表，或直接输入：\n帕拉丁级\t1\n响尾蛇级 x2\n座头鲸级 1',
     'queue.importError': '未能识别以下物品',
+    'queue.importFormatError': '未找到可导入的产品，请每行输入：物品名称 数量 ME0（ME 可省略，支持空格或 Tab 分隔）。',
 
     // MaterialSummary
     'summary.rawMaterial': '原材料',
@@ -1116,6 +1117,7 @@ const messages = {
     'queue.importTitle': 'Import Manufacturing Plan',
     'queue.importPlaceholder': 'Paste a shared plan, in-game inventory, contract list, or enter directly:\nPaladin\t1\nRattlesnake x2\nHumpback 1',
     'queue.importError': 'Could not resolve these items',
+    'queue.importFormatError': 'No products to import. Enter one item per line: Item name Quantity ME0 (ME is optional; separate with spaces or tabs).',
 
     // MaterialSummary
     'summary.rawMaterial': 'Raw Material',
