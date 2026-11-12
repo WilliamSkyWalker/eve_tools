@@ -10,7 +10,7 @@
         @keydown.escape="showDropdown = false"
         class="search-input"
       />
-      <span v-if="loading" class="spinner"></span>
+      <QueryProgress v-if="loading" :progress="progress" class="search-progress" />
     </div>
     <ul v-if="showDropdown && results.length" class="dropdown">
       <li
@@ -27,6 +27,8 @@
 </template>
 
 <script setup>
+import QueryProgress from '../common/QueryProgress.vue'
+import { useQueryProgress } from '../../composables/useQueryProgress'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchBlueprints } from '../../api/blueprints'
@@ -36,6 +38,7 @@ const query = ref('')
 const results = ref([])
 const showDropdown = ref(false)
 const loading = ref(false)
+const { progress, start, finish } = useQueryProgress()
 let debounceTimer = null
 
 function onInput() {
@@ -47,11 +50,13 @@ function onInput() {
   }
   debounceTimer = setTimeout(async () => {
     loading.value = true
+    start()
     try {
       const { data } = await searchBlueprints(query.value.trim())
       results.value = data.results
       showDropdown.value = results.value.length > 0
     } finally {
+      finish()
       loading.value = false
     }
   }, 300)
@@ -95,22 +100,8 @@ function selectBlueprint(bp) {
   color: #555555;
 }
 
-.spinner {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  border: 2px solid #2a2a2a;
-  border-top-color: #c8aa6e;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: translateY(-50%) rotate(360deg); }
-}
+.search-progress { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+.search-input { padding-right: 85px; }
 
 .dropdown {
   position: absolute;

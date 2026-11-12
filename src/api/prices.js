@@ -6,7 +6,7 @@ export async function getPrices(typeIds, datasource = 'serenity') {
   return { data: { prices } }
 }
 
-export async function marketCompare(text, datasource = 'serenity') {
-  const result = await _marketCompare(text, datasource)
+export async function marketCompare(text, datasource = 'serenity', options = {}) {
+  const result = await _marketCompare(text, datasource, options)
   return { data: result }
 }

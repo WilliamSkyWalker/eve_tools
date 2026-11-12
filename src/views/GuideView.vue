@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="state-msg">{{ t('guides.loading') }}</div>
+    <div v-if="loading" class="state-msg"><QueryProgress :label="t('guides.loading')" /></div>
     <div v-else-if="error" class="state-msg error-text">{{ t('guides.error') }}</div>
 
     <template v-else-if="data && selectedGuide">
@@ -220,6 +220,7 @@
 </template>
 
 <script setup>
+import QueryProgress from '../components/common/QueryProgress.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '../i18n'

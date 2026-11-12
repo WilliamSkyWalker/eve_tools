@@ -6,9 +6,9 @@ export async function getPublicContracts(regionId, { type, page, datasource } = 
   return { data: result }
 }
 
-export async function getContractItems(contractId, { datasource } = {}) {
+export async function getContractItems(contractId, { datasource, onProgress } = {}) {
   await loadIndustryData()
-  const result = await _getItems(contractId, datasource || 'serenity')
+  const result = await _getItems(contractId, datasource || 'serenity', { onProgress })
   return { data: result }
 }
 

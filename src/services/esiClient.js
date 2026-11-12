@@ -135,9 +135,13 @@ async function fetchOrderPricesForType(regionId, typeId, datasource) {
  * failure AND no fresh request succeeded — so a partial outage with some prices
  * coming back stays silent, but a fully-broken ESI surfaces a maintenance hint.
  * Cache hits don't count either way (the value is real, but the user might still
- * want to retry to refresh).
+ * want to retry to refresh). Optional onProgress reports completed types, including
+ * cache hits and failures, without changing the batch result or request scheduling.
  */
-export async function getOrderPricesForTypes(typeIds, datasource = 'serenity', regionId = null) {
+export async function getOrderPricesForTypes(typeIds, datasource = 'serenity', regionId = null, options = {}) {
+  let completed = 0
+  const reportProgress = () => options.onProgress?.({ completed, total: typeIds.length })
+  reportProgress()
   if (!typeIds.length) return { prices: {}, esiUnavailable: false }
   regionId = regionId || DEFAULT_REGION_ID
 
@@ -155,6 +159,8 @@ export async function getOrderPricesForTypes(typeIds, datasource = 'serenity', r
       if (r._source === 'fresh') freshSuccess++
       else if (r._source === 'esi-down') freshDown++
       prices[tid] = { buy_price: r.buy_price, sell_price: r.sell_price }
+      completed++
+      reportProgress()
     }
   }
 

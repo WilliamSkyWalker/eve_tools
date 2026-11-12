@@ -164,9 +164,23 @@ describe('marketCompare', () => {
 
     const result = await marketCompare('Tritanium\t2\n三钛合金\t3')
 
-    expect(getOrderPricesForTypes).toHaveBeenCalledWith([34], 'serenity')
+    expect(getOrderPricesForTypes).toHaveBeenCalledWith([34], 'serenity', null, {})
     expect(result.items).toMatchObject([
       { type_id: 34, quantity: 5, buy_price: 5, sell_price: 6 },
     ])
   })
+  it('forwards progress options for the merged matched types', async () => {
+    const { getOrderPricesForTypes } = await import('./esiClient')
+    const onProgress = vi.fn()
+    getOrderPricesForTypes.mockImplementationOnce(async (ids, datasource, regionId, options) => {
+      options.onProgress({ completed: 1, total: ids.length })
+      return { prices: {}, esiUnavailable: false }
+    })
+
+    await marketCompare('Tritanium\t2\n三钛合金\t3\nUnknown', 'tranquility', { onProgress })
+
+    expect(getOrderPricesForTypes).toHaveBeenLastCalledWith([34], 'tranquility', null, { onProgress })
+    expect(onProgress).toHaveBeenCalledWith({ completed: 1, total: 1 })
+  })
+
 })

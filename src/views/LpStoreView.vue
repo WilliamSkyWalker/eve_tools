@@ -6,7 +6,7 @@
       </div>
     </div>
 
-    <div v-if="!dataReady" class="loading-text">{{ t('lp.loading') }}</div>
+    <div v-if="!dataReady" class="loading-text">{{ t('lp.loading') }} <QueryProgress :progress="dataProgress" /></div>
 
     <template v-else>
       <!-- Corp search -->
@@ -35,6 +35,7 @@
         <button class="calc-btn" :disabled="!selectedCorpId || priceLoading" @click="calculateAll">
           {{ priceLoading ? t('lp.fetchingPrices') : t('lp.calculate') }}
         </button>
+        <QueryProgress v-if="priceLoading" :progress="priceProgress" :label="t('lp.fetchingPrices')" />
       </div>
 
       <!-- Offers table -->
@@ -103,11 +104,15 @@ import { loadLpStoreData, getLpStoreData, loadIndustryData } from '../data/loade
 import { getOrderPricesForTypes } from '../services/esiClient'
 import { typeIcon } from '../services/typeIcon'
 import PageHelp from '../components/layout/PageHelp.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const settings = useSettingsStore()
 const { t, locale, serverLabel } = useI18n()
 
 const dataReady = ref(false)
+const { progress: dataProgress, update: updateDataProgress } = useQueryProgress()
+const { progress: priceProgress, start: startPrices, update: updatePrices, finish: finishPrices } = useQueryProgress()
 const corpQuery = ref('')
 const dropdownOpen = ref(false)
 const selectedCorpId = ref(null)
@@ -117,7 +122,9 @@ const sortKey = ref('iskPerLpSell')
 const sortDir = ref('desc')
 
 onMounted(async () => {
-  await Promise.all([loadLpStoreData(), loadIndustryData()])
+  let completed = 0
+  await Promise.all([loadLpStoreData(), loadIndustryData()].map(request =>
+    request.then(() => updateDataProgress({ completed: ++completed, total: 2 }))))
   dataReady.value = true
   document.addEventListener('click', onDocClick)
 })
@@ -179,16 +186,17 @@ function typeName(tid) {
 async function calculateAll() {
   if (!currentOffers.value.length) return
   priceLoading.value = true
+  startPrices()
   try {
     const typeIds = new Set()
     for (const o of currentOffers.value) {
       typeIds.add(o.t)
       if (o.req) for (const [tid] of o.req) typeIds.add(tid)
     }
-    const { prices: p } = await getOrderPricesForTypes([...typeIds], settings.datasource)
+    const { prices: p } = await getOrderPricesForTypes([...typeIds], settings.datasource, null, { onProgress: updatePrices })
     prices.value = p
   } catch { /* prices optional */ }
-  finally { priceLoading.value = false }
+  finally { finishPrices(); priceLoading.value = false }
 }
 
 function buyPrice(offer) {

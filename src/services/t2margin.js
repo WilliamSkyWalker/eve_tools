@@ -15,7 +15,7 @@ import { getOrderPricesForTypes } from './esiClient'
 import { locName } from './locale'
 import { isSpecialEdition } from './blueprintLookup'
 
-export async function computeT2Margins(datasource = 'serenity') {
+export async function computeT2Margins(datasource = 'serenity', options = {}) {
   const d = getIndustryData()
   if (!d?.t2ships?.length) return { rows: [], esiUnavailable: false }
 
@@ -33,7 +33,7 @@ export async function computeT2Margins(datasource = 'serenity') {
     for (const [m] of raw) ids.add(m)
   }
 
-  const { prices, esiUnavailable } = await getOrderPricesForTypes([...ids], datasource)
+  const { prices, esiUnavailable } = await getOrderPricesForTypes([...ids], datasource, null, options)
 
   const rows = []
   for (const [tid, raw] of ships) {

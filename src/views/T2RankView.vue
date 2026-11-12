@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="state-msg">{{ t('industry.t2RankLoading') }}</div>
+    <div v-if="loading" class="state-msg">{{ t('industry.t2RankLoading') }} <QueryProgress :progress="progress" /></div>
     <div v-if="error" class="state-msg error-text">{{ error }}</div>
     <div v-if="esiDown" class="state-msg error-text">{{ t('market.esiDown') }}</div>
 
@@ -53,28 +53,33 @@ import { useI18n } from '../i18n'
 import { loadIndustryData } from '../data/loader'
 import { computeT2Margins } from '../services/t2margin'
 import { typeIcon, onTypeIconError } from '../services/typeIcon'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const settings = useSettingsStore()
 const { t, locale, serverLabel } = useI18n()
 
 const rows = ref([])
 const loading = ref(false)
+const { progress, start, update, finish } = useQueryProgress()
 const error = ref('')
 const esiDown = ref(false)
 
 async function load() {
   loading.value = true
+  start()
   error.value = ''
   esiDown.value = false
   try {
     await loadIndustryData()
-    const { rows: r, esiUnavailable } = await computeT2Margins(settings.datasource)
+    const { rows: r, esiUnavailable } = await computeT2Margins(settings.datasource, { onProgress: update })
     rows.value = r
     esiDown.value = esiUnavailable
     if (!r.length && !esiUnavailable) error.value = t('industry.t2RankError')
   } catch {
     error.value = t('industry.t2RankError')
   } finally {
+    finish()
     loading.value = false
   }
 }

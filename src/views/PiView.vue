@@ -6,7 +6,7 @@
       </div>
     </div>
 
-    <div v-if="!dataReady" class="loading-text">{{ t('home.loading') }}</div>
+    <div v-if="!dataReady" class="loading-text"><QueryProgress :label="t('home.loading')" /></div>
 
     <template v-else>
       <!-- Search + runs -->
@@ -70,6 +70,7 @@
 </template>
 
 <script setup>
+import QueryProgress from '../components/common/QueryProgress.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '../i18n'
 import { loadPiData, getPiData } from '../data/loader'

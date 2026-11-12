@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settings'
 import { getIndustryData, loadIndustryData } from '../data/loader'
 import { getOrderPricesForTypes } from '../services/esiClient'
 import MarketView from './MarketView.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
 
 const route = vi.hoisted(() => ({ meta: { mtab: 'oreValue' } }))
 vi.mock('vue-router', () => ({ useRoute: () => route }))
@@ -75,7 +76,7 @@ describe('ore value loading', () => {
       resolveData(industryData)
       await flushPromises()
 
-      expect(getOrderPricesForTypes).toHaveBeenCalledWith([34], datasource)
+      expect(getOrderPricesForTypes).toHaveBeenCalledWith([34], datasource, null, { onProgress: expect.any(Function) })
       expect(wrapper.find('.loading-msg').exists()).toBe(false)
       expect(wrapper.find('.error-msg').exists()).toBe(false)
       const row = wrapper.get('tbody tr')
@@ -150,6 +151,51 @@ describe('ore valuation price basis', () => {
       expect(rows()).toEqual(buyRows)
       expect(wrapper.get('.section-title').text()).toContain('吉他收单')
       expect(getOrderPricesForTypes).toHaveBeenCalledTimes(1)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+})
+
+
+describe.each(['price', 'reprocess', 'oreValue'])('%s query progress', tab => {
+  it('shows loading progress until the entire query completes', async () => {
+    route.meta.mtab = tab
+    let resolveData
+    let resolvePrices
+    let reportProgress
+    loadIndustryData.mockReturnValue(new Promise(resolve => { resolveData = resolve }))
+    getIndustryData.mockReturnValue(industryData)
+    getOrderPricesForTypes.mockImplementation((ids, datasource, regionId, { onProgress }) => {
+      reportProgress = onProgress
+      return new Promise(resolve => { resolvePrices = resolve })
+    })
+    const wrapper = mount(MarketView)
+    try {
+      if (tab !== 'oreValue') {
+        await wrapper.get('textarea').setValue('Veldspar 100')
+        await wrapper.get('.query-btn').trigger('click')
+      }
+      await flushPromises()
+      expect(wrapper.getComponent(QueryProgress).props('progress')).toBe(0)
+      expect(getOrderPricesForTypes).not.toHaveBeenCalled()
+
+      resolveData(industryData)
+      await flushPromises()
+      reportProgress({ completed: 1, total: 2 })
+      await flushPromises()
+      expect(wrapper.getComponent(QueryProgress).props('progress')).toBe(50)
+      expect(wrapper.getComponent(QueryProgress).text()).toContain('50%')
+      if (tab !== 'oreValue') expect(wrapper.get('.query-btn').attributes('disabled')).toBeDefined()
+      // No priced result is exposed before the batch has finished.
+      expect(wrapper.text()).not.toContain('1,600.00')
+
+      reportProgress({ completed: 2, total: 2 })
+      resolvePrices({ prices: { 1230: { buy_price: 5, sell_price: 6 }, 34: { buy_price: 5, sell_price: 6 } }, esiUnavailable: false })
+      await flushPromises()
+      expect(wrapper.findComponent(QueryProgress).exists()).toBe(false)
+      if (tab !== 'oreValue') expect(wrapper.get('.query-btn').attributes('disabled')).toBeUndefined()
+      expect(wrapper.text()).toContain('凡晶石')
     } finally {
       wrapper.unmount()
     }

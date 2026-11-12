@@ -21,6 +21,7 @@
         </button>
       </div>
 
+      <QueryProgress v-if="loading" :progress="priceProgress" :label="t('market.querying')" />
       <div v-if="error" class="error-msg">{{ error }}</div>
       <div v-if="esiDown" class="esi-down-msg">{{ t('market.esiDown') }}</div>
 
@@ -125,6 +126,7 @@
         </div>
       </div>
 
+      <QueryProgress v-if="reprocessLoading" :progress="reprocessProgress" :label="t('market.querying')" />
       <div v-if="reprocessError" class="error-msg">{{ reprocessError }}</div>
 
       <!-- Input items -->
@@ -217,7 +219,7 @@
 
     <!-- Ore Value Tab -->
     <template v-if="tab === 'oreValue'">
-      <div v-if="oreValueLoading" class="loading-msg">{{ t('market.oreLoading') }}</div>
+      <QueryProgress v-if="oreValueLoading" class="loading-msg" :progress="oreProgress" :label="t('market.oreLoading')" />
       <div v-if="oreValueError" class="error-msg">{{ oreValueError }}</div>
       <div v-if="oreValues.length" class="result-section">
         <h3 class="section-title">{{ t('market.oreValueTitle', { price: orePriceLabel }) }}</h3>
@@ -270,6 +272,8 @@ import { locName } from '../services/locale'
 import { typeIcon, onTypeIconError } from '../services/typeIcon'
 import { useTabInput } from '../composables/useTabInput'
 import PageHelp from '../components/layout/PageHelp.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()
@@ -287,6 +291,7 @@ const pageTitle = computed(() =>
 const inputText = ref('')
 const items = ref([])
 const loading = ref(false)
+const { progress: priceProgress, start: startPriceProgress, finish: finishPriceProgress, update: updatePriceProgress } = useQueryProgress()
 const error = ref('')
 const esiDown = ref(false)
 
@@ -356,18 +361,20 @@ onMounted(() => {
 async function queryPrices() {
   if (!inputText.value.trim()) return
   loading.value = true
+  startPriceProgress()
   error.value = ''
   esiDown.value = false
   items.value = []
 
   try {
     await loadIndustryData()
-    const { data } = await marketCompare(inputText.value, settings.datasource)
+    const { data } = await marketCompare(inputText.value, settings.datasource, { onProgress: updatePriceProgress })
     items.value = data.items
     esiDown.value = !!data.esiUnavailable
   } catch (e) {
     error.value = t('market.error')
   } finally {
+    finishPriceProgress()
     loading.value = false
   }
 }
@@ -438,11 +445,13 @@ const reprocessDiscount = ref(100)
 const reprocessInputItems = ref([])
 const reprocessResults = ref([])
 const reprocessLoading = ref(false)
+const { progress: reprocessProgress, start: startReprocessProgress, finish: finishReprocessProgress, update: updateReprocessProgress } = useQueryProgress()
 const reprocessError = ref('')
 
 async function calcReprocess() {
   if (!reprocessText.value.trim()) return
   reprocessLoading.value = true
+  startReprocessProgress()
   reprocessError.value = ''
   reprocessInputItems.value = []
   reprocessResults.value = []
@@ -482,7 +491,7 @@ async function calcReprocess() {
     let orderPrices = {}
     if (matTypeIds.length) {
       try {
-        const { prices } = await getOrderPricesForTypes(matTypeIds, settings.datasource)
+        const { prices } = await getOrderPricesForTypes(matTypeIds, settings.datasource, null, { onProgress: updateReprocessProgress })
         orderPrices = prices
       } catch { /* prices optional */ }
     }
@@ -512,6 +521,7 @@ async function calcReprocess() {
   } catch (e) {
     reprocessError.value = t('market.error')
   } finally {
+    finishReprocessProgress()
     reprocessLoading.value = false
   }
 }
@@ -569,6 +579,7 @@ const oreValues = computed(() => oreValueRows.value.map(ore => {
   }
 }).sort((a, b) => b.isk_per_m3 - a.isk_per_m3))
 const oreValueLoading = ref(false)
+const { progress: oreProgress, start: startOreProgress, finish: finishOreProgress, update: updateOreProgress } = useQueryProgress()
 const oreValueError = ref('')
 let oreValueLoaded = false
 
@@ -612,6 +623,7 @@ function findBaseOres(indData) {
 async function loadOreValues() {
   if (oreValueLoaded) return
   oreValueLoading.value = true
+  startOreProgress()
   oreValueError.value = ''
 
   try {
@@ -632,7 +644,7 @@ async function loadOreValues() {
     let orderPrices = {}
     if (mineralIds.size) {
       try {
-        const { prices } = await getOrderPricesForTypes([...mineralIds], settings.datasource)
+        const { prices } = await getOrderPricesForTypes([...mineralIds], settings.datasource, null, { onProgress: updateOreProgress })
         orderPrices = prices
       } catch { /* prices optional */ }
     }
@@ -669,6 +681,7 @@ async function loadOreValues() {
   } catch (e) {
     oreValueError.value = t('market.error')
   } finally {
+    finishOreProgress()
     oreValueLoading.value = false
   }
 }

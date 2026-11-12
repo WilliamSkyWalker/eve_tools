@@ -165,7 +165,7 @@ export function mergeResolvedItems(parsed) {
  * Full market compare: parse text, resolve names, fetch order prices.
  * Equivalent to the Django market_compare endpoint.
  */
-export async function marketCompare(text, datasource = 'serenity') {
+export async function marketCompare(text, datasource = 'serenity', options = {}) {
   const parsed = parseMaterialText(text)
   if (!parsed.length) return { items: [] }
 
@@ -173,7 +173,7 @@ export async function marketCompare(text, datasource = 'serenity') {
 
   const typeIds = merged.filter(item => item.matched).map(item => item.type_id)
   const { prices: orderPrices, esiUnavailable } = typeIds.length
-    ? await getOrderPricesForTypes(typeIds, datasource)
+    ? await getOrderPricesForTypes(typeIds, datasource, null, options)
     : { prices: {}, esiUnavailable: false }
 
   const items = merged.map(item => {

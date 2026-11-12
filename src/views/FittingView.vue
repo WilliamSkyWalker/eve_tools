@@ -8,7 +8,7 @@
 
     <!-- Ship search + game-fit import/export, side by side at the top -->
     <div v-if="dataError" class="state-msg">{{ dataError }}</div>
-    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }}</div>
+    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }} <QueryProgress /></div>
     <div v-else class="top-bar">
       <ShipSearch class="top-bar-search" @select="onShipSelect" />
       <EftPanel class="top-bar-eft" />
@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import QueryProgress from '../components/common/QueryProgress.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useFittingStore } from '../stores/fitting'
 import { useI18n } from '../i18n'

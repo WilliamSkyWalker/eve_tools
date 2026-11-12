@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-text">{{ t('sovmap.loading') }}</div>
+    <div v-if="loading" class="loading-text"><QueryProgress :progress="queryProgress" :label="t('sovmap.loading')" /></div>
     <div v-else-if="error" class="error-text">{{ error }}</div>
     <template v-else>
       <div class="map-wrapper">
@@ -31,8 +31,8 @@
             <span class="tooltip-count">({{ hoveredRegion.dominant.count }}/{{ hoveredRegion.totalSov }})</span>
           </div>
           <div v-if="hoveredRegion.dominant" class="tooltip-metrics">
-            <span>{{ t('sovmap.activePvp') }}: <b>{{ fmtStat(hoveredRegion.dominant.id, 'activePvp') }}</b></span>
-            <span>{{ t('sovmap.members') }}: <b>{{ fmtStat(hoveredRegion.dominant.id, 'members') }}</b></span>
+            <span>{{ t('sovmap.activePvp') }}: <QueryProgress v-if="statsById[hoveredRegion.dominant.id]?.loading" /><b v-else>{{ fmtStat(hoveredRegion.dominant.id, 'activePvp') }}</b></span>
+            <span>{{ t('sovmap.members') }}: <QueryProgress v-if="statsById[hoveredRegion.dominant.id]?.loading" /><b v-else>{{ fmtStat(hoveredRegion.dominant.id, 'members') }}</b></span>
           </div>
           <div v-else class="tooltip-unclaimed">{{ t('sovmap.unclaimed') }}</div>
           <div v-if="Object.keys(hoveredRegion.allianceCounts).length > 1" class="tooltip-others">
@@ -70,7 +70,7 @@
                   </div>
                 </td>
                 <td class="r num">{{ a.count.toLocaleString() }}</td>
-                <td v-if="isWorld" class="r num t-red">{{ fmtStat(a.id, 'activePvp') }}</td>
+                <td v-if="isWorld" class="r num t-red"><QueryProgress v-if="statsById[a.id]?.loading" /><template v-else>{{ fmtStat(a.id, 'activePvp') }}</template></td>
               </tr>
             </tbody>
           </table>
@@ -81,6 +81,8 @@
 </template>
 
 <script setup>
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
@@ -117,6 +119,7 @@ function fmtStat(id, key) {
 }
 
 const loading = ref(true)
+const { progress: queryProgress, start: startProgress, update: updateProgress, finish: finishProgress } = useQueryProgress()
 const error = ref(null)
 const canvasRef = ref(null)
 
@@ -431,11 +434,14 @@ function draw() {
 
 async function loadData() {
   loading.value = true
+  startProgress()
+  let completed = 0
+  const stepDone = () => updateProgress({ completed: ++completed, total: 3 })
   error.value = null
   try {
     const [navData, sovData] = await Promise.all([
-      loadNavigationData(),
-      fetchSovereigntyMap(datasource.value),
+      loadNavigationData().then(data => { stepDone(); return data }),
+      fetchSovereigntyMap(datasource.value).then(data => { stepDone(); return data }),
     ])
 
     const data = buildSovData(navData, sovData)
@@ -505,6 +511,7 @@ async function loadData() {
     view.oy = 0
     view.scale = 1
 
+    finishProgress()
     loading.value = false
     await nextTick()
     renderInfluenceCloud()

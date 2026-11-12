@@ -42,7 +42,8 @@
             :disabled="loading || !startSystem.trim() || !destSystem.trim()"
             @click="onCalculate"
           >
-            {{ loading ? t('jump.calculating') : t('jump.calculate') }}
+            <QueryProgress v-if="loading" :progress="progress" :label="t('jump.calculating')" />
+            <template v-else>{{ t('jump.calculate') }}</template>
           </button>
         </div>
       </div>
@@ -227,6 +228,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadNavigationData } from '../data/loader'
 import PageHelp from '../components/layout/PageHelp.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const settings = useSettingsStore()
 const { t, serverLabel } = useI18n()
@@ -247,6 +250,7 @@ const startSystem = ref('')
 const destSystem = ref('')
 const jumpRange = ref(7.0)
 const loading = ref(false)
+const { progress, start, finish } = useQueryProgress()
 const error = ref('')
 const routeResult = ref(null)
 const activeOption = ref(0)
@@ -336,6 +340,7 @@ function onDestSelect(sys) {
 async function onCalculate() {
   if (!startSystem.value.trim() || !destSystem.value.trim()) return
   loading.value = true
+  start()
   error.value = ''
   routeResult.value = null
   activeOption.value = 0
@@ -351,6 +356,7 @@ async function onCalculate() {
   } catch (e) {
     error.value = e.response?.data?.error || t('jump.error')
   } finally {
+    finish()
     loading.value = false
   }
 }

@@ -21,6 +21,7 @@
               @input="onRegionSearch"
               @focus="showRegionDropdown = true"
             />
+            <QueryProgress v-if="regionLoading" :progress="regionProgress" />
             <div v-if="showRegionDropdown && regionResults.length > 0" class="dropdown">
               <div
                 v-for="r in regionResults"
@@ -50,7 +51,8 @@
             :disabled="loading || !selectedRegion"
             @click="fetchContracts(1)"
           >
-            {{ loading ? t('contracts.loading') : t('contracts.search') }}
+            <QueryProgress v-if="loading" :progress="progress" :label="t('contracts.loading')" />
+            <template v-else>{{ t('contracts.search') }}</template>
           </button>
         </div>
       </div>
@@ -122,7 +124,7 @@
                   </span>
                 </template>
                 <template v-else>
-                  <span v-if="c._jita_loading" class="jita-loading">...</span>
+                  <QueryProgress v-if="c._jita_loading" :progress="c._jita_progress" />
                   <span v-else>-</span>
                 </template>
               </td>
@@ -207,7 +209,7 @@
 
                   <!-- Items table -->
                   <div v-if="c.type !== 'courier'">
-                    <div v-if="itemsLoading" class="items-loading">{{ t('contracts.loadingItems') }}</div>
+                    <div v-if="itemsLoading" class="items-loading"><QueryProgress :progress="itemsProgress" :label="t('contracts.loadingItems')" /></div>
                     <template v-else-if="expandedItems.length > 0">
                       <div class="jita-total-row">
                         <span v-if="expandedJitaBuy">{{ t('contracts.totalJitaBuy') }}: {{ formatIsk(expandedJitaBuy) }}</span>
@@ -269,6 +271,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { loadIndustryData, loadNavigationData } from '../data/loader'
 import PageHelp from '../components/layout/PageHelp.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const settings = useSettingsStore()
 const { t, locale, serverLabel } = useI18n()
@@ -290,6 +294,9 @@ const selectedRegion = ref(null)
 const contractType = ref('')
 const contracts = ref([])
 const loading = ref(false)
+const { progress, start, finish } = useQueryProgress()
+const regionLoading = ref(false)
+const { progress: regionProgress, start: startRegion, finish: finishRegion } = useQueryProgress()
 const error = ref('')
 const searched = ref(false)
 const currentPage = ref(1)
@@ -299,6 +306,7 @@ const expandedItems = ref([])
 const expandedJitaTotal = ref(null)
 const expandedJitaBuy = ref(null)
 const itemsLoading = ref(false)
+const { progress: itemsProgress, start: startItems, finish: finishItems, update: updateItems } = useQueryProgress()
 const contractItemsCache = {} // contract_id -> { items, total_jita_value, total_jita_buy }
 const copySuccess = ref(null)
 
@@ -314,12 +322,17 @@ function onRegionSearch() {
       regionResults.value = []
       return
     }
+    regionLoading.value = true
+    startRegion()
     try {
       const { data } = await searchRegions(q)
       regionResults.value = data.results
       showRegionDropdown.value = true
     } catch {
       regionResults.value = []
+    } finally {
+      finishRegion()
+      regionLoading.value = false
     }
   }, 200)
 }
@@ -334,6 +347,7 @@ function selectRegion(r) {
 async function fetchContracts(page = 1) {
   if (!selectedRegion.value) return
   loading.value = true
+  start()
   error.value = ''
   searched.value = true
   expandedContract.value = null
@@ -345,7 +359,7 @@ async function fetchContracts(page = 1) {
       page,
       datasource: datasource.value,
     })
-    contracts.value = data.contracts.map(c => ({ ...c, _jita_total: null, _jita_loading: false, _item_names: null }))
+    contracts.value = data.contracts.map(c => ({ ...c, _jita_total: null, _jita_loading: false, _jita_progress: 0, _item_names: null }))
     currentPage.value = data.page
     totalPages.value = data.total_pages
 
@@ -355,6 +369,7 @@ async function fetchContracts(page = 1) {
     error.value = e.response?.data?.error || t('contracts.error')
     contracts.value = []
   } finally {
+    finish()
     loading.value = false
   }
 }
@@ -368,9 +383,13 @@ async function fetchJitaPricesForContracts() {
     const batch = itemContracts.slice(i, i + batchSize)
     await Promise.all(batch.map(async (c) => {
       c._jita_loading = true
+      c._jita_progress = 0
       try {
         const { data } = await getContractItems(c.contract_id, {
           datasource: datasource.value,
+          onProgress: ({ completed, total }) => {
+            c._jita_progress = total ? Math.floor(completed / total * 100) : 0
+          },
         })
         contractItemsCache[c.contract_id] = data
         c._jita_total = data.total_jita_buy
@@ -411,9 +430,11 @@ async function toggleDetail(contract) {
       expandedJitaBuy.value = cached.total_jita_buy
     } else {
       itemsLoading.value = true
+      startItems()
       try {
         const { data } = await getContractItems(contract.contract_id, {
           datasource: datasource.value,
+          onProgress: updateItems,
         })
         contractItemsCache[contract.contract_id] = data
         expandedItems.value = data.items
@@ -422,6 +443,7 @@ async function toggleDetail(contract) {
       } catch {
         expandedItems.value = []
       } finally {
+        finishItems()
         itemsLoading.value = false
       }
     }

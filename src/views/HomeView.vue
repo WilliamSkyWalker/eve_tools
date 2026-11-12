@@ -14,7 +14,8 @@
           <span class="dot" :class="{ live: s.st.online, dead: !s.st.online && !s.st.loading }"></span>
           {{ t('server.' + s.key) }}
           <span class="kpi-status" :class="s.st.online ? 'online' : 'offline'">
-            {{ s.st.loading ? '…' : (s.st.online ? t('home.online') : t('home.offline')) }}
+            <QueryProgress v-if="s.st.loading" :progress="s.st.completed / 3 * 100" />
+            <template v-else>{{ s.st.online ? t('home.online') : t('home.offline') }}</template>
           </span>
         </div>
         <div class="kpi-stats">
@@ -33,11 +34,11 @@
     <!-- PvP hot zones -->
     <div class="grid-2">
       <div class="card" v-for="col in [
-        { key: 'gf', loading: serenityHotLoading, zones: serenityPvpZones },
-        { key: 'of', loading: tranquilityHotLoading, zones: tranquilityPvpZones }
+        { key: 'gf', loading: serenityHotLoading, progress: serenityHotProgress, zones: serenityPvpZones },
+        { key: 'of', loading: tranquilityHotLoading, progress: tranquilityHotProgress, zones: tranquilityPvpZones }
       ]" :key="'pvp-' + col.key">
         <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.hotPvp') }}</div>
-        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <div v-if="col.loading" class="state-msg"><QueryProgress :progress="col.progress" :label="t('home.loading')" /></div>
         <table v-else-if="col.zones.length" class="data-table">
           <thead><tr><th class="rank">#</th><th>{{ t('home.region') }}</th><th class="r">{{ t('home.shipKills') }}</th><th class="r">{{ t('home.podKills') }}</th></tr></thead>
           <tbody>
@@ -56,11 +57,11 @@
     <!-- NPC hot zones -->
     <div class="grid-2">
       <div class="card" v-for="col in [
-        { key: 'gf', loading: serenityHotLoading, zones: serenityNpcZones },
-        { key: 'of', loading: tranquilityHotLoading, zones: tranquilityNpcZones }
+        { key: 'gf', loading: serenityHotLoading, progress: serenityHotProgress, zones: serenityNpcZones },
+        { key: 'of', loading: tranquilityHotLoading, progress: tranquilityHotProgress, zones: tranquilityNpcZones }
       ]" :key="'npc-' + col.key">
         <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.hotNpc') }}</div>
-        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <div v-if="col.loading" class="state-msg"><QueryProgress :progress="col.progress" :label="t('home.loading')" /></div>
         <table v-else-if="col.zones.length" class="data-table">
           <thead><tr><th class="rank">#</th><th>{{ t('home.region') }}</th><th class="r">{{ t('home.npcKills') }}</th></tr></thead>
           <tbody>
@@ -78,11 +79,11 @@
     <!-- Sovereignty campaigns -->
     <div class="grid-2">
       <div class="card" v-for="col in [
-        { key: 'gf', loading: serenitySovLoading, sov: serenitySov },
-        { key: 'of', loading: tranquilitySovLoading, sov: tranquilitySov }
+        { key: 'gf', loading: serenitySovLoading, progress: serenitySovProgress, sov: serenitySov },
+        { key: 'of', loading: tranquilitySovLoading, progress: tranquilitySovProgress, sov: tranquilitySov }
       ]" :key="'sov-' + col.key">
         <div class="panel-head"><span class="srv-chip" :class="col.key">{{ t('server.' + col.key) }}</span>{{ t('home.sovCampaigns') }}</div>
-        <div v-if="col.loading" class="state-msg">{{ t('home.loading') }}</div>
+        <div v-if="col.loading" class="state-msg"><QueryProgress :progress="col.progress" :label="t('home.loading')" /></div>
         <table v-else-if="col.sov.length" class="data-table">
           <thead><tr><th>{{ t('home.sovSystem') }}</th><th>{{ t('home.sovDefender') }}</th><th style="width:40%">{{ t('home.sovProgress') }}</th></tr></thead>
           <tbody>
@@ -106,6 +107,7 @@
 </template>
 
 <script setup>
+import QueryProgress from '../components/common/QueryProgress.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
@@ -124,18 +126,22 @@ const ESI = {
   tranquility: 'https://esi.evetech.net/latest',
 }
 
-const serenity = reactive({ players: 0, online: false, shipKills: 0, loading: true })
-const tranquility = reactive({ players: 0, online: false, shipKills: 0, loading: true })
+const serenity = reactive({ players: 0, online: false, shipKills: 0, loading: true, completed: 0 })
+const tranquility = reactive({ players: 0, online: false, shipKills: 0, loading: true, completed: 0 })
 const serenityPvpZones = ref([])
 const serenityNpcZones = ref([])
 const tranquilityPvpZones = ref([])
 const tranquilityNpcZones = ref([])
 const serenityHotLoading = ref(true)
+const serenityHotProgress = ref(0)
 const tranquilityHotLoading = ref(true)
+const tranquilityHotProgress = ref(0)
 const serenitySov = ref([])
 const tranquilitySov = ref([])
 const serenitySovLoading = ref(true)
+const serenitySovProgress = ref(0)
 const tranquilitySovLoading = ref(true)
+const tranquilitySovProgress = ref(0)
 
 function formatNumber(n) {
   return n != null ? n.toLocaleString() : '—'
@@ -213,9 +219,10 @@ async function fetchNames(datasource, ids) {
   } catch { return {} }
 }
 
-async function fetchSovCampaigns(datasource, navData) {
+async function fetchSovCampaigns(datasource, navData, progress) {
   try {
     const data = await fetchJson(`${ESI[datasource]}/sovereignty/campaigns/?datasource=${datasource}`)
+    progress.value = 2 / 3 * 100
     if (!data.length) return []
 
     // Collect IDs to resolve
@@ -243,27 +250,47 @@ onMounted(async () => {
     navData = await loadNavigationData()
   } catch { /* ignore */ }
 
+  serenity.completed = tranquility.completed = 1
+  serenityHotProgress.value = tranquilityHotProgress.value = 100 / 3
+  serenitySovProgress.value = tranquilitySovProgress.value = 100 / 3
+
   // Fetch both servers in parallel
   const [, , gfKills, ofKills] = await Promise.all([
-    fetchServerStatus('serenity', serenity).finally(() => { serenity.loading = false }),
-    fetchServerStatus('tranquility', tranquility).finally(() => { tranquility.loading = false }),
-    fetchKills('serenity', serenity).finally(() => { serenity.loading = false }),
-    fetchKills('tranquility', tranquility).finally(() => { tranquility.loading = false }),
+    fetchServerStatus('serenity', serenity).finally(() => {
+      serenity.completed++
+      serenity.loading = serenity.completed < 3
+    }),
+    fetchServerStatus('tranquility', tranquility).finally(() => {
+      tranquility.completed++
+      tranquility.loading = tranquility.completed < 3
+    }),
+    fetchKills('serenity', serenity).finally(() => {
+      serenity.completed++
+      serenity.loading = serenity.completed < 3
+      serenityHotProgress.value = 200 / 3
+    }),
+    fetchKills('tranquility', tranquility).finally(() => {
+      tranquility.completed++
+      tranquility.loading = tranquility.completed < 3
+      tranquilityHotProgress.value = 200 / 3
+    }),
   ])
 
   const gfZones = await buildHotZones(gfKills, navData)
   serenityPvpZones.value = gfZones.pvp
   serenityNpcZones.value = gfZones.npc
+  serenityHotProgress.value = 100
   serenityHotLoading.value = false
 
   const ofZones = await buildHotZones(ofKills, navData)
   tranquilityPvpZones.value = ofZones.pvp
   tranquilityNpcZones.value = ofZones.npc
+  tranquilityHotProgress.value = 100
   tranquilityHotLoading.value = false
 
   // Fetch sovereignty campaigns
-  fetchSovCampaigns('serenity', navData).then(d => { serenitySov.value = d }).finally(() => { serenitySovLoading.value = false })
-  fetchSovCampaigns('tranquility', navData).then(d => { tranquilitySov.value = d }).finally(() => { tranquilitySovLoading.value = false })
+  fetchSovCampaigns('serenity', navData, serenitySovProgress).then(d => { serenitySov.value = d }).finally(() => { serenitySovProgress.value = 100; serenitySovLoading.value = false })
+  fetchSovCampaigns('tranquility', navData, tranquilitySovProgress).then(d => { tranquilitySov.value = d }).finally(() => { tranquilitySovProgress.value = 100; tranquilitySovLoading.value = false })
 })
 </script>
 

@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="state-msg">{{ t('wh.loading') }}</div>
+    <div v-if="loading" class="state-msg"><QueryProgress :progress="progress" :label="t('wh.loading')" /></div>
     <div v-if="error" class="state-msg error-text">{{ error }}</div>
 
     <!-- Results -->
@@ -91,6 +91,8 @@
     <div v-if="!loading && !error && searched && results.length === 0" class="state-msg">
       {{ t('wh.noResults') }}
     </div>
+
+    <div v-if="detailLoading" class="state-msg"><QueryProgress :progress="detailProgress" :label="t('wh.loading')" /></div>
 
     <!-- Detail panel -->
     <div v-if="detail" class="card detail-panel">
@@ -174,6 +176,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 import { onMounted } from 'vue'
 import { searchWormholeSystems, getWormholeSystemDetail } from '../api/wormhole'
 import { useI18n } from '../i18n'
@@ -189,6 +193,9 @@ const filterClass = ref(null)
 const filterEffect = ref('')
 const results = ref([])
 const loading = ref(false)
+const { progress, start, finish } = useQueryProgress()
+const detailLoading = ref(false)
+const { progress: detailProgress, start: startDetail, finish: finishDetail } = useQueryProgress()
 const error = ref('')
 const searched = ref(false)
 const selectedSystem = ref(null)
@@ -232,6 +239,7 @@ async function doSearch() {
   }
 
   loading.value = true
+  start()
   error.value = ''
   searched.value = true
 
@@ -244,6 +252,7 @@ async function doSearch() {
   } catch (e) {
     error.value = t('wh.error')
   } finally {
+    finish()
     loading.value = false
   }
 }
@@ -255,11 +264,16 @@ function toggleClassFilter(value) {
 
 async function selectSystem(sys) {
   selectedSystem.value = sys
+  detailLoading.value = true
+  startDetail()
   try {
     const { data } = await getWormholeSystemDetail(sys.solar_system_id)
     detail.value = data
   } catch {
     detail.value = null
+  } finally {
+    finishDetail()
+    detailLoading.value = false
   }
 }
 

@@ -7,10 +7,11 @@
     </div>
 
     <div v-if="dataError" class="state-msg">{{ dataError }}</div>
-    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }}</div>
+    <div v-else-if="!dataReady" class="state-msg">{{ t('home.loading') }} <QueryProgress :progress="0" /></div>
     <ManufacturingQueue v-else @calculate="onCalculate" />
 
-    <div v-if="calculating" class="state-msg">{{ t('industry.calculating') }}</div>
+    <div v-if="calculating" class="state-msg">{{ t('industry.calculating') }} <QueryProgress :progress="calculationProgress" /></div>
+    <div v-if="priceLoading" class="state-msg"><QueryProgress :progress="priceProgress" :label="t('market.querying')" /></div>
 
     <template v-if="levels.length">
       <div class="card global-me-bar">
@@ -88,7 +89,7 @@
               <span v-if="levelStats[lvl.key].volume" class="stat-item volume">{{ t('industry.volume') }} {{ formatVolume(levelStats[lvl.key].volume) }}</span>
               <span v-if="levelStats[lvl.key].minTime" class="stat-item time">{{ formatTime(levelStats[lvl.key].minTime) }} ~ {{ formatTime(levelStats[lvl.key].maxTime) }}</span>
             </div>
-            <div v-else-if="priceLoading" class="tier-stats"><span class="stat-item loading-stat">...</span></div>
+            <div v-else-if="priceLoading" class="tier-stats"><QueryProgress :progress="priceProgress" /></div>
             <div v-if="lineStats[lvl.key] != null" class="tier-stats lines-row" :title="t('industry.linesHint')">
               <span class="stat-item lines-label">{{ t('industry.linesTitle') }}</span>
               <span class="stat-item lines">{{ formatNumber(lineStats[lvl.key]) }}</span>
@@ -235,6 +236,8 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getBatchBom } from '../api/blueprints'
 import ManufacturingQueue from '../components/blueprint/ManufacturingQueue.vue'
 import PageHelp from '../components/layout/PageHelp.vue'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 import { useSettingsStore } from '../stores/settings'
 import { useI18n } from '../i18n'
 import { useTabInput } from '../composables/useTabInput'
@@ -266,6 +269,9 @@ const summary = ref([])
 const buildItems = ref({})
 const currentItems = ref([])
 const calculating = ref(false)
+const { progress: calculationProgress, start: startCalculation, finish: finishCalculation } = useQueryProgress()
+const { progress: priceProgress, start: startPrices, update: updatePrices, finish: finishPrices } = useQueryProgress()
+let priceQueryId = 0
 const dataReady = ref(false)
 const dataError = ref('')
 const globalMe = ref(0)
@@ -358,6 +364,7 @@ const modalTitle = computed(() => {
 async function fetchBom() {
   if (!currentItems.value.length) return
   calculating.value = true
+  startCalculation()
   try {
     const { data } = await getBatchBom(currentItems.value, buildItems.value)
     levels.value = data.levels
@@ -366,6 +373,7 @@ async function fetchBom() {
     fetchLevelPrices()
     return data
   } finally {
+    finishCalculation()
     calculating.value = false
   }
 }
@@ -478,7 +486,9 @@ watch([secTier, mfgStructure, reactStructure, hasTimeRig], () => {
 
 
 async function fetchLevelPrices() {
+  const queryId = ++priceQueryId
   priceLoading.value = true
+  startPrices()
   try {
     const indData = getIndustryData()
     const volOf = tid => indData?.types?.[tid]?.v || 0
@@ -492,7 +502,9 @@ async function fetchLevelPrices() {
     for (const mat of summary.value) allTypeIds.add(mat.type_id)
 
     // Fetch Jita order prices for all types at once
-    const { prices } = await getOrderPricesForTypes([...allTypeIds], settings.datasource)
+    const { prices } = await getOrderPricesForTypes([...allTypeIds], settings.datasource, null, {
+      onProgress: state => { if (queryId === priceQueryId) updatePrices(state) },
+    })
 
     // Product prices
     let prodSell = 0, prodBuy = 0, prodVolume = 0
@@ -537,7 +549,12 @@ async function fetchLevelPrices() {
       }
     }
   } catch { /* prices optional */ }
-  finally { priceLoading.value = false }
+  finally {
+    if (queryId === priceQueryId) {
+      finishPrices()
+      priceLoading.value = false
+    }
+  }
 }
 
 function formatPrice(n) {

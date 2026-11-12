@@ -28,7 +28,7 @@ export async function getPublicContracts(regionId, contractType = null, page = 1
   return { contracts, page, total_pages: result.total_pages }
 }
 
-export async function getContractItems(contractId, datasource = 'serenity') {
+export async function getContractItems(contractId, datasource = 'serenity', { onProgress } = {}) {
   let items
   try {
     items = await esiGetItems(contractId, datasource)
@@ -40,9 +40,15 @@ export async function getContractItems(contractId, datasource = 'serenity') {
   const indData = getIndustryData()
   const typeIds = [...new Set(items.filter(i => i.type_id).map(i => i.type_id))]
 
+  // Include the completed item-list request alongside each price request.
+  const total = typeIds.length + 1
+  onProgress?.({ completed: 1, total })
+
   // Fetch Jita prices
   const { prices: jitaPrices } = typeIds.length
-    ? await getOrderPricesForTypes(typeIds, datasource, JITA_REGION_ID)
+    ? await getOrderPricesForTypes(typeIds, datasource, JITA_REGION_ID, {
+      onProgress: ({ completed }) => onProgress?.({ completed: completed + 1, total }),
+    })
     : { prices: {} }
 
   let totalJitaSell = 0

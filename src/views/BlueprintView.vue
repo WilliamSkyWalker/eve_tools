@@ -16,6 +16,8 @@
       @calculate-bom="onCalculateBom"
     />
 
+    <QueryProgress v-if="queryLoading" :progress="queryProgress" :label="t('industry.calculating')" />
+
     <div v-if="materials.length" class="results">
       <h3>直接材料</h3>
       <MaterialTable :materials="materials" :me-level="currentMe" :runs="currentRuns" />
@@ -37,7 +39,7 @@
       </div>
     </div>
   </div>
-  <div v-else class="loading">Loading blueprint...</div>
+  <div v-else class="loading"><QueryProgress :progress="dataProgress" :label="t('home.loading')" /></div>
 </template>
 
 <script setup>
@@ -49,11 +51,18 @@ import MaterialTable from '../components/calculation/MaterialTable.vue'
 import BomTree from '../components/calculation/BomTree.vue'
 import MaterialSummary from '../components/calculation/MaterialSummary.vue'
 import { loadIndustryData } from '../data/loader'
+import { useI18n } from '../i18n'
+import QueryProgress from '../components/common/QueryProgress.vue'
+import { useQueryProgress } from '../composables/useQueryProgress'
 
 const props = defineProps({
   typeId: { type: Number, required: true },
 })
 
+const { t } = useI18n()
+const { progress: dataProgress, update: updateDataProgress } = useQueryProgress()
+const { progress: queryProgress, start: startQuery, update: updateQuery, finish: finishQuery } = useQueryProgress()
+const queryLoading = ref(false)
 const blueprint = ref(null)
 const materials = ref([])
 const bomTree = ref(null)
@@ -66,8 +75,10 @@ const expandAll = ref(false)
 
 onMounted(async () => {
   await loadIndustryData()
+  updateDataProgress({ completed: 1, total: 2 })
   const { data } = await getBlueprintDetail(props.typeId)
   blueprint.value = data
+  updateDataProgress({ completed: 2, total: 2 })
 })
 
 function formatTime(seconds) {
@@ -78,12 +89,19 @@ function formatTime(seconds) {
 }
 
 async function onCalculate({ meLevel, runs }) {
-  currentMe.value = meLevel
-  currentRuns.value = runs
-  const { data } = await calculateMaterials(props.typeId, meLevel, runs)
-  materials.value = data.materials
-  bomTree.value = null
-  bomSummary.value = []
+  queryLoading.value = true
+  startQuery()
+  try {
+    currentMe.value = meLevel
+    currentRuns.value = runs
+    const { data } = await calculateMaterials(props.typeId, meLevel, runs)
+    materials.value = data.materials
+    bomTree.value = null
+    bomSummary.value = []
+  } finally {
+    finishQuery()
+    queryLoading.value = false
+  }
 }
 
 function collectManufacturableIds(tree) {
@@ -104,50 +122,59 @@ function collectManufacturableIds(tree) {
 }
 
 async function onCalculateBom({ meLevel, runs }) {
-  currentMe.value = meLevel
-  currentRuns.value = runs
+  queryLoading.value = true
+  startQuery()
+  try {
+    currentMe.value = meLevel
+    currentRuns.value = runs
 
-  // If expandAll, iteratively expand until no new nodes appear
-  if (expandAll.value) {
-    // First pass: mark direct materials
-    for (const mat of materials.value) {
-      if (mat.has_blueprint) {
-        buildItems.value[String(mat.type_id)] = {
-          me_level: 0,
-          build: true,
+    // If expandAll, iteratively expand until no new nodes appear
+    if (expandAll.value) {
+      // First pass: mark direct materials
+      for (const mat of materials.value) {
+        if (mat.has_blueprint) {
+          buildItems.value[String(mat.type_id)] = {
+            me_level: 0,
+            build: true,
+          }
         }
       }
-    }
-    // Iteratively expand: keep fetching BOM until no new build items found
-    let prevCount = 0
-    for (let i = 0; i < 10; i++) {
-      const { data } = await getBom(props.typeId, meLevel, runs, buildItems.value)
-      const newIds = collectManufacturableIds(data.tree)
-      Object.assign(buildItems.value, newIds)
-      if (Object.keys(buildItems.value).length === prevCount) {
+      // Iteratively expand: keep fetching BOM until no new build items found
+      let prevCount = 0
+      for (let i = 0; i < 10; i++) {
+        const { data } = await getBom(props.typeId, meLevel, runs, buildItems.value)
+        const newIds = collectManufacturableIds(data.tree)
+        Object.assign(buildItems.value, newIds)
+        if (Object.keys(buildItems.value).length === prevCount) {
+          bomTree.value = data.tree
+          bomSummary.value = data.summary
+          break
+        }
+        prevCount = Object.keys(buildItems.value).length
         bomTree.value = data.tree
         bomSummary.value = data.summary
-        break
       }
-      prevCount = Object.keys(buildItems.value).length
+    } else {
+      const { data } = await getBom(props.typeId, meLevel, runs, buildItems.value)
       bomTree.value = data.tree
       bomSummary.value = data.summary
     }
-  } else {
-    const { data } = await getBom(props.typeId, meLevel, runs, buildItems.value)
-    bomTree.value = data.tree
-    bomSummary.value = data.summary
-  }
 
-  // Fetch prices for summary materials
-  const typeIds = bomSummary.value.map((m) => m.type_id)
-  if (typeIds.length) {
-    try {
-      const priceResp = await getPrices(typeIds)
-      prices.value = priceResp.data.prices
-    } catch {
-      // prices are optional
+    updateQuery({ completed: 1, total: 2 })
+
+    // Fetch prices for summary materials
+    const typeIds = bomSummary.value.map((m) => m.type_id)
+    if (typeIds.length) {
+      try {
+        const priceResp = await getPrices(typeIds)
+        prices.value = priceResp.data.prices
+      } catch {
+        // prices are optional
+      }
     }
+  } finally {
+    finishQuery()
+    queryLoading.value = false
   }
 }
 
