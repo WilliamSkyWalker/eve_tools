@@ -21,7 +21,7 @@ export function filterGuides(guides, filters = {}) {
         return guide.colossusSupport === 'full' || guide.colossusSupport === 'supported'
       }
       if (shipClass === 'colossus_deny') {
-        return guide.colossusSupport === 'none'
+        return guide.colossusSupport === 'none' || guide.colossusSupport === 'partial'
       }
       if (shipClass === 'battleship') {
         return !limit.includes('battlecruiser') && !limit.includes('cruiser') && !limit.includes('frigate') && !limit.includes('destroyer')
@@ -78,6 +78,8 @@ export function shipRestrictionLabel(guide, locale = 'en') {
     .replace(/\bOnly allows:\s*/gi, '仅允许：')
     .replace(/\bUnrestricted\b/gi, '无限制')
     .replace(/\bColossus supported\b/gi, '支持巨像')
+    .replace(/\bColossus restricted in parts 1–3 of 5\b/gi, '第 1–3 步的轨道禁止巨像通行（共 5 步）')
+    .replace(/\bColossus restricted in part 2 of 3\b/gi, '第 2 步的轨道禁止巨像通行（共 3 步）')
     .replace(/\bColossus restricted\b/gi, '巨像禁入')
     .replace(/\bColossus\b/gi, '巨像')
     .replace(/\bT1\b/g, 'T1')

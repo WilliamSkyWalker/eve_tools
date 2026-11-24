@@ -71,7 +71,7 @@
           </div>
 
           <div v-if="selectedGuide.colossusSupport" class="colossus-box" :class="`colossus-${selectedGuide.colossusSupport}`">
-            {{ t(`guides.colossusNotice.${selectedGuide.colossusSupport}`) }}
+            {{ t(`guides.colossusNotice.${selectedGuide.shipRestriction?.note || selectedGuide.colossusSupport}`) }}
           </div>
         </div>
 
@@ -344,7 +344,7 @@ onMounted(async () => {
 .prose-card, .encounters-card { overflow: hidden; }
 .prose-section { padding: 14px 16px; border-bottom: 1px solid var(--border-default); }
 .colossus-box { margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: var(--text-xs); line-height: 1.5; }
-.colossus-none { background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.3); color: var(--red); }
+.colossus-none, .colossus-partial { background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.3); color: var(--red); }
 .colossus-full { background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.3); color: var(--green); }
 .colossus-supported { background: rgba(90, 160, 224, 0.12); border: 1px solid rgba(90, 160, 224, 0.3); color: var(--blue); }
 .prose-section:last-child { border-bottom: 0; }

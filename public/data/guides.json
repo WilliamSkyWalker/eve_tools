@@ -125599,11 +125599,14 @@
       "faction": "Caldari State",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          358
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -125792,7 +125795,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-cleaning-house-level-5",
@@ -126430,11 +126433,14 @@
       "faction": "Minmatar Republic",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -126742,7 +126748,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-convoy-attack-amarr-level-5",
@@ -126752,11 +126758,14 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -126856,7 +126865,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-convoy-attack-caldari-level-5",
@@ -126866,11 +126875,14 @@
       "faction": "Caldari State",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -126970,7 +126982,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-convoy-attack-gallente-federation-level-5",
@@ -126980,11 +126992,14 @@
       "faction": "Gallente Federation",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -127084,7 +127099,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-convoy-attack-minmatar-republic-level-5",
@@ -127094,11 +127109,14 @@
       "faction": "Minmatar Republic",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -127174,7 +127192,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-crush-the-sebiestor-station-level-5",
@@ -127184,11 +127202,14 @@
       "faction": "Minmatar Republic",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Battleship, Battleship + Logi",
       "damageToDeal": "",
@@ -127341,7 +127362,7 @@
         "title": "摧毁赛比斯托尔空间站",
         "sections": []
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-deadly-serious-level-5",
@@ -127407,11 +127428,14 @@
       "faction": "Amarr",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -127587,7 +127611,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-destroy-the-caldari-outpost-level-5",
@@ -127597,11 +127621,14 @@
       "faction": "Caldari",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -127801,7 +127828,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-dirty-job-level-5",
@@ -128341,7 +128368,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -128381,11 +128411,14 @@
       "faction": "Amarr",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          447
+        ]
       },
       "shipSuggestion": "Dual logistics domi",
       "damageToDeal": "",
@@ -128558,7 +128591,7 @@
         "title": "集结之力",
         "sections": []
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-hidden-enemy-base-amarr-level-5",
@@ -128568,11 +128601,14 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -128664,7 +128700,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-hidden-enemy-base-caldari-level-5",
@@ -128674,11 +128710,14 @@
       "faction": "Caldari",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Ishtar with Osprey Shield Repping. Osprey was only needed for last room.",
       "damageToDeal": "",
@@ -128778,7 +128817,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-hidden-enemy-base-minmatar-republic-level-5",
@@ -128788,11 +128827,14 @@
       "faction": "Minmatar",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive shield tanked ships (eg: Drake, Nighthawk, etc)",
       "damageToDeal": "",
@@ -128862,7 +128904,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-honor-angel-cartel-level-5",
@@ -128876,7 +128918,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "(1) Maelstrom w/ Passive Tank, plus (1) Maelstrom w/ Shield Transporters",
       "damageToDeal": "",
@@ -129072,7 +129117,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive shield tanked ships(eg: Drake, Nighthawk, etc)",
       "damageToDeal": "",
@@ -129302,7 +129350,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Battleship + Logistics, Marauder",
       "damageToDeal": "",
@@ -129469,7 +129520,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Battleship + Logistics",
       "damageToDeal": "",
@@ -130478,11 +130532,16 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Colossus restricted in parts 1–3 of 5",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Colossus restricted in parts 1–3 of 5",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445,
+          447
+        ],
+        "note": "locationLocation"
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -130512,7 +130571,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "partial"
     },
     {
       "slug": "mission-location-location-caldari-level-5",
@@ -130522,11 +130581,16 @@
       "faction": "Caldari",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Colossus restricted in parts 1–3 of 5",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Colossus restricted in parts 1–3 of 5",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445,
+          447
+        ],
+        "note": "locationLocation"
       },
       "shipSuggestion": "(1) Ishtar w/ Passive Tank and (1) Osprey w/ Shield Transporters but recommend more DPS (I used a Drake for backup)",
       "damageToDeal": "",
@@ -130612,7 +130676,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "partial"
     },
     {
       "slug": "mission-location-location-gallente-federation-level-5",
@@ -130622,11 +130686,16 @@
       "faction": "Gallente Federation",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Colossus restricted in parts 1–3 of 5",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Colossus restricted in parts 1–3 of 5",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445,
+          447
+        ],
+        "note": "locationLocation"
       },
       "shipSuggestion": "(1) Tengu passive (Done with 2 BallisticCS and 3 ShieldPR)",
       "damageToDeal": "",
@@ -130864,7 +130933,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "partial"
     },
     {
       "slug": "mission-mass-drivers-amarr-level-5",
@@ -130874,11 +130943,15 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          460,
+          445
+        ]
       },
       "shipSuggestion": "(1) Maelstrom w/ Passive Tank, and (1) Maelstrom w/ 4 Shield Transporters, but recommend more DPS if you want to complete this mission within the 1.3 hour time bonus",
       "damageToDeal": "",
@@ -131059,7 +131132,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-mass-drivers-gallente-federation-level-5",
@@ -131069,11 +131142,15 @@
       "faction": "Gallente Federation",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          460,
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -131267,7 +131344,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-operation-wyrmsbane-level-5",
@@ -131802,11 +131879,14 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "(1) Maelstrom w/ Passive Tank and (1) Maelstrom w/ Shield Transporters",
       "damageToDeal": "",
@@ -131919,7 +131999,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-prison-break-level-5",
@@ -132576,7 +132656,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          447
+        ]
       },
       "shipSuggestion": "Passive Battleship + Logistics Battleship",
       "damageToDeal": "",
@@ -132795,11 +132878,14 @@
       "faction": "Gallente Federation",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Battleship + Logistics, Passive Shield HAC",
       "damageToDeal": "",
@@ -132925,7 +133011,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-reclamation-amarr-level-5",
@@ -133396,11 +133482,14 @@
       "faction": "Caldari State",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Battleship + Logistics Battleship, Hauler (for hauling)",
       "damageToDeal": "",
@@ -133821,7 +133910,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-rogue-eradication-level-5",
@@ -133831,11 +133920,14 @@
       "faction": "Rogue Drones",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Battleship + Logistics, Passive HAC, Passive T3C",
       "damageToDeal": "",
@@ -133985,7 +134077,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-rogue-hunt-level-5",
@@ -133995,11 +134087,14 @@
       "faction": "Rogue Drones",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Battleship + Logistics, Passive HAC, Passive T3C",
       "damageToDeal": "",
@@ -134204,7 +134299,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-rogue-spy-level-5",
@@ -134218,7 +134313,10 @@
       "shipRestriction": {
         "status": "limited",
         "text": "Battleship & below (Colossus restricted)",
-        "source": "serenity_rules"
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -134577,11 +134675,14 @@
       "faction": "Gallente Federation",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive Tanking Ships (Nighthawk, Drake, Onyx etc.) (Active ships with Logistics)",
       "damageToDeal": "",
@@ -134789,7 +134890,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-stray-amarr-carrier-level-5",
@@ -135151,11 +135252,15 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Unrestricted (Colossus supported)",
+      "shipLimit": "Colossus restricted in part 2 of 3",
       "shipRestriction": {
-        "status": "unrestricted",
-        "text": "Unrestricted (Colossus supported)",
-        "source": "serenity_rules"
+        "status": "limited",
+        "text": "Colossus restricted in part 2 of 3",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ],
+        "note": "bigSting"
       },
       "shipSuggestion": "(1) Maelstrom w/ passive tank and (1) Maelstrom w/ Shield Transporters",
       "damageToDeal": "",
@@ -135678,7 +135783,7 @@
           }
         ]
       },
-      "colossusSupport": "full"
+      "colossusSupport": "partial"
     },
     {
       "slug": "mission-the-big-sting-caldari-state-level-5",
@@ -135688,11 +135793,15 @@
       "faction": "Caldari State",
       "rating": "",
       "location": "",
-      "shipLimit": "Unrestricted (Colossus supported)",
+      "shipLimit": "Colossus restricted in part 2 of 3",
       "shipRestriction": {
-        "status": "unrestricted",
-        "text": "Unrestricted (Colossus supported)",
-        "source": "serenity_rules"
+        "status": "limited",
+        "text": "Colossus restricted in part 2 of 3",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ],
+        "note": "bigSting"
       },
       "shipSuggestion": "Maelstrom w/ passive tank and (1) Maelstrom w/ Shield Transporters",
       "damageToDeal": "",
@@ -136366,7 +136475,7 @@
           }
         ]
       },
-      "colossusSupport": "full"
+      "colossusSupport": "partial"
     },
     {
       "slug": "mission-the-fortress-amarr-level-5",
@@ -137060,11 +137169,14 @@
       "faction": "Amarr Empire",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "(1) Maelstrom w/ Passive Tank and (1) Maelstrom w/ Shield Transporters but recommend more DPS",
       "damageToDeal": "",
@@ -137261,7 +137373,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-the-mordus-headhunters-level-5",
@@ -137271,11 +137383,14 @@
       "faction": "Mordu's Legion",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "Passive/Active Battleship + Logistics Battleship",
       "damageToDeal": "",
@@ -137535,7 +137650,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-troop-build-up-level-5",
@@ -137729,11 +137844,14 @@
       "faction": "Amarr",
       "rating": "",
       "location": "",
-      "shipLimit": "Battleship & below (Colossus supported)",
+      "shipLimit": "Battleship & below (Colossus restricted)",
       "shipRestriction": {
         "status": "limited",
-        "text": "Battleship & below (Colossus supported)",
-        "source": "serenity_rules"
+        "text": "Battleship & below (Colossus restricted)",
+        "source": "serenity_client",
+        "typeListIDs": [
+          445
+        ]
       },
       "shipSuggestion": "",
       "damageToDeal": "",
@@ -138081,7 +138199,7 @@
           }
         ]
       },
-      "colossusSupport": "supported"
+      "colossusSupport": "none"
     },
     {
       "slug": "mission-wrath-of-angels-level-5",
