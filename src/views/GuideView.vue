@@ -22,7 +22,7 @@
             <div>
               <span class="type-badge" :class="`type-${selectedGuide.type}`">{{ typeLabel(selectedGuide.type) }}</span>
               <h2>{{ guideTitle(selectedGuide) }}</h2>
-              <p v-if="locale === 'zh' && selectedGuide.zh?.title" class="english-name">{{ selectedGuide.title }}</p>
+              <p v-if="locale === 'zh' && (selectedGuide.missionName?.zh || selectedGuide.zh?.title)" class="english-name">{{ guideTitle(selectedGuide, 'en') }}</p>
             </div>
             <a :href="selectedGuide.source.url" target="_blank" rel="noopener" class="btn ghost sm">
               {{ t('guides.openSource') }} ↗
@@ -38,9 +38,9 @@
               <span class="eyebrow">{{ t('guides.rating') }}</span>
               <strong>{{ selectedGuide.rating }}</strong>
             </div>
-            <div v-if="selectedGuide.faction" class="fact">
-              <span class="eyebrow">{{ t('guides.faction') }}</span>
-              <strong>{{ selectedGuide.faction }}</strong>
+            <div v-if="selectedGuide.type === 'mission' || selectedGuide.enemyFactions || selectedGuide.faction" class="fact">
+              <span class="eyebrow">{{ t(selectedGuide.enemySimulation ? 'guides.simulatedEnemy' : selectedGuide.enemyFactions ? 'guides.clientEnemy' : 'guides.faction') }}</span>
+              <strong>{{ enemyLabel(selectedGuide) }}</strong>
             </div>
             <div v-if="selectedGuide.location" class="fact">
               <span class="eyebrow">{{ t('guides.location') }}</span>
@@ -50,7 +50,7 @@
               <span class="eyebrow">{{ t('guides.shipSuggestion') }}</span>
               <strong class="t-green">{{ selectedGuide.shipSuggestion }}</strong>
             </div>
-            <div class="fact restriction-fact">
+            <div v-if="selectedGuide.shipLimit || !selectedGuide.colossusSupport" class="fact restriction-fact">
               <span class="eyebrow">{{ t('guides.shipLimit') }}</span>
               <strong class="restriction-badge" :class="`restriction-${restrictionStatus(selectedGuide)}`">
                 {{ restrictionLabel(selectedGuide) }}
@@ -70,8 +70,8 @@
             </div>
           </div>
 
-          <div v-if="selectedGuide.colossusSupport" class="colossus-box" :class="`colossus-${selectedGuide.colossusSupport}`">
-            {{ t(`guides.colossusNotice.${selectedGuide.shipRestriction?.note || selectedGuide.colossusSupport}`) }}
+          <div v-if="selectedGuide.colossusSupport" class="colossus-box" :class="`colossus-${colossusAccessStatus(selectedGuide)}`">
+            {{ colossusNotice(selectedGuide) }}
           </div>
         </div>
 
@@ -152,7 +152,7 @@
             <label>{{ t('guides.faction') }}</label>
             <select v-model="faction" class="sel">
               <option value="">{{ t('guides.allFactions') }}</option>
-              <option v-for="item in facets.factions" :key="item" :value="item">{{ item }}</option>
+              <option v-for="item in facets.factions" :key="item" :value="item">{{ guideFactionLabel(item, locale) }}</option>
             </select>
           </div>
           <div class="field">
@@ -161,6 +161,7 @@
               <option value="">{{ t('guides.allShips') }}</option>
               <option value="colossus_allow">{{ t('guides.ship.colossus_allow') }}</option>
               <option value="colossus_deny">{{ t('guides.ship.colossus_deny') }}</option>
+              <option value="colossus_unknown">{{ t('guides.ship.colossus_unknown') }}</option>
               <option value="battleship">{{ t('guides.ship.battleship') }}</option>
               <option value="battlecruiser">{{ t('guides.ship.battlecruiser') }}</option>
               <option value="cruiser">{{ t('guides.ship.cruiser') }}</option>
@@ -192,15 +193,19 @@
             <tr v-for="guide in filtered" :key="guide.slug">
               <td>
                 <router-link :to="`/${server}/guides/${guide.slug}`" class="guide-link">{{ guideTitle(guide) }}</router-link>
-                <span v-if="locale === 'zh' && guide.zh?.title" class="english-name list-english">{{ guide.title }}</span>
+                <span v-if="locale === 'zh' && (guide.missionName?.zh || guide.zh?.title)" class="english-name list-english">{{ guideTitle(guide, 'en') }}</span>
+                <span v-if="guide.missionName" class="mobile-faction">{{ enemyLabel(guide) }}</span>
               </td>
               <td><span class="type-badge" :class="`type-${guide.type}`">{{ typeLabel(guide.type) }}</span></td>
               <td class="c num">{{ guide.level ? `L${guide.level}` : guide.rating || '—' }}</td>
-              <td class="t-muted">{{ guide.faction || '—' }}</td>
+              <td class="t-muted">{{ enemyLabel(guide) }}</td>
               <td class="t-muted">{{ guide.shipSuggestion || '—' }}</td>
               <td>
-                <span class="restriction-badge" :class="`restriction-${restrictionStatus(guide)}`">
+                <span v-if="guide.shipLimit || !guide.colossusSupport" class="restriction-badge" :class="`restriction-${restrictionStatus(guide)}`">
                   {{ restrictionLabel(guide) }}
+                </span>
+                <span v-if="guide.colossusSupport" class="restriction-badge colossus-access" :class="`colossus-${colossusAccessStatus(guide)}`">
+                  {{ colossusLabel(guide) }}
                 </span>
               </td>
             </tr>
@@ -226,7 +231,9 @@ import { useRoute } from 'vue-router'
 import { useI18n } from '../i18n'
 import { useSettingsStore } from '../stores/settings'
 import { loadGuideData } from '../data/loader'
+import { guideFactionLabel, guideEnemyLabel } from '../services/guideFactions'
 import {
+  colossusAccessStatus,
   filterGuides,
   guideFacets,
   shipRestrictionLabel,
@@ -266,8 +273,13 @@ function typeLabel(value) {
   return t(`guides.type.${value}`)
 }
 
-function guideTitle(guide) {
-  return locale.value === 'zh' ? guide.zh?.title || guide.title : guide.title
+function enemyLabel(guide) {
+  return guideEnemyLabel(guide, locale.value) || (guide.type === 'mission' ? t('guides.enemyUnverified') : '—')
+}
+
+function guideTitle(guide, language = locale.value) {
+  const english = guide.missionName?.en || guide.title
+  return language === 'zh' ? guide.missionName?.zh || guide.zh?.title || english : english
 }
 
 function sectionHeading(guide, section, index) {
@@ -276,6 +288,19 @@ function sectionHeading(guide, section, index) {
 
 function sectionText(guide, section, index) {
   return locale.value === 'zh' ? guide.zh?.sections?.[index]?.text || section.text : section.text
+}
+
+function colossusLabel(guide) {
+  const status = colossusAccessStatus(guide)
+  if (status === 'blocked') return t('guides.ship.colossus_deny')
+  if (status === 'unknown') return t('guides.ship.colossus_unknown')
+  return t('guides.ship.colossus_allow')
+}
+
+function colossusNotice(guide) {
+  const status = colossusAccessStatus(guide)
+  const key = status === 'blocked' ? 'blocked' : guide.colossusNote || status
+  return t(`guides.colossusNotice.${key}`)
 }
 
 function restrictionStatus(guide) {
@@ -328,6 +353,8 @@ onMounted(async () => {
 .type-unrated { color: var(--orange); background: var(--orange-bg); }
 .type-expedition { color: var(--purple); background: var(--purple-bg); }
 .restriction-badge { display: inline-flex; max-width: 360px; padding: 3px 8px; border-radius: var(--radius-sm); font-size: var(--text-xs); line-height: 1.4; }
+.colossus-access { display: block; width: fit-content; margin-top: 4px; }
+.mobile-faction { display: none; }
 .restriction-limited { color: var(--orange); background: var(--orange-bg); }
 .restriction-unrestricted { color: var(--green); background: var(--green-bg); }
 .restriction-unknown { color: var(--text-dim); background: var(--bg-elevated); }
@@ -344,7 +371,8 @@ onMounted(async () => {
 .prose-card, .encounters-card { overflow: hidden; }
 .prose-section { padding: 14px 16px; border-bottom: 1px solid var(--border-default); }
 .colossus-box { margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: var(--text-xs); line-height: 1.5; }
-.colossus-none, .colossus-partial { background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.3); color: var(--red); }
+.colossus-unknown { color: var(--text-secondary); background: var(--bg-elevated); }
+.colossus-blocked { background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.3); color: var(--red); }
 .colossus-full { background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.3); color: var(--green); }
 .colossus-supported { background: rgba(90, 160, 224, 0.12); border: 1px solid rgba(90, 160, 224, 0.3); color: var(--blue); }
 .prose-section:last-child { border-bottom: 0; }
@@ -357,6 +385,7 @@ summary:hover { background: var(--bg-elevated); }
 .license-note { text-align: center; padding: 4px 10px 0; }
 
 @media (max-width: 800px) {
+  .mobile-faction { display: block; font-size: var(--text-xs); color: var(--text-dim); }
   .filter-grid { grid-template-columns: 1fr 1fr; }
   .search-field { grid-column: 1 / -1; }
   .guide-table th:nth-child(4), .guide-table td:nth-child(4),

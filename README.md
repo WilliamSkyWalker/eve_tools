@@ -46,7 +46,9 @@ EVE Online 工业工具，纯前端 SPA，支持世界服 (Tranquility) 和国�
 
 - Comprehensive PvE walkthroughs: Level 1–5 Security Missions, Combat Anomalies, DED Complexes, Unrated Complexes, and Expeditions / 1–5 级安全任务、战斗异常、DED 死亡空间、未评级与远征攻略
 - Search and filter by category, mission level, faction, and **allowed ship classes** / 支持按类别、等级、敌对势力及**准入舰船**多维筛选
-- **Serenity Colossus gate access** — Level 5 mission guides show which acceleration gates allow or block Colossus ships. / **国服巨像准入** — 五级任务攻略标明哪些加速轨道允许或禁止巨像通行。
+- **Serenity Colossus gate access** — A single confirmed restriction marks the whole mission or deadspace site as blocked. Level 5 missions, DED sites, unrated complexes, and expeditions also show when access is confirmed or unverified. / **国服巨像准入** — 任务或死亡空间只要有一条轨道确认禁止巨像，整项就归入巨像禁入。五级任务、DED、未评级死亡空间和远征同时标明已确认可进或尚待核实的情况。
+- Level 5 mission titles use the Serenity client’s Chinese and English names. The original guide titles remain searchable. / 五级任务显示国服客户端的中英文名称，旧攻略名也可搜索。
+- Mission enemies use Serenity client evidence. Each verified faction has its own filter option in Chinese and English. / 任务敌方以国服客户端记录为准，已确认的每个势力均可用中文或英文单独筛选。
 - Ship suggestions, damage profiles (deal/resist), objective details, wave breakdowns with triggers, and EWAR hazards / 推荐舰船、建议输出/防御抗性、波次触发与电子战单位详情
 - Sourced from EVE University Wiki under CC BY-SA 4.0 / 攻略内容源自 EVE University Wiki（遵循 CC BY-SA 4.0 协议）
 
@@ -176,6 +178,13 @@ npm run preview      # Preview production build / 预览构建结果
 # Download latest SDE and generate JSON (with CN names & CN extras)
 # 下载最新 SDE 并生成全套 JSON（含国服中文名与国服独有物品/Dogma数据）
 node scripts/convert-sde.mjs --download --fetch-zh-names --fetch-serenity-extras --fetch-lp
+
+# Refresh the guide snapshots when updating from a Serenity client
+# 从国服客户端更新舰船准入、任务名称与敌对势力快照
+python3 -B scripts/export-serenity-complex-access.py /path/to/SharedCache
+python3 -B scripts/export-serenity-mission-access.py /path/to/SharedCache
+python3 -B scripts/export-serenity-mission-names.py /path/to/SharedCache
+python3 -B scripts/export-serenity-mission-enemies.py /path/to/SharedCache
 
 # Update PvE Guides from EVE University Wiki API
 # 从 EVE University Wiki API 更新 PvE 攻略库

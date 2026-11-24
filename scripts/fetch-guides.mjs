@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { serenityMissionAccess } from './serenity-mission-access.mjs'
+import { serenityMissionName } from './serenity-mission-names.mjs'
+import { serenityMissionEnemies } from './serenity-mission-enemies.mjs'
+import { serenityEventEnemies } from './serenity-event-enemies.mjs'
+import { serenityComplexAccess } from './serenity-complex-access.mjs'
 
 const API = 'https://wiki.eveuniversity.org/api.php'
 const SOURCE_BASE = 'https://wiki.eveuniversity.org/'
@@ -282,11 +286,15 @@ function parseGuide(entry, page) {
     escalation: 'expedition',
   })[rawType] || entry.type
   const level = entry.level || Number(mission.level) || null
-  const faction = mission.faction || mission.faction1 || site.faction || entry.indexFaction || ''
   const title = site.name || page.title || entry.title
+  const identity = { type, level, source: { title: page.title } }
+  const simulatedEnemies = serenityEventEnemies(identity)
+  const enemyFactions = serenityMissionEnemies(identity) ?? simulatedEnemies
+  const faction = enemyFactions?.join(', ') ?? (mission.faction || mission.faction1 || site.faction || entry.indexFaction || '')
   const revision = page.revisions?.[0]
-  const access = type === 'mission' ? serenityMissionAccess(title, level) : null
-  const shipRestriction = access?.shipRestriction ?? extractShipRestriction(
+  const access = type === 'mission' ? serenityMissionAccess(page.title, level) : serenityComplexAccess(page.title, type)
+  const missionName = type === 'mission' ? serenityMissionName(page.title, level) : null
+  const shipRestriction = extractShipRestriction(
     wikitext,
     mission.shipsizelimit || site['ship limit'] || '',
   )
@@ -296,11 +304,14 @@ function parseGuide(entry, page) {
     type,
     level,
     faction,
+    ...(enemyFactions !== undefined && { enemyFactions }),
+    ...(simulatedEnemies && { enemySimulation: true }),
     rating: site.rating || '',
     location: site.location || '',
     shipLimit: shipRestriction.text,
     shipRestriction,
-    ...(access && { colossusSupport: access.colossusSupport }),
+    ...access,
+    ...(missionName && { missionName }),
     shipSuggestion: mission.shipsuggestion || '',
     damageToDeal: mission.damagetodeal || '',
     damageToResist: mission.damagetoresist || '',

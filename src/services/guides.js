@@ -1,3 +1,5 @@
+import { guideFactionMembers, guideEnemyLabel } from './guideFactions.js'
+
 const TYPE_ORDER = ['mission', 'anomaly', 'ded', 'unrated', 'expedition']
 
 export function guideTypeOrder(type) {
@@ -5,15 +7,22 @@ export function guideTypeOrder(type) {
   return index === -1 ? TYPE_ORDER.length : index
 }
 
+// Older guide catalogs distinguished wholly and partly blocked sites.
+export function colossusAccessStatus(guide) {
+  const status = guide.colossusSupport
+  return status === 'none' || status === 'partial' ? 'blocked' : status
+}
+
 export function filterGuides(guides, filters = {}) {
   const query = (filters.query || '').trim().toLocaleLowerCase()
   const level = filters.level ? Number(filters.level) : null
+  const faction = filters.faction
   const shipClass = filters.shipClass || ''
 
   return guides
     .filter(guide => !filters.type || guide.type === filters.type)
     .filter(guide => !level || guide.level === level)
-    .filter(guide => !filters.faction || guide.faction === filters.faction)
+    .filter(guide => !faction || guideFactionMembers(guide).includes(faction))
     .filter(guide => {
       if (!shipClass) return true
       const limit = (guide.shipLimit || '').toLowerCase()
@@ -21,7 +30,10 @@ export function filterGuides(guides, filters = {}) {
         return guide.colossusSupport === 'full' || guide.colossusSupport === 'supported'
       }
       if (shipClass === 'colossus_deny') {
-        return guide.colossusSupport === 'none' || guide.colossusSupport === 'partial'
+        return colossusAccessStatus(guide) === 'blocked'
+      }
+      if (shipClass === 'colossus_unknown') {
+        return guide.colossusSupport === 'unknown'
       }
       if (shipClass === 'battleship') {
         return !limit.includes('battlecruiser') && !limit.includes('cruiser') && !limit.includes('frigate') && !limit.includes('destroyer')
@@ -39,7 +51,10 @@ export function filterGuides(guides, filters = {}) {
       return [
         guide.title,
         guide.zh?.title,
-        guide.faction,
+        guide.missionName?.en,
+        guide.missionName?.zh,
+        guideEnemyLabel(guide, 'en'),
+        guideEnemyLabel(guide, 'zh'),
         guide.rating,
         guide.location,
         guide.shipSuggestion,
@@ -55,7 +70,7 @@ export function filterGuides(guides, filters = {}) {
 export function guideFacets(guides) {
   return {
     types: [...new Set(guides.map(guide => guide.type))].sort((a, b) => guideTypeOrder(a) - guideTypeOrder(b)),
-    factions: [...new Set(guides.map(guide => guide.faction).filter(Boolean))].sort(),
+    factions: [...new Set(guides.flatMap(guideFactionMembers))].sort(),
   }
 }
 
@@ -72,14 +87,15 @@ export function shipRestrictionLabel(guide, locale = 'en') {
   if (guide.shipLimit === 'Unrestricted' || /^(unrestricted|none|no limit|not gated|ungated)$/i.test(guide.shipLimit)) {
     return locale === 'zh' ? '无限制' : 'Unrestricted'
   }
+  if (/^Colossus restricted in parts? [\d–-]+ of \d+$/i.test(guide.shipLimit)) {
+    return locale === 'zh' ? '巨像禁入' : 'Colossus restricted'
+  }
   if (locale !== 'zh') return guide.shipLimit
 
   return guide.shipLimit
     .replace(/\bOnly allows:\s*/gi, '仅允许：')
     .replace(/\bUnrestricted\b/gi, '无限制')
     .replace(/\bColossus supported\b/gi, '巨像可进')
-    .replace(/\bColossus restricted in parts 1–3 of 5\b/gi, '巨像禁入第 1–3 步的轨道（共 5 步）')
-    .replace(/\bColossus restricted in part 2 of 3\b/gi, '巨像禁入第 2 步的内部轨道（共 3 步）')
     .replace(/\bColossus restricted\b/gi, '巨像禁入')
     .replace(/\s*\((巨像可进|巨像禁入)\)/g, '（$1）')
     .replace(/\bColossus\b/gi, '巨像')
