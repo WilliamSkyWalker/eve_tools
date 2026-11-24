@@ -29,8 +29,8 @@ describe('guide filters', () => {
   it('normalizes and localizes ship restriction states', () => {
     expect(shipRestrictionStatus({ shipRestriction: { status: 'unrestricted' } })).toBe('unrestricted')
     expect(shipRestrictionLabel({ shipLimit: 'Battlecruiser or smaller' }, 'zh')).toBe('战列巡洋舰及以下')
-    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus restricted)' }, 'zh')).toBe('战列舰及以下 (巨像禁入)')
-    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus supported)' }, 'zh')).toBe('战列舰及以下 (支持巨像)')
+    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus restricted)' }, 'zh')).toBe('战列舰及以下（巨像禁入）')
+    expect(shipRestrictionLabel({ shipLimit: 'Battleship & below (Colossus supported)' }, 'zh')).toBe('战列舰及以下（巨像可进）')
     expect(shipRestrictionLabel({}, 'zh')).toBe('未注明')
   })
 })

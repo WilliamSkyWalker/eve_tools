@@ -46,7 +46,7 @@ EVE Online 工业工具，纯前端 SPA，支持世界服 (Tranquility) 和国�
 
 - Comprehensive PvE walkthroughs: Level 1–5 Security Missions, Combat Anomalies, DED Complexes, Unrated Complexes, and Expeditions / 1–5 级安全任务、战斗异常、DED 死亡空间、未评级与远征攻略
 - Search and filter by category, mission level, faction, and **allowed ship classes** / 支持按类别、等级、敌对势力及**准入舰船**多维筛选
-- **Serenity Colossus (Xolotl) Support**: Explicit gate restriction tags and notice banners for CN-only Colossus-class ships (Group 4622) / **国服巨像（索洛托尔级）准入支持**：针对 5 级任务加速轨道代码白名单专门标注巨像（Group 4622）可进/禁入提示
+- **Serenity Colossus gate access** — Level 5 mission guides show which acceleration gates allow or block Colossus ships. / **国服巨像准入** — 五级任务攻略标明哪些加速轨道允许或禁止巨像通行。
 - Ship suggestions, damage profiles (deal/resist), objective details, wave breakdowns with triggers, and EWAR hazards / 推荐舰船、建议输出/防御抗性、波次触发与电子战单位详情
 - Sourced from EVE University Wiki under CC BY-SA 4.0 / 攻略内容源自 EVE University Wiki（遵循 CC BY-SA 4.0 协议）
 
